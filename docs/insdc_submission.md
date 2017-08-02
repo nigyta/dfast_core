@@ -103,13 +103,15 @@ which will be required to submit the genome through [DDBJ Mass Submission System
 By default, the COMMON entry section of an annotation file is left blank, so that users can fill with the information later. Alternatively, if you provide a text file describing metadata to `metadata_file` in the config, DFAST can generate a fully qualified DDBJ submission file including metadata.
 Alternatively, you can do it with the `--metadata_file` option.
 * `metadata_file`
- A metadata file is a tab-separated text file with a key and a value in each line. It is recommended to use a sample metadata file (`$DFAST_APP_ROOT/example/metadata.txt`) as a template.
+ A metadata file is a tab-separated text file with a key and a value in each line. It is recommended to use a sample metadata file (`$DFAST_APP_ROOT/example/sample.metadata.txt`) as a template.  
+ See also `$DFAST_APP_ROOT/example/description.metadata.txt` for more information.
 
 #### Example
 
-The below is an example of a command to generate compliant submission files for a complete genome consisting of 3 replicons.
+The below is an example of a command to generate compliant submission files for a complete genome consisting of one chromosome and 2 plasmids.  
+Execute this in `$DFAST_APP_ROOT`.
 ```
-dfast -g your_genome.fa --complete t --organism "Lactobacillus plantarum" --strain JCMxxxx --seq_names "Chromosome,pXXXX,pYYYY" --seq_topologies c,c,l --seq_types c,p,p --additional_modifiers "culture_collection=JCM:xxxx; isolation_source=plant; note=You can add a comment; note=You can add another comment; collection_date=2017-06-26" --metadata_file your_metadata.txt --prefix JCMxxxx --step 10 --use_separate_tags t
+dfast -g example/sample.lactobacillus.fna --complete t --organism "Lactobacillus hokkaidonensis" --strain LOOC260 --seq_names "Chromosome,pXXXX,pYYYY" --seq_topologies c,c,l --seq_types c,p,p --additional_modifiers "culture_collection=JCM:18461; isolation_source=silage; note=You can add a comment; note=You can add another comment; collection_date=2017-06-26" --metadata_file example/sample.metadata.txt --prefix LH260 --step 10 --use_separate_tags t --out LHLOOC
 ```
 
 
