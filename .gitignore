@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.python-version
+.DS_Store
+.idea
+db/
+!bin/Darwin/barrnap-0.8/db/
