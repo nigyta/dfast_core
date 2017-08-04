@@ -1,5 +1,5 @@
 # DFAST - DDBJ Fast Annotation and Submission Tool
-DFAST is a flexible and customizable pipeline for prokaryotic genome annotation as well as data submission to the INSDC. It is originally developed as the background engine for the [DFAST web service](https://dfast.ng.ac.jp) and is also available as a stand-alone command-line tool.
+DFAST is a flexible and customizable pipeline for prokaryotic genome annotation as well as data submission to the INSDC. It is originally developed as the background engine for the [DFAST web service](https://dfast.nig.ac.jp) and is also available as a stand-alone command-line tool.
 The stand-alone version of DFAST is also refered to as DFAST-core to differentiate it from its on-line version.  
 For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 
