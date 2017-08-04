@@ -106,7 +106,7 @@ Alternatively, you can do it with the `--metadata_file` option.
  A metadata file is a tab-separated text file with a key and a value in each line. It is recommended to use a sample metadata file (`$DFAST_APP_ROOT/example/sample.metadata.txt`) as a template.  
  See also `$DFAST_APP_ROOT/example/description.metadata.txt` for more information.
 
-#### Example
+#### Example    
 
 The below is an example of a command to generate compliant submission files for a complete genome consisting of one chromosome and 2 plasmids.  
 Execute this in `$DFAST_APP_ROOT`.

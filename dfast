@@ -7,10 +7,9 @@ import argparse
 from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
 
 from dfc import dfast_version
-
-from dfc.utils.config_util import load_config, show_config, set_references, set_aligner
-from dfc.utils.path_util import set_binaries_path
 from dfc.pipeline import Pipeline
+from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner
+from dfc.utils.path_util import set_binaries_path
 
 
 def parse_bool(arg):
@@ -55,7 +54,7 @@ group_lt.add_argument("--use_separate_tags", choices=["t", "true", "f", "false"]
                       help="Use separate tags according to feature types [t|f]", default=None, metavar="BOOL")
 
 group_workflow = parser.add_argument_group('Workflow options')
-# group_workflow.add_argument("--database", help="Additional reference database to be searched prior to the default database", metavar="PATH")
+group_workflow.add_argument("--database", help="Additional reference database to be searched prior to the default database", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
 group_workflow.add_argument("--aligner", help="Aligner to use [ghostx|ghostz|blastp]", choices=["ghostx", "ghostz", "blastp"], metavar="STR")
 
@@ -156,6 +155,9 @@ if use_separate_tags is not None:
 
 if args.references:  # --references
     set_references(config, args.references)
+
+if args.database:  # --databse
+    set_database(config, args.database)
 
 if args.aligner:  # --aligner
     set_aligner(config, args.aligner)

@@ -177,8 +177,8 @@ class Config:
         },
         {
             # By default, this is disabled. 
-            # If you want to add your original databases to be searched in prior to default DB,
-            # set 'enabled' to True and specify 'database'
+            # If you want to add your original databases to be searched prior to default DB,
+            # set 'enabled' to True and specify 'database', which you can do with '--database' option.
             # The database file must be in a DFAST reference format,
             # and DB indexing must be done using the 'reference_util.py' script.
             "component_name": "DBsearch",

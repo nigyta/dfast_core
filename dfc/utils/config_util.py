@@ -73,6 +73,14 @@ def set_references(config, references):
             return
 
 
+def set_database(config, database):
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        if setting.get("component_name", "") == "DBsearch":
+            setting["options"]["database"] = database
+            setting["enabled"] = True
+            return
+
+
 def set_aligner(config, aligner):
     for setting in config.FUNCTIONAL_ANNOTATION:
         if "aligner" in setting.setdefault("options", {}):
