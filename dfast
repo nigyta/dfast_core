@@ -8,7 +8,7 @@ from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
 
 from dfc import dfast_version
 from dfc.pipeline import Pipeline
-from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner
+from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, disable_cdd_search, disable_hmm_scan
 from dfc.utils.path_util import set_binaries_path
 
 
@@ -56,7 +56,10 @@ group_lt.add_argument("--use_separate_tags", choices=["t", "true", "f", "false"]
 group_workflow = parser.add_argument_group('Workflow options')
 group_workflow.add_argument("--database", help="Additional reference database to be searched prior to the default database", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
-group_workflow.add_argument("--aligner", help="Aligner to use [ghostx|ghostz|blastp]", choices=["ghostx", "ghostz", "blastp"], metavar="STR")
+group_workflow.add_argument("--aligner", help="Aligner to use [ghostx|blastp]", choices=["ghostx", "blastp"], metavar="STR")
+group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
+group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
+
 
 group_source = parser.add_argument_group('Genome source modifiers and metadata [advanced]',
                                          description='These values are only used to create INSDC submission files and do not affect the annotation result. See documents for more detail.')
@@ -161,6 +164,12 @@ if args.database:  # --databse
 
 if args.aligner:  # --aligner
     set_aligner(config, args.aligner)
+
+if args.no_hmm:  # --no_hmm
+    disable_hmm_scan(config)
+
+if args.no_cdd:  # --no_cdd
+    disable_cdd_search(config)
 
 if args.seq_names:  # --seq_names
     config.GENOME_SOURCE_INFORMATION["seq_names"] = args.seq_names

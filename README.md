@@ -71,7 +71,7 @@ export PATH=$DFAST_APP_ROOT:$PATH
     ```
     python scripts/file_downloader.py --protein dfast
     ```
-    File downloading and database indexing for GHOSTX/Z and BLASTP will be performed.
+    File downloading and database indexing for GHOSTX and BLASTP will be performed.
 2. **HMMer and RPS-BLAST databases (this may take time)**
     ```
     python scripts/file_downloader.py --cdd Cog --hmm TIGR
@@ -218,6 +218,12 @@ This distribution contains following external programs.
 * blastp, makeblastdb, blastdbcmd, rpsblast, rpsbproc from [NCBI-BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download) package. (Public domain)
 * hmmpress, hmmscan from [HMMer](http://hmmer.org/) package (GPLv3)
 * [LAST](http://last.cbrc.jp/) (GPLv3)
+
+## Trouble shoot
+* GLIBCXX not found error in Linux system  
+If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
+In this case, you need to update "libstdc++.so.6". (You might need to a newer version of GCC)  
+Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
 
 ## <a id="citation"></a>Citation
 * on-line version of DFAST  

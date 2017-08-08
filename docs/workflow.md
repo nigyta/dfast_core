@@ -117,15 +117,15 @@ similar to Prokka, and reduce running time.
 
 * DBsearch (Database search)  
 This is a method for a conventional homology search against reference databases.  
-By default, it uses Ghostx as a sequence aligner, which is about 100 times more efficient than BLAST. 
-You can choose an aligner from Ghostx/Ghostz/Blastp.  
+By default, it uses GHOSTX as a sequence aligner, which is about 100 times more efficient than BLAST. 
+You can choose an aligner from GHOSTX/BLASTP.  
 You can specify thresholds for E-value (`evalue_cutoff`), 
 query coverage % (`qcov_cutoff`), and subject coverage % (`scov_cutoff`).  
 The reference database is specified by `database`. 
 The DFAST-format reference file is a tab-separated table consisting of 7 columns,
 which is detailed in the **Reference Database** section.  
 You can prepare your own database following this format. 
-Before running the pipeline, index files for Blastp and Ghostx/z must be created.
+Before running the pipeline, index files for BLASTP and GHOSTX must be created.
 This can be done as following:
   ```
   python $DFAST_APP_ROOT/scripts/ref_util.py format your_database.ref
