@@ -66,13 +66,16 @@ class OrthoSearch(BaseAnnotationComponent):
             result_file_r = os.path.join(self.result_dir, "reference{0}-query0.out".format(i))
 
             cmd = self.aligner.get_command(query_file=query_fasta_file, db_name=ref_db, result_file=result_file_f)
+            cmd.append("2> /dev/null")  # Drop warning for O containing query sequence
             self.commands.append(cmd)
             cmd = self.aligner.get_command(query_file=ref_fasta_file, db_name=query_db, result_file=result_file_r)
+            cmd.append("2> /dev/null")  # Drop warning for O containing query sequence
             self.commands.append(cmd)
 
         # self-self alignment
         result_file_self = os.path.join(self.result_dir, "query0-query0.out")
         cmd = self.aligner.get_self_alignment_command(query_file=query_fasta_file, db_name=query_db, result_file=result_file_self)
+        cmd.append("2> /dev/null")  # Drop warning for O containing query sequence
         self.commands.append(cmd)
 
     def read_inner_hits(self):

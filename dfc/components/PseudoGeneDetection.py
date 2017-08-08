@@ -456,7 +456,9 @@ class PseudoGeneDetection(BaseAnnotationComponent):
         blast_result_file = os.path.join(self.workDir, "blast_result.out")
 
         self.executeCommand(self.blastp.format_db_command(reference_fasta_file, db_name))  # format db
-        self.executeCommand(self.blastp.get_command(query_fasta_file, db_name, blast_result_file), shell=True)  # blastp
+        blast_cmd = self.blastp.get_command(query_fasta_file, db_name, blast_result_file)
+        blast_cmd.append("2> /dev/null")  # Drop warning for O containing query sequence
+        self.executeCommand(blast_cmd, shell=True)  # blastp
         _parse_result(blast_result_file)
 
     def run(self):
