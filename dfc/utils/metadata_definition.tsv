@@ -28,7 +28,7 @@ zip	Zip	zip	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9\-]{0,16}
 #---------- Reference ----------								
 reference	Reference Title	title	REFERENCE	COMMON	string	TRUE	[^`\\]*	
 author	Author	ab_name	REFERENCE	COMMON	array	TRUE	[A-Za-z0-9',\.\-]*	
-refconsrtm	Consortium	consrtm	REFERENCE	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+ref_consrtm	Consortium	consrtm	REFERENCE	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
 status	Status	status	REFERENCE	COMMON	string	TRUE	(Unpublished)|(In press)|(Published)	Unpublished
 year	Year	year	REFERENCE	COMMON	string	TRUE	\d{4}	
 journal	Journal	journal	REFERENCE	COMMON	string	FALSE	[^`<>\\]*	

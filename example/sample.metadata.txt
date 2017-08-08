@@ -19,15 +19,15 @@ street	Yata 1111
 zip	411-8540
 reference	Complete genome sequence of Lactobacillus hokkaidonensis LOOC260.
 author	Tanizawa,Y.; Arita,M.; Nakamura,Y.; Tohno,M.
-refconsrtm	
+ref_consrtm	
 status	Unpublished
 year	2017
 journal	
 volume	
 start_page	
 end_page	
-holdDate	20181010
+hold_date	20181010
 comment	These metadata are examples for the DDBJ submission using MSS (Mass Submission System).; 2nd comment line
-assemblyMethod	HGAP protocol 3
-sequencingTechnology	MiSeq; PacBio RSII
+assembly_method	HGAP protocol 3
+sequencing_technology	MiSeq; PacBio RSII
 coverage	120x
