@@ -85,3 +85,15 @@ def set_aligner(config, aligner):
     for setting in config.FUNCTIONAL_ANNOTATION:
         if "aligner" in setting.setdefault("options", {}):
             setting["options"]["aligner"] = aligner
+
+
+def disable_cdd_search(config):
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        if setting.get("component_name", "") == "CDDsearch":
+            setting["enabled"] = False
+
+
+def disable_hmm_scan(config):
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        if setting.get("component_name", "") == "HMMscan":
+            setting["enabled"] = False

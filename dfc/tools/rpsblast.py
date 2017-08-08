@@ -13,7 +13,7 @@ class RPSblast(Tool):
 
     def __init__(self, options=None):
         super(RPSblast, self).__init__(options=options)
-        self.evalue_cutoff = options.get("evalue_cutoff", 1e-5)
+        self.evalue_cutoff = options.get("evalue_cutoff", 1e-6)
 
     def get_command(self, query_file, db_name, result_file):
         return ["rpsblast", "-query", query_file, "-db", db_name, "-out", result_file, "-outfmt 5",

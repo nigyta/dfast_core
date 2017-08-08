@@ -72,6 +72,25 @@ def dfast2fasta(input_file, output_file=None, with_description=False):
     fh.close()
     return output_file
 
+def genbank2dfast(input_file, output_file=None, no_header=False, attributes=None):
+    if output_file is None:
+        fh = sys.stdout
+    else:
+        dir_name = os.path.dirname(output_file)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        fh = open(output_file, "w")
+    D = Protein.read_from_genbank(input_file)
+    if not no_header:
+        if attributes:
+            fh.write("# {}\n".format(attributes))
+        else:
+            fh.write("#\n")
+        fh.write("#id\tdescription\tgene\tEC_number\tflag\torganism\tsource_DB\tsequence\n")
+    for protein in D.values():
+        infer_source_db = False
+        fh.write(protein.to_tsv(infer_source_db=infer_source_db))
+    fh.close()
 
 def make_blast_db(file_name, db_name=None):
     if db_name is None:
@@ -116,15 +135,33 @@ def run_hmmpress(file_name):
 if __name__ == '__main__':
 
     def f2d(args):
+        if args.input is None:
+            parser_toDfast.print_help()
+            exit()
         fasta2dfast(args.input, args.output, args.no_header, args.source_db, args.attributes)
 
+    def g2d(args):
+        if args.input is None:
+            parser_gbk2dfast.print_help()
+            exit()
+        genbank2dfast(args.input, args.output, args.no_header, args.attributes)
+
     def d2f(args):
+        if args.input is None:
+            parser_toFasta.print_help()
+            exit()
         dfast2fasta(args.input, args.output, args.with_description)
 
     def formatdb(args):
+        if args.input is None:
+            parser_format_db.print_help()
+            exit()
         prepare_database(args.input)
 
     def formathmm(args):
+        if args.input is None:
+            parser_format_hmm.print_help()
+            exit()
         run_hmmpress(args.input)
 
     import argparse
@@ -144,6 +181,11 @@ if __name__ == '__main__':
     parser_toDfast.add_argument("--attributes", help="DB attributes. eg '[dbname=DFAST-default] [version=1.0] [contributor=yt]'", metavar="STR")
     parser_toDfast.set_defaults(func=f2d)
 
+    parser_gbk2dfast = subparsers.add_parser('gbk2dfast', help='Convert a FASTA file to a DFAST reference file.', parents=[common_parser])
+    parser_gbk2dfast.add_argument("--no_header", help="Do not add a header to output", action="store_true")
+    parser_gbk2dfast.add_argument("--attributes", help="DB attributes. eg '[dbname=DFAST-default] [version=1.0] [contributor=yt]'", metavar="STR")
+    parser_gbk2dfast.set_defaults(func=g2d)
+
     parser_toFasta = subparsers.add_parser('dfast2fasta', help='Convert a DFAST reference file to a FASTA file.', parents=[common_parser])
     parser_toFasta.add_argument("--with_description", help="Include description in FASTA headers.", action="store_true")
     parser_toFasta.set_defaults(func=d2f)
@@ -157,6 +199,10 @@ if __name__ == '__main__':
     parser_format_hmm.set_defaults(func=formathmm)
 
     args = parser.parse_args()
+    if not hasattr(args, "func"):
+        parser.print_help()
+        exit()
+
     # handler.setLevel(INFO)
 
     # file_name = os.path.join(dbPath, "DFAST_RefSeq.ref")

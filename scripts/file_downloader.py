@@ -61,6 +61,9 @@ parser.add_argument("-o", "--out", help="Output directory", type=str, metavar="P
 args = parser.parse_args()
 # print(args)
 
+if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly]):
+    parser.print_help()
+    exit()
 
 def retrieve_dfast_reference(db_name, out_dir="."):
     target_url = db_urls[db_name]
