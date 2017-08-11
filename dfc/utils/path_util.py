@@ -16,10 +16,10 @@ def create_output_directory(config):
         if os.path.isdir(directory):
             if force_overwrite:
                 shutil.rmtree(directory)
-                logger.info("WORKING Directory is set to an existing directory '{}'.".format(directory))
+                logger.info("WORKING Directory is set to an existing directory: '{}'.".format(directory))
                 os.makedirs(directory)
             else:
-                logger.error("Output directory '{}' already exists. To overwrite an existing directory, use '--force' option. Aborting...".format(directory))
+                logger.error("Output directory '{}' already exists. To overwrite the existing directory, use '--force' option. Aborting...".format(directory))
                 exit(1)
         else:
             logger.info("Cannot create output directory '{}'. Aborting...".format(directory))

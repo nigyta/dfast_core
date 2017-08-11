@@ -59,7 +59,7 @@ class StructuralAnnotation(object):
 
     def execute(self):
         """
-        Run structural annotation tools parallelly using multi threading
+        Run structural annotation tools in parallel using multi threading
         :return:
         """
         self.logger.info("Start structural annotation process using {self.CPU} CPUs".format(self=self))

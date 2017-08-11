@@ -83,6 +83,10 @@ group_run.add_argument("-h", "--help", help="Show this help message", action="st
 
 args = parser.parse_args()
 
+if len(sys.argv) == 1:
+    parser.print_help()
+    exit()
+
 logger = getLogger()
 handler = StreamHandler(sys.stdout)
 handler.setLevel(DEBUG)
