@@ -27,7 +27,7 @@ As its name suggested, DFAST is intended to support rapid genome submission to t
 ### Prerequisites
 * **Python (3.4- or 2.7)**  
   DFAST is developed in Python 3.6 and runs both on Python 3.4 or later and Python 2.7.
-* **BioPython package**
+* **BioPython package**  
   You can install this with the Python package management tool `pip`:  
   ```
   (sudo) pip install biopython
@@ -175,9 +175,13 @@ Locus_tag settings:
                         Use separate tags according to feature types [t|f]
 
 Workflow options:
+  --database PATH       Additional reference database to be searched prior to
+                        the default database
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
-  --aligner STR         Aligner to use [ghostx|ghostz|blastp]
+  --aligner STR         Aligner to use [ghostx|blastp]
+  --no_hmm              Disable HMMscan
+  --no_cdd              Disable CDDsearch
 
 Genome source modifiers and metadata [advanced]:
   These values are only used to create INSDC submission files and do not
@@ -220,9 +224,12 @@ This distribution contains following external programs.
 * [LAST](http://last.cbrc.jp/) (GPLv3)
 
 ## Trouble shoot
+* DBsearch is slow  
+The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
+If your machine does not have enough memory, decrease the number of CPUs (--cpu 2 or --cpu 1) or use BLASTP instead (--aligner blastp). 
 * GLIBCXX not found error in Linux system  
 If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
-In this case, you need to update "libstdc++.so.6". (You might need to a newer version of GCC)  
+In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
 
 ## <a id="citation"></a>Citation
