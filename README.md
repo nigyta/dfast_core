@@ -9,8 +9,11 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [How to run](#howto)
 * [Default workflow](#workflow)
 * [Options](#options)
+* [Software distribution](#distribution)
+* [Trouble shoot](#trouble_shoot)
 * [Citation](#citation)
-
+* [Workflow details](#docs/workflow.md) \[advanced\]
+* [INSDC submission](#docs/insdc_submission.md) \[advanced\]
 ## <a id="overview"></a>Overview
 * **Easy install**  
 DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.
@@ -33,7 +36,7 @@ As its name suggested, DFAST is intended to support rapid genome submission to t
   (sudo) pip install biopython
   ``` 
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.
-* **'Futures' and 'six' packages (Required only on Python 2.7)**  
+* **'futures' and 'six' packages (required only on Python 2.7)**  
 DFAST uses the `concurrent.futures` module for multiprocessing and the `six` module for compatibility with Python 2 and 3. To run on Python 2.7, you need to install them:
   ```
   (sudo) pip install futures six
@@ -46,21 +49,21 @@ For **RedHat/CentOS/Fedora**, the Time::Piece module should be installed:
   ```
 
 ### Source code
-Download the stable version from our web site or clone the latest version from GitHub.
+Download the stable version from our web site or clone the latest version from [GitHub](https://github.com/nigyta/dfast_core).
 * **Download the distribution**  
-Download the DFAST distribution from [our site](https://dfast.nig.ac.jp/distribution), then unarchive it.
+Download the DFAST distribution from [our site](https://dfast.nig.ac.jp/dfc/distribution/), then unarchive it.
   ```
   wget https://dfast.nig.ac.jp/dfc/distribution/dfast_core_x.x.x.tar.gz  
   tar xvfz dfast_core_x.x.x.tar.gz  
   cd dfast_core_x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
-* **GitHub**
+* **GitHub** (recommended)  
   ```
   git clone https://github.com/nigyta/dfast_core.git
   cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 
-For your convenience, add $DFAST_APP_ROOT in your `PATH`.
+For your convenience, add $DFAST_APP_ROOT to your `PATH`.
 ```
 export PATH=$DFAST_APP_ROOT:$PATH
 ```
@@ -223,7 +226,7 @@ This distribution contains following external programs.
 * hmmpress, hmmscan from [HMMer](http://hmmer.org/) package (GPLv3)
 * [LAST](http://last.cbrc.jp/) (GPLv3)
 
-## Trouble shoot
+## <a id="trouble_shoot"></a>Trouble shoot
 * DBsearch is slow  
 The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
 If your machine does not have enough memory, decrease the number of CPUs (--cpu 2 or --cpu 1) or use BLASTP instead (--aligner blastp). 

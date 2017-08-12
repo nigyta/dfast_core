@@ -28,11 +28,11 @@ cdd_directory = "/pub/mmdb/cdd/little_endian/"
 host_dfast = "https://dfast.nig.ac.jp"
 
 db_urls = {
-    "dfast": "https://dfast.nig.ac.jp/download/dfc/DFAST-default.ref.gz",
-    "bifido": "https://dfast.nig.ac.jp/download/dfc/DFAST-BIFIDO.ref.gz",
-    "cyanobase": "https://dfast.nig.ac.jp/download/dfc/cyanobase_aa.ref.gz",
-    "ecoli": "https://dfast.nig.ac.jp/download/dfc/DFAST-ECOLI.ref.gz",
-    "lab": "https://dfast.nig.ac.jp/download/dfc/DFAST-LAB.ref.gz",
+    "dfast": host_dfast + "/dfc/distribution/DFAST-default.ref.gz",
+    "bifido": host_dfast + "/dfc/distribution/DFAST-BIFIDO.ref.gz",
+    "cyanobase": host_dfast + "/dfc/distribution/cyanobase_aa.ref.gz",
+    "ecoli": host_dfast + "/dfc/distribution/DFAST-ECOLI.ref.gz",
+    "lab": host_dfast + "/dfc/distribution/DFAST-LAB.ref.gz",
 }
 
 hmm_urls = {
@@ -59,7 +59,7 @@ parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("-o", "--out", help="Output directory", type=str, metavar="PATH")
 args = parser.parse_args()
-# print(args)
+
 
 if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly]):
     parser.print_help()

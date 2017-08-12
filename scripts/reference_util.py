@@ -190,7 +190,7 @@ if __name__ == '__main__':
     parser_toFasta.add_argument("--with_description", help="Include description in FASTA headers.", action="store_true")
     parser_toFasta.set_defaults(func=d2f)
 
-    parser_format_db = subparsers.add_parser('formatdb', help='Create BLAST and GHOSTX/Z databases from a DFAST reference file.')
+    parser_format_db = subparsers.add_parser('formatdb', help='Create BLAST and GHOSTX databases from a DFAST reference file.')
     parser_format_db.add_argument("-i", "--input", help="Input reference file", metavar="PATH", required=True)
     parser_format_db.set_defaults(func=formatdb)
 
