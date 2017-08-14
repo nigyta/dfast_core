@@ -61,7 +61,7 @@ class GAP(StructuralAnnotationTool):
                         feature = ExtendedFeature(location, type="assembly_gap", qualifiers=qualifiers,
                                                   id="{0}_{1}".format(self.__class__.__name__, i), seq_id=record.id)
 
-                        assert str(feature.extract(record).seq) == fragment
+                        assert str(feature.extract(record).seq).upper() == fragment
                         yield record.id, feature
                     startPosition = endPosition
 

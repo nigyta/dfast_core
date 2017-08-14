@@ -12,8 +12,8 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Software distribution](#distribution)
 * [Trouble shoot](#trouble_shoot)
 * [Citation](#citation)
-* [Workflow details](#docs/workflow.md) \[advanced\]
-* [INSDC submission](#docs/insdc_submission.md) \[advanced\]
+* [Workflow details](docs/workflow.md) \[advanced\]
+* [INSDC submission](docs/insdc_submission.md) \[advanced\]
 ## <a id="overview"></a>Overview
 * **Easy install**  
 DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.
@@ -110,9 +110,9 @@ export PATH=$DFAST_APP_ROOT:$PATH
 4. **Advanced usage**  
     By providing command line options, you can override the default settings described in the configuration file.
     ```
-    dfast --genome your_genome.fna --organism "Escherichia coli" --strain "str. xxx" --locus_tag_prefix ECXXX --minimum_length 200 --reference EC_ref_genome.gbk --aligner blastp --out OUT_ECXXX
+    dfast --genome your_genome.fna --organism "Escherichia coli" --strain "str. xxx" --prefix ECXXX --minimum_length 200 --reference EC_ref_genome.gbk --aligner blastp --out OUT_ECXXX
     ```
-    `locus_tag_prefix` is required if you want your genome to be submitted to the INSDC. DFAST generates DDBJ and GenBank submission files. For more information, please refer to [INSDC submission](docs/insdc_submission.md).
+    'locus_tag_prefix' is required if you want your genome to be submitted to the INSDC (use `--prefix` option). DFAST generates DDBJ and GenBank submission files. For more information, please refer to [INSDC submission](docs/insdc_submission.md).
      If you set `--references` option, OrthoSearch (orthologous gene assignment) is enabled, which conducts all-against-all protein alignments between given reference genomes to infer orthologous genes.  
      `--aligner blastp` will let DFAST use BLASTP for protein alignments instead of default GHOSTX.
 
