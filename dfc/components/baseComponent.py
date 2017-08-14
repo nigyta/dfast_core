@@ -32,7 +32,8 @@ class BaseAnnotationComponent(object):
             self.workDir += "_" + str(self.__class__.instances)
         if not os.path.exists(self.workDir):
             os.makedirs(self.workDir)
-        self.CPU = CPU
+        cpu = self.options.get("cpu")
+        self.CPU = cpu if cpu else CPU  # if component-specific cpu number is not specified, global CPU number is used.  
         self.skipAnnotatedFeatures = self.options.get("skipAnnotatedFeatures", False)
         self.logger.info("Setting {0} options. {1}".format(self.__class__.__name__, str(self.options)))
         aligner = self.options.get("aligner")

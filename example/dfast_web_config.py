@@ -198,7 +198,7 @@ class Config:
             "component_name": "DBsearch",
             "enabled": False,
             "options": {
-                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 1,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
@@ -213,7 +213,7 @@ class Config:
             "component_name": "DBsearch",
             "enabled": True,
             "options": {
-                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 1,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
@@ -258,7 +258,7 @@ class Config:
             "component_name": "HMMscan",
             "enabled": True,
             "options": {
-                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
                 "evalue_cutoff": 1e-6,
                 "database": "@@APP_ROOT@@/db/hmm/TIGRFAMs_15.0_HMM.LIB",
@@ -283,7 +283,7 @@ class Config:
             "component_name": "CDDsearch",
             "enabled": True,
             "options": {
-                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "@@APP_ROOT@@/db/cdd/Cog",
