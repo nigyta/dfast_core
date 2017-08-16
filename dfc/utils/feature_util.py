@@ -68,11 +68,15 @@ class FeatureUtil(object):
         self.logger.info("Removed {} overlapping features.".format(count_removed))
 
     def remove_partial_features(self):
+        exempted_features = ["CRISPR"]
         removed = []
+
         for feature in self.genome.features.values():
             # if hasattr(feature, "location"):
             #     print(feature, feature.id)
             #     continue
+            if feature.type in exempted_features:
+                continue
             start = feature.location.start
             end = feature.location.end
             if isinstance(start, BeforePosition) or isinstance(end, AfterPosition):

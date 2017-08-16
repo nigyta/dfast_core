@@ -4,7 +4,7 @@
 import os
 from logging import getLogger, DEBUG, StreamHandler
 from collections import namedtuple, Counter
-from Bio.SeqFeature import FeatureLocation
+from Bio.SeqFeature import FeatureLocation, BeforePosition, AfterPosition
 from Bio import SeqIO
 from .base_tools import JavaWrapper, StructuralAnnotationTool
 from ..models.bio_feature import ExtendedFeature
@@ -31,6 +31,10 @@ class CRT(StructuralAnnotationTool):
     VERSION_CHECK_CMD = ""
     VERSION_PATTERN = ""
     SHELL = True
+
+    INTERVAL = 100
+    # CRT does not accept a draft genome consisting of multi-fasta.
+    # Sequences are concatenated with interval of 100 Ns before runnning CRT.
 
     def __init__(self, options=None, workDir="OUT"):
         """
@@ -66,9 +70,7 @@ class CRT(StructuralAnnotationTool):
         return cmd
 
     def prepare_concatenated_query(self):
-        # CRT does not accept a draft genome consisting of multi-fasta.
-        # Sequences are concatenated with interval of 100 Ns before runnning CRT.
-        interval = 100
+
         start = 1
         seq_info = []
         seqs = []
@@ -77,10 +79,10 @@ class CRT(StructuralAnnotationTool):
             end = start + len(record) - 1
             crt_seq = CrtSeq(record.id, len(record), start, end)
             seq_info.append(crt_seq)
-            start = end + interval + 1
+            start = end + self.__class__.INTERVAL + 1
             seqs.append(str(record.seq))
         with open(concatenated_query, "w") as f:
-            seq_interval = "n" * interval
+            seq_interval = "n" * self.__class__.INTERVAL
             seq = ">query\n" + seq_interval.join(seqs) + "\n"
             f.write(seq)
         return concatenated_query, seq_info
@@ -88,15 +90,21 @@ class CRT(StructuralAnnotationTool):
     def getFeatures(self):
 
         def _get_feature(line):
+            # modified at 2017.8.15. Suppress error when a crispr is detected at the edge of a contig.
             cols = line.strip().split()
             start, end = int(cols[3]), int(cols[5])
-            extracted = [x for x in self.seq_info if x.start <= start and end <= x.end]
+
+            extracted = [x for x in self.seq_info if x.start - self.__class__.INTERVAL < start and end < x.end + self.__class__.INTERVAL]
+            # extracted = [x for x in self.seq_info if x.start <= start and end <= x.end]
             assert len(extracted) == 1
             crt_seq = extracted[0]
             seq_id = crt_seq.id
             start = start - crt_seq.start
             end = end - crt_seq.start + 1
-            location = FeatureLocation(start, end, strand=1)
+
+            start_position = BeforePosition(0) if start < 0 else start
+            end_position = AfterPosition(crt_seq.length) if end > crt_seq.length else end
+            location = FeatureLocation(start_position, end_position, strand=1)
             return ExtendedFeature(location=location, type="CRISPR", seq_id=seq_id)
 
         def _get_repeat_sequence(fh):
