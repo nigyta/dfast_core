@@ -51,7 +51,7 @@ class Config:
     }
 
     LOCUS_TAG_SETTINGS = {
-        "prefix": "LOCUS",
+        "locus_tag_prefix": "LOCUS",
         "step": 10,
         "use_separate_tags": True,  # If set to `True`, locus_tags are assigned separately according to feature type. 
         "symbols": {"CDS": "", "rRNA": "r", "tRNA": "t", "tmRNA": "tm"}

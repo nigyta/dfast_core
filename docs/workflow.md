@@ -1,6 +1,5 @@
 # DFAST workflow
 
-[TOC]
 
 ## Input
 DFAST accepts a FASTA-formatted genome sequence file as an input.  
@@ -66,7 +65,7 @@ CRT requires Java Runtime Environment (JRE). Type "java" in your console to chec
 Depending on your system, you may need to configure options to launch Java.
 If not working properly, set `java_options` in the configuration file to "-Xmx256m", for example. 
 You can also export _JAVA_OPTIONS to environmental variables before running DFAST.  
-e.g. `export _JAVA_OPTIONS="-Xmx256m -XX:ParallelGCThreads=1`
+e.g. `export _JAVA_OPTIONS="-Xmx256m -XX:ParallelGCThreads=1`  
 http://www.room220.com/crt/
 8. Gap annotator*  
 Gap annotator is not an external program, but works as other programs do.
@@ -74,7 +73,7 @@ It finds gap regions (runs of Ns or ns) in the sequence,
 and annotate them as assembly_gap features.  
 By default `len_cutoff` is set to 5, which means gaps shorter than this value will be ignored.
 `linkage_evidence` and `gap_type` are assigned with the values specified in the configuration file.  
-(default: "paired-ends" and "within scaffold")
+(default: "paired-ends" and "within scaffold")  
 Please see this [page](https://www.ncbi.nlm.nih.gov/genbank/wgs_gapped/) to submit gapped sequences to the INSDC.
 
 If you want to use programs not included in the DFAST distribution, 
@@ -200,12 +199,12 @@ and thus should be placed as the final process of Functional Annotation.
 It first lists candidates of pseudogenes, 
 whose s_cov (subject coverage) in a protein alignment result is less than `scov_cutoff` (default: 85%).
 Then their coding sequences are extended to flanking regions by the length specified by `extension`,
-and re-aligned to their subject protein sequences using LAST, which allows frameshift alignments.
+and re-aligned to their subject protein sequences using [LAST](http://last.cbrc.jp), which allows frameshift alignments.
 When stop codons or frameshifts are found in the extended regions,
 the query will be marked as possible pseudogenes.  
-This also detects translation exceptions to selenocystein/pyrrolysine.
+This also detects translation exceptions to selenocysteine/pyrrolysine.
 
-  Kie lbasa SM, Wan R, Sato K, Horton P, Frith MC (2011)  
+  Kiełbasa SM, Wan R, Sato K, Horton P, Frith MC (2011)  
   Adaptive seeds tame genomic sequence comparison.  
   Genome Res 21: 487–493.
 
@@ -277,21 +276,21 @@ The second line and after contain protein sequence data in each line.
 |WP_001015721.1	|aerobactin synthase IucC |	iucC |6.3.2.27 | | Escherichia coli O83:H1 str. NRG 857C |RefSeq |MNHKDWDLVN...|
 |AAC73225.1 |pyruvate dehydrogenase |aceE |1.2.4.1 | | |INSD |MSERFPNDVD...|
 
-* id
+* id  
   Sequecne ID (Mandatory. Must be unique.)
-* description
+* description  
   Protein name (Mandatory)
-* gene
+* gene  
   Gene symbol.
-* EC_number
+* EC_number  
   EC number. For bifunctional proeins, use comma. e.g. 1.1.1.81, 1.1.1.79
-* flag
+* flag  
   This corresponds to the Flags field of the UniProtKB entry to indicate precursor or fragment. Current version of DFAST does not use this.
-* organism
+* organism  
   Organism name from which the sequence derived.
-* source_DB
+* source_DB  
   The database name from which the sequence is obtained. This will appear in the 'inference' qualifier of a CDS feature. e.g. /inference="DESCRIPTION:similar to AAsequence:UniProtKB:O66428"
-* sequence (Mandatory)
+* sequence (Mandatory)  
   Amino acid sequence for the protein
 
 #### Utility script
