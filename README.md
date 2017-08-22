@@ -110,9 +110,11 @@ export PATH=$DFAST_APP_ROOT:$PATH
 4. **Advanced usage**  
     By providing command line options, you can override the default settings described in the configuration file.
     ```
-    dfast --genome your_genome.fna --organism "Escherichia coli" --strain "str. xxx" --prefix ECXXX --minimum_length 200 --reference EC_ref_genome.gbk --aligner blastp --out OUT_ECXXX
+    dfast --genome your_genome.fna --organism "Escherichia coli" --strain "str. xxx" \
+    --locus_tag_prefix ECXXX --minimum_length 200 --references EC_ref_genome.gbk \
+    --aligner blastp --out OUT_ECXXX
     ```
-    'locus_tag_prefix' is required if you want your genome to be submitted to the INSDC (use `--prefix` option). DFAST generates DDBJ and GenBank submission files. For more information, please refer to [INSDC submission](docs/insdc_submission.md).
+    'locus tag prefix' is required if you want your genome to be submitted to the INSDC (use `--locus_tag_prefix` option). DFAST generates DDBJ and GenBank submission files. For more information, please refer to [INSDC submission](docs/insdc_submission.md).
      If you set `--references` option, OrthoSearch (orthologous gene assignment) is enabled, which conducts all-against-all protein alignments between given reference genomes to infer orthologous genes.  
      `--aligner blastp` will let DFAST use BLASTP for protein alignments instead of default GHOSTX.
 
@@ -156,33 +158,37 @@ The following tools are run in parallel to predict biological features (e.g. CDS
 Basic options:
   -g PATH, --genome PATH
                         Genomic FASTA file
-  -o PATH, --out PATH   Output directory
+  -o PATH, --out PATH   Output directory (default:OUT)
   -c PATH, --config PATH
-                        Configuration file
+                        Configuration file (default config will be used if not
+                        specified)
   --organism STR        Organism name
   --strain STR          Strain name
 
 Genome settings:
   --complete BOOL       Treat the query as a complete genome. Not required
-                        unless you need INSDC submission files. [t|f]
+                        unless you need INSDC submission files.
+                        [t|f(=default)]
   --use_original_name BOOL
                         Use original sequence names in a query FASTA file
-                        [t|f]
-  --sort_sequence BOOL  Sort sequences by length [t|f]
-  --minimum_length INT  Minimum sequence length
+                        [t|f(=default)]
+  --sort_sequence BOOL  Sort sequences by length [t(=default)|f]
+  --minimum_length INT  Minimum sequence length (default:200)
 
 Locus_tag settings:
-  --prefix STR          Locus tag prefix
-  --step INT            Increment step of locus tag
+  --locus_tag_prefix STR
+                        Locus tag prefix (defaut:LOCUS)
+  --step INT            Increment step of locus tag (default:10)
   --use_separate_tags BOOL
-                        Use separate tags according to feature types [t|f]
+                        Use separate tags according to feature types
+                        [t(=default)|f]
 
 Workflow options:
   --database PATH       Additional reference database to be searched prior to
                         the default database
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
-  --aligner STR         Aligner to use [ghostx|blastp]
+  --aligner STR         Aligner to use [ghostx(=default)|blastp]
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
 
@@ -197,9 +203,9 @@ Genome source modifiers and metadata [advanced]:
                         (linear/circular, for complete genome)
   --additional_modifiers STR
                         Additional modifiers for source features
-  --metadata_file PATH  Path to a metadata file (Optional for DDBJ submission
+  --metadata_file PATH  Path to a metadata file (optional for DDBJ submission
                         file)
-  --center_name STR     Genome center name (Optional for GenBank submission
+  --center_name STR     Genome center name (optional for GenBank submission
                         file)
 
 Run options:
@@ -215,7 +221,7 @@ Run options:
 DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](docs/LICENSE)).
 
 This distribution contains following external programs.
-* [MetaGeneAnnotator](http://metagene.cb.k.u-tokyo.ac.jp/) (© Hideki Noguchi)
+* [MetaGeneAnnotator](http://metagene.cb.k.u-tokyo.ac.jp/) (© Hideki Noguchi)  
  Redistributed by courtesy of Hideki Noguchi at National Institute of Genetics.
 * [Aragorn](http://mbio-serv2.mbioekol.lu.se/ARAGORN/) (GPLv3)
 * [Barrnap](https://github.com/tseemann/barrnap) (GPLv3)
@@ -229,7 +235,7 @@ This distribution contains following external programs.
 ## <a id="trouble_shoot"></a>Trouble shoot
 * DBsearch is slow  
 The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
-If your machine does not have enough memory, decrease the number of CPUs (--cpu 2 or --cpu 1) or use BLASTP instead (--aligner blastp). 
+If your machine does not have enough memory, decrease the number of CPUs (`--cpu 2` or `--cpu 1`) or use BLASTP instead (`--aligner blastp`). 
 * GLIBCXX not found error in Linux system  
 If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
 In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  

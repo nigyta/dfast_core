@@ -31,32 +31,32 @@ parser = argparse.ArgumentParser(description='DFAST: DDBJ Fast Annotation and Su
 
 group_basic = parser.add_argument_group("Basic options")
 group_basic.add_argument("-g", "--genome", help="Genomic FASTA file", metavar="PATH")
-group_basic.add_argument("-o", "--out", help="Output directory", type=str, metavar="PATH")
-group_basic.add_argument("-c", "--config", help="Configuration file", type=str, metavar="PATH")
+group_basic.add_argument("-o", "--out", help="Output directory (default:OUT)", type=str, metavar="PATH")
+group_basic.add_argument("-c", "--config", help="Configuration file (default config will be used if not specified)", type=str, metavar="PATH")
 group_basic.add_argument("--organism", help="Organism name", metavar="STR", default="")
 group_basic.add_argument("--strain", help="Strain name", metavar="STR", default="")
 
 
 group_genome = parser.add_argument_group('Genome settings')
 group_genome.add_argument("--complete", choices=["t", "true", "f", "false"], metavar="BOOL",
-                          help="Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f]")
+                          help="Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f(=default)]")
 group_genome.add_argument("--use_original_name", choices=["t", "true", "f", "false"],
-                          help="Use original sequence names in a query FASTA file [t|f]", metavar="BOOL")
+                          help="Use original sequence names in a query FASTA file [t|f(=default)]", metavar="BOOL")
 group_genome.add_argument("--sort_sequence", choices=["t", "true", "f", "false"],
-                          help="Sort sequences by length [t|f]", metavar="BOOL")
-group_genome.add_argument("--minimum_length", help="Minimum sequence length", type=int, metavar="INT")
+                          help="Sort sequences by length [t(=default)|f]", metavar="BOOL")
+group_genome.add_argument("--minimum_length", help="Minimum sequence length (default:200)", type=int, metavar="INT")
 
 
 group_lt = parser.add_argument_group('Locus_tag settings')
-group_lt.add_argument("--prefix", help="Locus tag prefix", metavar="STR")
-group_lt.add_argument("--step", help="Increment step of locus tag", metavar="INT", type=int)
+group_lt.add_argument("--locus_tag_prefix", help="Locus tag prefix (defaut:LOCUS)", metavar="STR")
+group_lt.add_argument("--step", help="Increment step of locus tag (default:10)", metavar="INT", type=int)
 group_lt.add_argument("--use_separate_tags", choices=["t", "true", "f", "false"],
-                      help="Use separate tags according to feature types [t|f]", default=None, metavar="BOOL")
+                      help="Use separate tags according to feature types [t(=default)|f]", default=None, metavar="BOOL")
 
 group_workflow = parser.add_argument_group('Workflow options')
 group_workflow.add_argument("--database", help="Additional reference database to be searched prior to the default database", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
-group_workflow.add_argument("--aligner", help="Aligner to use [ghostx|blastp]", choices=["ghostx", "blastp"], metavar="STR")
+group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
 group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
 group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
 
@@ -67,8 +67,8 @@ group_source.add_argument("--seq_names", help="Sequence names for each sequence 
 group_source.add_argument("--seq_types", help="Sequence types for each sequence (chromosome/plasmid, for complete genome)", metavar="STR")
 group_source.add_argument("--seq_topologies", help="Sequence topologies for each sequence (linear/circular, for complete genome)", metavar="STR")
 group_source.add_argument("--additional_modifiers", help="Additional modifiers for source features", metavar="STR")
-group_source.add_argument("--metadata_file", help="Path to a metadata file (Optional for DDBJ submission file)", metavar="PATH")
-group_source.add_argument("--center_name", help="Genome center name (Optional for GenBank submission file)", metavar="STR")
+group_source.add_argument("--metadata_file", help="Path to a metadata file (optional for DDBJ submission file)", metavar="PATH")
+group_source.add_argument("--center_name", help="Genome center name (optional for GenBank submission file)", metavar="STR")
 
 
 group_run = parser.add_argument_group('Run options')
@@ -150,8 +150,8 @@ if sort_sequence is not None:
 if args.minimum_length:  # --minimum_length
     config.GENOME_CONFIG["minimum_length"] = args.minimum_length
 
-if args.prefix:  # --prefix
-    config.LOCUS_TAG_SETTINGS["prefix"] = args.prefix
+if args.locus_tag_prefix:  # --locus_tag_prefix
+    config.LOCUS_TAG_SETTINGS["locus_tag_prefix"] = args.locus_tag_prefix
 
 if args.step:  # --step
     config.LOCUS_TAG_SETTINGS["step"] = args.step

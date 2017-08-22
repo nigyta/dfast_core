@@ -9,15 +9,15 @@ class LocusTagGenerator(object):
     def __init__(self, genome, config):
         self.logger = getLogger(__name__)
         self.genome = genome
-        self.prefix = config.LOCUS_TAG_SETTINGS.get("prefix", "")
+        self.locus_tag_prefix = config.LOCUS_TAG_SETTINGS.get("locus_tag_prefix", "LOCUS")
         self.step = config.LOCUS_TAG_SETTINGS.get("step", 1)
         self.separate = config.LOCUS_TAG_SETTINGS.get("use_separate_tags", True)
         self.symbols = config.LOCUS_TAG_SETTINGS.get("symbols", {"CDS": "", "rRNA": "r", "tRNA": "t"})
-        if self.prefix:
+        if self.locus_tag_prefix:
             self.enabled = True
-            self.logger.info("Locus_tag settings: locus_tag_prefix={self.prefix} and step={self.step}.".format(self=self))
+            self.logger.info("Locus_tag settings: locus_tag_prefix={self.locus_tag_prefix} and step={self.step}.".format(self=self))
             if self.separate:
-                examples = ", ".join([key + ": " + self.prefix + "_" + value + "000xx" for key, value in self.symbols.items()])
+                examples = ", ".join([key + ": " + self.locus_tag_prefix + "_" + value + "000xx" for key, value in self.symbols.items()])
                 self.logger.info("Locus_tags are assigned separately to each feature type. e.g. " + examples + ".")
         else:
             self.enabled = False
@@ -38,9 +38,9 @@ class LocusTagGenerator(object):
                 counts[type_] += 1
                 count += 1
                 if self.separate:
-                    locus_tag = self.prefix + "_" + self.symbols[type_] + str(self.step * counts[type_]).zfill(digit)
+                    locus_tag = self.locus_tag_prefix + "_" + self.symbols[type_] + str(self.step * counts[type_]).zfill(digit)
                 else:
-                    locus_tag = self.prefix + "_" + str(self.step * count).zfill(digit)
+                    locus_tag = self.locus_tag_prefix + "_" + str(self.step * count).zfill(digit)
                 feature.qualifiers["locus_tag"] = [locus_tag]
             else:
                 if "locus_tag" in feature.qualifiers:
