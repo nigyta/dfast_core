@@ -131,7 +131,7 @@ class CRT(StructuralAnnotationTool):
                     feature.id = "{0}_{1}".format(self.__class__.__name__, i)
                     repeat = _get_repeat_sequence(fh)
                     feature.qualifiers["inference"] = \
-                        ["COORDINATES: alignment:{0}:{1}".format(self.__class__.NAME, self.__class__.version)]
+                        ["COORDINATES:alignment:{0}:{1}".format(self.__class__.NAME, self.__class__.version)]
                     feature.qualifiers["rpt_family"] = ["CRISPR"]
                     feature.qualifiers["rpt_type"] = ["direct"]
                     feature.qualifiers["rpt_unit_seq"] = [repeat.lower()]
