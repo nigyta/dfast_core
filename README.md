@@ -12,8 +12,10 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Software distribution](#distribution)
 * [Trouble shoot](#trouble_shoot)
 * [Citation](#citation)
-* [Workflow details](docs/workflow.md) \[advanced\]
-* [INSDC submission](docs/insdc_submission.md) \[advanced\]
+#### Advanced contents
+* [Workflow details](docs/workflow.md)
+* [INSDC submission](docs/insdc_submission.md)
+* [Cookbook](docs/cookbook.md)
 ## <a id="overview"></a>Overview
 * **Easy install**  
 DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.
