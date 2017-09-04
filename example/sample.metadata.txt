@@ -1,4 +1,4 @@
-keyword	
+keyword	HIGH-QUALITY-DRAFT
 bioproject	PRJDB1726
 biosample	SAMD00000344
 sra	DRR024501; DRR054113
