@@ -77,7 +77,7 @@ class DnaAfinder(BaseAnnotationComponent):
             seq_record = self.genome.seq_records[dnaA_gene.seq_id]
             seq_record.seq = _rotate(seq_record, start, strand, self.offset)
         else:
-            self.logger.warn("DnaA gene was not found. Rotation is not done.")
+            self.logger.warn("DnaA gene was not found. The sequence file will be generated as is.")
             # print(seq_record)
             # print(seq_record.seq)
 
