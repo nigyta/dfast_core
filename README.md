@@ -176,6 +176,10 @@ Genome settings:
                         [t|f(=default)]
   --sort_sequence BOOL  Sort sequences by length [t(=default)|f]
   --minimum_length INT  Minimum sequence length (default:200)
+  --fix_origin          Rotate/flip the chromosome so that the dnaA gene comes
+                        first. (ONLY FOR A FINISHED GENOME)
+  --offset INT          Offset from the start codon of the dnaA gene. (for
+                        --fix_origin option, default=0)
 
 Locus_tag settings:
   --locus_tag_prefix STR
