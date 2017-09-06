@@ -11,7 +11,7 @@ The following options specified by `GENOME_CONFIG` in the configuration file are
 - `use_original_name` (default: False)  
   If set to True, the first word in the Fasta header line will be used as a sequence name.  
   Otherwise, sequences will be renamed as 'Sequence001, Sequence002, ...'.
-- `sort_by_length` (default: True)  
+- `sort_sequence` (default: True)  
   By default, sequences will be sorted so that longer sequences come first.
   If set to False, the original order in the FASTA file will be retained.
 - `minimum_length` (default: 200)  
@@ -19,13 +19,13 @@ The following options specified by `GENOME_CONFIG` in the configuration file are
   GenBank requires a minimum length of 200 base pairs for the submission.
 - `complete` (default: False)  
   If set to True, the input genome will be treated as a complete genome. 
-  Also, `sort_by_length` is set to False, and `minimum_length` is set to 0.  
+  Also, `sort_sequence` is set to False, and `minimum_length` is set to 0.  
   In the current version, changing this flag does not affect the annotation result.
   It is only used when creating submission files to DDBJ and GenBank,
   thus you may leave this as default unless you need submission files.
   
 You can override the values specified in the configuratin file by providing command line options: 
-`--use_original_name`, `--sort_by_length`, `--minimum_length`, `--complete`.  
+`--use_original_name`, `--sort_sequence`, `--minimum_length`, `--complete`.  
 
 
 ## Structural annotation

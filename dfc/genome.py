@@ -66,7 +66,7 @@ class Genome():
     def prepare_genome(self, config):
         query_genome_fasta = config.GENOME_FASTA
         use_original_name = config.GENOME_CONFIG.get("use_original_name", False)
-        sort_by_length = config.GENOME_CONFIG.get("sort_by_length", True)
+        sort_sequence = config.GENOME_CONFIG.get("sort_sequence", True)
         minimum_length = config.GENOME_CONFIG.get("minimum_length", 0)
         R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta", IUPAC.ambiguous_dna)]
 
@@ -74,7 +74,7 @@ class Genome():
 
         if self.complete:
             logger.info("The query genome is treated as a complete genome with {} sequences.".format(len(R)))
-            logger.info("'minimum_length' and 'sort_by_length' options will be ignored.")
+            logger.info("'minimum_length' and 'sort_sequence' options will be ignored.")
             if len(R) != len(self.seq_topologies):
                 logger.error("The numbers of sequences and seq_topologies do not match. Aborting...")
                 logger.error("seq_topolgies: {}".format(self.seq_topologies))
@@ -108,7 +108,7 @@ class Genome():
         else:
             logger.info("The query genome is treated as a draft genome with {} sequences.".format(len(R)))
 
-            if sort_by_length:
+            if sort_sequence:
                 logger.info("Sequences are sorted by length (from longer to shorter).")
                 R.sort(key=lambda x: -len(x))
 
