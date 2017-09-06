@@ -55,9 +55,9 @@ Download the stable version from our web site or clone the latest version from [
 * **Download the distribution**  
 Download the DFAST distribution from [our site](https://dfast.nig.ac.jp/dfc/distribution/), then unarchive it.
   ```
-  wget https://dfast.nig.ac.jp/dfc/distribution/dfast_core_x.x.x.tar.gz  
-  tar xvfz dfast_core_x.x.x.tar.gz  
-  cd dfast_core_x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
+  wget https://dfast.nig.ac.jp/dfc/distribution/dfast_core-x.x.x.tar.gz  
+  tar xvfz dfast_core-x.x.x.tar.gz  
+  cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 * **GitHub** (recommended)  
   ```
