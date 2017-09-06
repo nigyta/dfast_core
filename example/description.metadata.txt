@@ -1,0 +1,34 @@
+# key	description	example	acceptable values
+keyword	A keyword for a WGS genome that represents current assembly status. Will be ignored for non-WGS genomes. (default: STANDARD_DRAFT)	STANDARD_DRAFT	STANDARD_DRAFT|HIGH_QUALITY_DRAFT|IMPROVED_HIGH_QUALITY_DRAFT|NON_CONTIGUOUS_FINISHED
+bioproject	BioProject ID	PRJDB1726	
+biosample	BioSample ID	SAMD00000344	
+sra	SRA accession number(s). Use semicolons for multiple values. (optional)	DRR024501; DRR054113	
+submitter	Submitters' name. Use semicolons for multiple values.	Tanizawa,Y.; Tohno,M.	
+consrtm	Submitters' consortium name. You may leave this blank if not necessary. (optional)		
+contact	contact person's name. Must be one of submitters.	Masanori Tohno	
+email	contact person's email address	dfast@nig.ac.jp	
+url	URL for the institute, laboratory, or consortium that the contact person belongs to. (optional)	https://dfast.nig.ac.jp/	
+phone	contact person's phone number	81-55-981-6853	
+phext	contact person's phone extension number (optional)		
+fax	contact person's fax number	81-55-981-6853	
+institute	An institute name that the contact person belongs to	National Institute of Genetics	
+department	(optional)	Genome Informatics Labotatory	
+country		Japan	
+state	(optional)	Shizuoka	
+city		Mishima	
+street		Yata 1111	
+zip		411-8540	
+reference	A reference title to be submitted or published. (Provide one even if you have no plans for submitting a paper)	Complete genome sequence of Lactobacillus hokkaidonensis LOOC260.	
+author	Authors' name for the reference. Use semicolons for multiple values.	Tanizawa,Y.; Arita,M.; Nakamura,Y.; Tohno,M.	
+ref_consrtm	Authors' consortium name for the publication. (optional)		
+status	Publicatoin status of the reference	Unpublished	Unpublished|In press|Published
+year	Reference publication year	2017	
+journal	Journal name for the reference. Not required if publication status is 'Unpublished'.		
+volume	Journal volume number. Not required if publication status is 'Unpublished' or 'In press'.		
+start_page	Journal start page. Not required if publication status is 'Unpublished' or 'In press'.		
+end_page	Journal end page. Not required if publication status is 'Unpublished' or 'In press'.		
+hold_date	The date until which the submitted data are kept confidential.	20181010	
+comment	Additional comments for submission. Use a semicolon to start a new line.	These metadata are examples for the DDBJ submission using MSS (Mass Submission System).; 2nd comment line	
+assembly_method	Structure comment for Assembly Method. E.g. the names of genome assemblers	HGAP protocol 3	
+sequencing_technology	Structure comment for Sequencing technology.	MiSeq; PacBio RSII	
+coverage	Genome coverage value	120x	

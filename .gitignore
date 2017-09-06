@@ -3,6 +3,6 @@ __pycache__/
 .python-version
 .DS_Store
 .idea
-db/
+db/*
 !bin/Darwin/barrnap-0.8/db/
-LHLOOC/
+!db/hmm_search/

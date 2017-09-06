@@ -12,6 +12,8 @@ from .components.CDDsearch import CDDsearch
 from .components.HMMscan import HMMscan
 from .components.PseudoGeneDetection import PseudoGeneDetection
 from .components.BlastSearch import BlastSearch
+from .components.DnaAfinder import DnaAfinder
+
 
 COMPONENTS = {
     "BASE": BaseAnnotationComponent,
@@ -20,7 +22,8 @@ COMPONENTS = {
     "CDDsearch": CDDsearch,
     "HMMscan": HMMscan,
     "PseudoGeneDetection": PseudoGeneDetection,
-    "BlastSearch": BlastSearch
+    "BlastSearch": BlastSearch,
+    "DnaAfinder": DnaAfinder,
 }
 
 

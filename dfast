@@ -4,12 +4,14 @@
 import os
 import sys
 import argparse
+import tempfile
 from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
 
 from dfc import dfast_version
 from dfc.pipeline import Pipeline
 from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, disable_cdd_search, disable_hmm_scan
 from dfc.utils.path_util import set_binaries_path
+from dfc.utils.fix_origin import fix_origin
 
 
 def parse_bool(arg):
@@ -45,6 +47,8 @@ group_genome.add_argument("--use_original_name", choices=["t", "true", "f", "fal
 group_genome.add_argument("--sort_sequence", choices=["t", "true", "f", "false"],
                           help="Sort sequences by length [t(=default)|f]", metavar="BOOL")
 group_genome.add_argument("--minimum_length", help="Minimum sequence length (default:200)", type=int, metavar="INT")
+group_genome.add_argument("--fix_origin", help="Rotate/flip the chromosome so that the dnaA gene comes first. (ONLY FOR A FINISHED GENOME)", action="store_true")
+group_genome.add_argument("--offset", help="Offset from the start codon of the dnaA gene. (for --fix_origin option, default=0)", default=0, type=int, metavar="INT")
 
 
 group_lt = parser.add_argument_group('Locus_tag settings')
@@ -204,10 +208,22 @@ if args.show_config:
 # set environmental path
 set_binaries_path(app_root)
 
+# rotate the chromosome so that dnaA comes first.
+if args.fix_origin:
+    query_genome_fasta = config.GENOME_FASTA
+    fd, temporary_fasta_file = tempfile.mkstemp()
+    fix_origin(query_genome_fasta, temporary_fasta_file, offset=args.offset)
+    logger.info("Created a temporary file for the origin-fixed genome. ({0})".format((temporary_fasta_file )))
+    config.GENOME_FASTA = temporary_fasta_file
+
 pipeline = Pipeline(config, logger)
 pipeline.execute()
+
+# cleanup unwanted files
 if not config.DEBUG:
     pipeline.cleanup()
+if args.fix_origin:
+    os.remove(temporary_fasta_file)
 
 if __name__ == '__main__':
   pass
