@@ -212,7 +212,7 @@ set_binaries_path(app_root)
 if args.fix_origin:
     query_genome_fasta = config.GENOME_FASTA
     fd, temporary_fasta_file = tempfile.mkstemp()
-    fix_origin(query_genome_fasta, temporary_fasta_file, offset=args.offset)
+    fix_origin(query_genome_fasta, temporary_fasta_file, offset=args.offset, logger=logger)
     logger.info("Created a temporary file for the origin-fixed genome. ({0})".format((temporary_fasta_file )))
     config.GENOME_FASTA = temporary_fasta_file
 

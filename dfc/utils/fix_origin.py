@@ -60,7 +60,6 @@ class Config:
         },
     ]
 
-logger = getLogger()
 
 
 def parse_arg():
@@ -81,6 +80,7 @@ def parse_arg():
 
 def main():
     args = parse_arg()
+    logger = getLogger(__name__)
 
     if args.debug:
         log_level = DEBUG
@@ -93,15 +93,17 @@ def main():
     logger.addHandler(handler)
     logger.setLevel(log_level)
 
-    fix_origin(args.genome, output_file=args.out, offset=args.offset)
+    fix_origin(args.genome, output_file=args.out, offset=args.offset, logger=logger)
 
 
-def fix_origin(input_file, output_file=None, offset=0):
+def fix_origin(input_file, output_file=None, offset=0, logger=None):
+    if logger is None:
+        logger = getLogger(__name__)
     if __name__ != '__main__':
         loglevel_bkup = logger.level
         logger.setLevel(WARNING)
 
-    logger.warning("[WARNIGN] Trying to locate a dnaA gene to fix the sequence origin of the chromosome. DO NOT APPLY THIS TO A DRAFT GENOME.")
+    logger.warning("[WARNING] Trying to locate a dnaA gene to fix the sequence origin of the chromosome. DO NOT APPLY THIS TO A DRAFT GENOME.")
     config = Config()
     config.GENOME_FASTA = input_file
     config.FUNCTIONAL_ANNOTATION[0]["options"]["offset"] = offset

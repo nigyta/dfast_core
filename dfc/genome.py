@@ -153,7 +153,8 @@ class Genome():
                                                                    self.seq_names, self.seq_types, self.seq_topologies):
                 annotations = {
                     "organism": self.organism, "source": source, "strain": self.strain,
-                    "complete": self.complete, "date": today, "topology": seq_topology
+                    "complete": self.complete, "date": today, "topology": seq_topology,
+                    "data_file_division": "BCT",
                     # "sequence_version": 1, "data_file_division": "BCT",
                     # "taxonomy":['Eukaryota', 'Viridiplantae', 'Streptophyta', 'Embryophyta', 'Paphiopedilum'],
                 }
@@ -164,7 +165,7 @@ class Genome():
         else:
             for i, record in enumerate(self.seq_records.values()):
                 record.annotations = {
-                    "date": today,
+                    "date": today, "data_file_division": "BCT", "topology": "linear",
                     "organism": self.organism, "source": source, "strain": self.strain, "complete": self.complete
                 }
 
