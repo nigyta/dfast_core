@@ -160,14 +160,17 @@ class OrthoSearch(BaseAnnotationComponent):
                                     self.results.setdefault(q_id, []).append(hit)
 
     def set_results(self):
-
+        hypothetical_proteins = ["hypothetical protein", "conserved protein", "uncharacterized protein", "conserved hypothetical protein"]
         for q_id, hits in self.results.items():
             # print(q_id, list(map(str, hits)))
             hits.sort(key=lambda x: -1 * float(x.score))
             best_hit = hits[0]
             feature = self.genome.features[q_id]
             # print(best_hit)
-            if best_hit.q_cov < self.qcov_cutoff or best_hit.s_cov < self.scov_cutoff:
+            if best_hit.description.lower() in hypothetical_proteins:
+                # hypothetical protein will be added as a secondary hit.
+                feature.secondary_hits.append(best_hit)
+            elif best_hit.q_cov < self.qcov_cutoff or best_hit.s_cov < self.scov_cutoff:
                 best_hit.flag += "Partial hit, "
                 feature.secondary_hits.append(best_hit)
             elif feature.primary_hit is None:
