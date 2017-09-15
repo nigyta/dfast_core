@@ -51,7 +51,7 @@ def uniprot_parser(s_id, title):
         D[key] = splitted_title[-1]
 
     product = D["product"]
-    organism = D.get("OS", "")
+    organism = D.get("OS") or D.get("Tax", "")
     gene = D.get("GN", "")
     ec_number = ""
     return s_id, product, organism, gene, source_db, ec_number
@@ -85,7 +85,7 @@ def prokka_fasta_parser(s_id, title):
 def auto_fasta_parser(s_id, title):
     if "~~~" in title:
         return prokka_fasta_parser(s_id, title)
-    elif " OS=" in title or " n=" in title or " GN=" in title:
+    elif " OS=" in title or " Tax=" in title or " n=" in title or " GN=" in title:
         return uniprot_parser(s_id, title)
     elif title.endswith("]") and " [" in title:
         return ncbi_parser(s_id, title)
