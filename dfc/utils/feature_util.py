@@ -49,6 +49,7 @@ class FeatureUtil(object):
                     #             print(masked_seq)
                     #             print(original_seq)
                     #             print(extracted_seq)
+                    #             print(feature)
                     if 100.0 * extracted_seq.count("x") / len(extracted_seq) > threshold:
                         removed.append(feature.id)
                     else:

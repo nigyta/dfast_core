@@ -71,8 +71,11 @@ class Aragorn(StructuralAnnotationTool):
         D = {}
         i = 0
         for sequence, product, left, right, strand, anticodon, anticodon_position in _parseResult():
-
-            location = self.getLocation(left, right, strand)
+            if int(left) < 1:
+                left = 1
+                location = self.getLocation(left, right, strand, partial_flag="10")
+            else:
+                location = self.getLocation(left, right, strand)
             i += 1
             if product == "tmRNA":
                 type_ = "tmRNA"
