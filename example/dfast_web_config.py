@@ -3,6 +3,9 @@
 
 import multiprocessing
 
+import warnings
+from Bio import BiopythonWarning
+warnings.simplefilter('ignore', BiopythonWarning)
 
 class Config:
 
