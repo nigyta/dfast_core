@@ -90,6 +90,8 @@ def feature_to_table(feature):
     ret = []
     location_string = get_location_string(feature.location)
     for key in feature.qualifiers:
+        if key == "translation":
+            continue  # translation is not required for MSS
         ret += qualifier_to_table(feature.qualifiers, key)
     ret[0][1] = feature.type
     ret[0][2] = location_string
