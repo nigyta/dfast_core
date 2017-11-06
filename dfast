@@ -58,7 +58,7 @@ group_lt.add_argument("--use_separate_tags", choices=["t", "true", "f", "false"]
                       help="Use separate tags according to feature types [t(=default)|f]", default=None, metavar="BOOL")
 
 group_workflow = parser.add_argument_group('Workflow options')
-group_workflow.add_argument("--database", help="Additional reference database to be searched prior to the default database", metavar="PATH")
+group_workflow.add_argument("--database", help="Additional reference database to search against prior to the default database", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
 group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
 group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
