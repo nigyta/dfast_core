@@ -51,18 +51,18 @@ For **RedHat/CentOS/Fedora**, the Time::Piece module should be installed:
   ```
 
 ### Source code
-Download the stable version from our web site or clone the latest version from [GitHub](https://github.com/nigyta/dfast_core).
-* **Download the distribution**  
-Download the DFAST distribution from [our site](https://dfast.nig.ac.jp/dfc/distribution/), then unarchive it.
-  ```
-  wget https://dfast.nig.ac.jp/dfc/distribution/dfast_core-x.x.x.tar.gz  
-  tar xvfz dfast_core-x.x.x.tar.gz  
-  cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
-  ```
-* **GitHub** (recommended)  
+Available from [our GitHub repository](https://github.com/nigyta/dfast_core).
+* **Via git command** (recommended)  
   ```
   git clone https://github.com/nigyta/dfast_core.git
   cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
+  ```
+* **Download the distribution**  
+Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta/dfast_core/releases), then unarchive it.
+  ```
+  wget https://github.com/nigyta/dfast_core/archive/x.x.x.tar.gz  
+  tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
+  cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 
 For your convenience, add $DFAST_APP_ROOT to your `PATH`.
