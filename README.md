@@ -251,8 +251,11 @@ Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GL
 * on-line version of DFAST  
     DFAST and DAGA: web-based integrated genome annotation tools and resources  
     *Biosci Microbiota Food Health*. 2016; 35(4): 173–184.  
-    Yasuhiro TANIZAWA, Takatomo FUJISAWA, Eli KAMINUMA, Yasukazu NAKAMURA, and Masanori ARITA
+    Yasuhiro TANIZAWA, Takatomo FUJISAWA, Eli KAMINUMA, Yasukazu NAKAMURA, and Masanori ARITA  
 * stand-alone version (DFAST-core)  
-    Manuscript in preparation.
+    DFAST: a flexible prokaryotic genome annotation pipeline for faster genome publication.  
+    *Bioinformatics*. 2017 Nov 2. doi: 10.1093/bioinformatics/btx713 (advance article).  
+    Yasuhiro TANIZAWA, Takatomo FUJISAWA, Yasukazu NAKAMURA  
+    https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btx713  
 
 
