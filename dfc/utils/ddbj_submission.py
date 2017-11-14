@@ -112,7 +112,8 @@ def source_feature_to_table(feature, record, seq_rank):
     # if plasmid:
     #     ret.append(["", "", "", "plasmid", plasmid])
     if seq_rank in ["contig", "scaffold"]:
-        ret.append(["", "", "", "note", seq_rank + ": @@[entry]@@"])
+        ret.append(["", "", "", "submitter_seqid", "@@[entry]@@"])
+        # ret.append(["", "", "", "note", seq_rank + ": @@[entry]@@"])
     ret.append(create_ff_definiton(seq_rank, strain))
 
     ret[0][1] = feature.type
@@ -125,11 +126,17 @@ def source_feature_to_table(feature, record, seq_rank):
 def create_ff_definiton(seq_rank, strain):
     assert seq_rank in ["complete", "scaffold", "contig"]
     if seq_rank == "complete":
-        ff_definition = "@@[organism]@@ DNA, complete genome: @@[entry]@@"
+        ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome: @@[entry]@@"
+        # if strain:
+        #     ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome: @@[entry]@@"
+        # else:
+        #     ff_definition = "@@[organism]@@ DNA, complete genome: @@[entry]@@"
     else:
-        ff_definition = "@@[organism]@@ DNA, {0}: @@[entry]@@".format(seq_rank)
-    if strain:
-        ff_definition += ", strain: @@[strain]@@"
+        ff_definition = "@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@"
+        # if strain:
+        #     ff_definition = "@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@"
+        # else:
+        #     ff_definition = "@@[organism]@@ DNA, @@[submitter_seqid]@@"
     return ["", "", "", "ff_definition", ff_definition]
 
 

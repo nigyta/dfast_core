@@ -140,6 +140,6 @@ For more detail, please see the [Submission Guideine](https://www.ncbi.nlm.nih.g
 The below is an example of a command to generate GenBank submission files for a draft genome of E. coli.
 ```
 dfast -g your_genome.fa --organism "Escherichia coli" --strain Sakai \
---additional_modifiers "serovar=O157:H7; sub_strain=RIMD 0509952; coutry=Japan:Osaka, Sakai" \
+--additional_modifiers "serovar=O157:H7; sub_strain=RIMD 0509952; country=Japan:Osaka, Sakai" \
 --locus_tag_prefix ECS --center_name NIG 
 ```

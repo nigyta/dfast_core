@@ -1,1 +1,1 @@
-dfast_version = "1.0.0"
+dfast_version = "1.0.1"

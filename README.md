@@ -51,7 +51,7 @@ For **RedHat/CentOS/Fedora**, the Time::Piece module should be installed:
   ```
 
 ### Source code
-Available from [our GitHub repository](https://github.com/nigyta/dfast_core).
+Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigyta/dfast_core).
 * **Via git command** (recommended)  
   ```
   git clone https://github.com/nigyta/dfast_core.git

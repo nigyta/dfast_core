@@ -55,7 +55,9 @@ class GAP(StructuralAnnotationTool):
                     endPosition = startPosition + len(fragment)
                     if fragment.startswith("N"):
                         i += 1
-                        qualifiers = {"estimated_length": [len(fragment)], "gap_type": [self.gap_type],
+                        # qualifiers = {"estimated_length": [len(fragment)], "gap_type": [self.gap_type],
+                        #               "linkage_evidence": [self.linkage_evidence]}
+                        qualifiers = {"estimated_length": ["known"], "gap_type": [self.gap_type],
                                       "linkage_evidence": [self.linkage_evidence]}
                         location = FeatureLocation(startPosition, endPosition, strand=1)
                         feature = ExtendedFeature(location, type="assembly_gap", qualifiers=qualifiers,
