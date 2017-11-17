@@ -123,8 +123,8 @@ else:
 if args.cpu is not None:  # --cpu
     config.CPU = args.cpu
 
-if args.force is not None:  # --force
-    config.FORCE_OVERWRITE = args.force
+if args.force:  # --force
+    config.FORCE_OVERWRITE = True
 
 # override config by command options
 if args.genome:  # --genome

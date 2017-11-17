@@ -68,9 +68,11 @@ class ProteinHit(Hit):
 
     def get_inference(self):
         if self.source_db:
-            return "DESCRIPTION:similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
+            return "similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
+            # return "DESCRIPTION:similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
         else:
-            return "DESCRIPTION:similar to AA sequence:{0}".format(self.id)
+            return "similar to AA sequence:{0}".format(self.id)
+            # return "DESCRIPTION:similar to AA sequence:{0}".format(self.id)
 
 
 class HmmHit(Hit):

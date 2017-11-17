@@ -92,6 +92,11 @@ def feature_to_table(feature):
     for key in feature.qualifiers:
         if key == "translation":
             continue  # translation is not required for MSS
+        if key == "EC_number":
+            continue
+        if key == "transl_except":
+            value = feature.qualifiers[key][0]
+            feature.qualifiers[key][0] = value.replace("complement(", "").replace("),", ",")
         ret += qualifier_to_table(feature.qualifiers, key)
     ret[0][1] = feature.type
     ret[0][2] = location_string

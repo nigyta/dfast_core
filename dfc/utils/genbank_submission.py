@@ -68,7 +68,7 @@ def qualifier_to_tbl(qualifiers, key):
 
 
 def feature_to_tbl(feature, center_name):
-    ignored_qualifiers = ["locus_tag", "gene", "codon_start", "transl_table", "translation"]
+    ignored_qualifiers = ["locus_tag", "gene", "codon_start", "transl_table", "translation", "EC_number"]
     ret = ""
     start, end = location_to_str(feature.location)
     locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
