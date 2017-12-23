@@ -124,10 +124,11 @@ class BaseAnnotationComponent(object):
             cmd = ["echo", "query{0}=".format(i), self.query_files["query{0}".format(i)]]
             self.commands.append(cmd)
 
-    def executeCommands(self, shell=False, process_name=None):
+    def executeCommands(self, shell=False, process_name=None, verbose=True):
         if process_name is None:
             process_name = self.__class__.__name__
-        self.logger.info("{0} will be performed using {1} CPUs.".format(process_name, self.CPU))
+        if verbose:
+            self.logger.info("{0} will be performed using {1} CPUs.".format(process_name, self.CPU))
         with futures.ThreadPoolExecutor(max_workers=self.CPU) as executor:
             mappings = {}
             num = len(self.commands)
@@ -138,7 +139,8 @@ class BaseAnnotationComponent(object):
             for future in futures.as_completed(mappings):
                 finished_command = mappings[future]
                 result = future.result()
-                self.logger.info("{0} done {1}/{2}.".format(process_name, finished_command, num))
+                if verbose:
+                    self.logger.info("{0} done {1}/{2}.".format(process_name, finished_command, num))
         self.commands = []
 
     def run(self):

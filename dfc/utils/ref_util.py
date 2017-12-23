@@ -70,6 +70,7 @@ def plain_fasta_parser(s_id, title):
     return s_id, product, organism, gene, source_db, ec_number
 
 
+    
 def prokka_fasta_parser(s_id, title):
     if title.startswith(s_id):
         title = title.replace(s_id, "").strip()
@@ -97,7 +98,7 @@ fasta_parsers = {
     "ncbi": ncbi_parser,
     "uniprot": uniprot_parser,
     "plain": plain_fasta_parser,
-    "prokka": auto_fasta_parser,
+    "prokka": prokka_fasta_parser,
     "auto": auto_fasta_parser
 }
 

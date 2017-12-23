@@ -222,6 +222,44 @@ class PseudoGene(Hit):
                 feature.qualifiers.setdefault("note", []).append(note)
 
 
+class MBGDHit(Hit):
+    def __init__(self, id_, mbgd_version, mbgd_tabid, clst_id, clst_descr, gene_symbol, gene_descr, e_value, score, identity, q_cov,
+                 s_cov, flag, notes=None):
+        self.id = id_
+        self.mbgd_version = mbgd_version
+        self.mbgd_tabid = mbgd_tabid
+        self.clst_id = clst_id
+        self.clst_descr = clst_descr
+        self.gene_symbol = gene_symbol
+        self.gene_descr = gene_descr
+        self.score = score
+        self.e_value = float(e_value)
+        self.identity = float(identity)
+        self.q_cov = q_cov
+        self.s_cov = s_cov
+        self.flag = flag
+        if not notes:
+            notes = []
+        self.notes = notes
+
+    def __str__(self):
+        if self.clst_descr:
+            return "MBGD: {{gene_id: '{x.id}', cluster_id: '{x.clst_id}', cluster_description: '{x.clst_descr}', gene: '{x.gene_symbol}', version: '{x.mbgd_version}', tabid: '{x.mbgd_tabid}', pid: '{x.identity:.1f}%', q_cov: '{x.q_cov:.1f}%', s_cov: '{x.s_cov:.1f}%', Eval: '{x.e_value:.1e}'}}".format(x=self)
+        else:
+            return "MBGD: {{gene_id: '{x.id}', cluster_id: '{x.clst_id}', gene_description: '{x.gene_descr}', version: '{x.mbgd_version}', tabid: '{x.mbgd_tabid}', pid: '{x.identity:.1f}%', q_cov: '{x.q_cov:.1f}%', s_cov: '{x.s_cov:.1f}%', Eval: '{x.e_value:.1e}'}}".format(x=self)
+
+    def assign(self, feature, verbosity=2):
+        self.assign_as_note(feature, verbosity)
+
+    def assign_as_note(self, feature, verbosity=2):
+        if verbosity >= 2:
+            feature.qualifiers.setdefault("inference", []).append(self.get_inference())
+            feature.qualifiers.setdefault("note", []).append(str(self))
+
+    def get_inference(self):
+        # inference: similar to AA sequence:MBGD:2016-01_default:317
+        return "similar to AA sequence:MBGD:{0}_{1}:{2}".format(self.mbgd_version, self.mbgd_tabid, self.clst_id)
+
 
 if __name__ == '__main__':
     pass
