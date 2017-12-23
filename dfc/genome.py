@@ -16,7 +16,7 @@ from .models.bio_feature import ExtendedFeature
 logger = getLogger(__name__)
 
 
-class Genome():
+class Genome(object):
     """
     Stores genome data as BioPython SeqRecord object
 

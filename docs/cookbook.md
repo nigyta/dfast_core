@@ -1,6 +1,6 @@
 # Cookbook
 
-## Custom reference database
+## 1. Custom reference database
 ### From a DFAST reference file  
 1. Create a reference file  
 Prepare a TAB-separated reference file following the format described in the [Reference Database](workflow.md) section.  
@@ -30,7 +30,7 @@ The script can parse FASTA definition lines for NCBI/UniprotKB/Prokka styles.
 2. Format database, configure, and run  
 Then, follow the same procedure as above.
 
-## OrthoSearch
+## 2. OrthoSearch
 OrthoSearch identifies orthologous genes based on a simple Reciprocal-Best-Hit (RBH) approach.
 This is effective in reducing running time and in transferring annotations from a reference genome of the closely-related organism.  
 This recipe shows how to perform OrthoSearch.
@@ -80,7 +80,8 @@ Set `enabled` to True, and specify `references` in the 'FUNCTIONAL_ANNOTATION' p
         },
     },
     ```
-## BlastSearch
+
+## 3. BlastSearch
 BlastSearch is for protein homology search against a large-sized reference database, such as pre-formatted Blast databases like RefSeq Protein and SwissProt available at the NCBI FTP site.
 ### How to use a pre-formatted BLAST database
 1. Download a database from NCBI  
@@ -114,6 +115,7 @@ Place this part upstream of 'DBsearch' against the default database
     ```
     dfast --genome your_genome.fa --config your_config.py
     ```
+
 ### Prepare database from a FASTA file
 Here is an example to create a database for RefSeq nonredundant archaeal proteins.
 1. Download FASTA files  
@@ -129,3 +131,28 @@ Be sure to use `-parse_seqids`.
 3. Create a configuration file and run DFAST  
 Follow the recipe described above.
 
+## 4. Re-annotation pipeine
+**dfast_re** is prototype implementation for the DFAST re-annotation pipeline, which is located in \$DFAST_APP_ROOT/dfc/dev/reannotation.  
+**dfast_re** takes a GenBank-formatted sequence file as an input, skips all structural annotation processes, and only conducts functional annotation for CDSs imported from the Genank file. It generates INSDC submission files, but the file format may not be valid.　　
+As it is a Beta version, please use it at your own risk. 
+### Pipeline
+* Input file  
+Takes a GenBank-formatted sequence file as an input, specified by the `--genome or (-g)` option. As an input, we assume the result from other annotation platforms such as Prokka, RAST, PGAP (RefSeq data), and so on.
+* Supported biological features  
+'CDS' features are imported from the GenBank file and their functional annotation will be overriden.  
+'gene' features will be discarded.  
+Other features are imported, but no additional annotation will be done.
+* Locus_tag, protein_id, product in CDS features  
+Locus_tags imported from the GenBank files will be described as old_locus_tag, and new locus_tags will be assigned. Protein_id and product in the original GenBank file will be described in the note qualifier.
+    
+### How to use
+1. Basic usage  
+    ```
+    $DFAST_APP_ROOT/dfc/dev/reannotation/dfast_re --genome path/to/gbfile.gbk
+    ```
+	or after adding `$DFAST_APP_ROOT/dfc/dev/reannotation` to PATH,  
+    ```
+    dfast_re --genome path/to/gbfile.gbk
+    ```
+2. Options  
+	Same as the DFAST standard pipeline.
