@@ -97,3 +97,17 @@ def disable_hmm_scan(config):
     for setting in config.FUNCTIONAL_ANNOTATION:
         if setting.get("component_name", "") == "HMMscan":
             setting["enabled"] = False
+
+
+def set_gff(config, gff_file_name):
+    targets = []
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") == "GFF_import":
+            setting["enabled"] = True
+            setting["options"]["gff_file_name"] = gff_file_name
+            targets = setting["options"]["targets"]
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") != "GFF_import":
+            target = setting.get("target", "-")
+            if target in targets:
+                setting["enabled"] = False

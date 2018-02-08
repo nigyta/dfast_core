@@ -6,6 +6,7 @@ import shutil
 from logging import getLogger
 from concurrent import futures
 from Bio.SeqFeature import ExactPosition
+from Bio.Data.CodonTable import TranslationError
 from .tools.mga import MGA
 from .tools.barrnap import Barrnap
 from .tools.aragorn import Aragorn
@@ -15,7 +16,7 @@ from .tools.CRT import CRT
 from .tools.prodigal import Prodigal
 from .tools.tRNAscan import tRNAscan
 from .tools.rnammer import RNAmmer
-
+from .tools.gff_importer import GFFimporter
 TOOLS = {
     "GAP": GAP,
     "MGA": MGA,
@@ -26,6 +27,7 @@ TOOLS = {
     "Prodigal": Prodigal,
     "tRNAscan": tRNAscan,
     "RNAmmer": RNAmmer,
+    "GFF_import": GFFimporter,
 }
 
 
@@ -103,6 +105,21 @@ class StructuralAnnotation(object):
                         else:
                             translation = nucseq[offset:rightOffset].translate(table=tool.transl_table, stop_symbol="")
                         feature.qualifiers["translation"] = [str(translation)]
+                elif tool.TYPE == "GFF":  # TODO: preliminary implementation (redundant implementation of the code above) 
+                    for feature in features:
+                        if feature.type == "CDS":
+                            nucseq = feature.location.extract(record.seq)
+                            offset = feature.qualifiers.get("codon_start", [1])[0] - 1
+                            transl_table = feature.qualifiers.get("transl_table", [11])[0]
+                            rightOffset = -1 * ((len(nucseq) - offset) % 3)
+                            if rightOffset == 0:
+                                try:
+                                    translation = nucseq[offset:].translate(table=transl_table, cds=True)
+                                except TranslationError:
+                                    translation = nucseq[offset:].translate(table=transl_table, stop_symbol="")
+                            else:
+                                translation = nucseq[offset:rightOffset].translate(table=transl_table, stop_symbol="")
+                            feature.qualifiers["translation"] = [str(translation)]
                 record.features += features
             self.logger.info("{num} {tool.TYPE} features were detected by {tool.__class__.NAME}.".format(
                 num=detected_features, tool=tool))
