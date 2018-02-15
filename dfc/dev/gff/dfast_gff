@@ -34,7 +34,7 @@ def parse_bool(arg):
 
 parser = argparse.ArgumentParser(description='DFAST: DDBJ Fast Annotation and Submission \tTool\n' +
                                  "version {}.  ".format(dfast_version),
-                                 usage="dfast -g your_genome.fna [options]", epilog=None, # "-- prolog",
+                                 usage="dfast_gff -g your_genome.fna [--gff annotation.gff] [options]", epilog=None, # "-- prolog",
                                  # formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                  add_help=False  # , allow_abbrev=False
                                  # argument_default=argparse.SUPPRESS

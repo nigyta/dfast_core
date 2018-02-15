@@ -49,6 +49,7 @@ class GFFimporter(StructuralAnnotationTool):
                     if line.startswith("#"):
                         continue
                     sequence_id, tool_name, feature_type, left, right, score, strand, _, qualifiers = line.strip("\n").split("\t")
+                    tool_name = tool_name.replace(" ", "-")
                     if feature_type not in self.targets:
                         continue
                     i += 1

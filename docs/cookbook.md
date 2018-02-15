@@ -177,11 +177,11 @@ Biological features specified by `targets` in the configuration file will be imp
 **dfast_gff** is located in `$DFAST_APP_ROOT/dfc/dev/gff`.
 1. Basic usage  
     ```
-    $DFAST_APP_ROOT/dfc/dev/gff/dfast_gff --genome path/to/foo.gbk --gff path/to/bar.gff
+    $DFAST_APP_ROOT/dfc/dev/gff/dfast_gff --genome path/to/foo.fna --gff path/to/bar.gff
     ```
 	or after adding `$DFAST_APP_ROOT/dfc/dev/gff` to your `PATH`,  
     ```
-    dfast_gff --genome path/to/foo.gbk --gff path/to/bar.gff
+    dfast_gff --genome path/to/foo.fna --gff path/to/bar.gff
     ```
 2. Options  
 	Same as the DFAST standard pipeline.
