@@ -12,32 +12,42 @@ def load_config(app_root, config_file):
     logger.info("Running on Python {}.".format(sys.version))
     logger.info("Loading a config file from {}".format(config_file))
 
-    version = sys.version_info.major
-    if version == 3:
-        from importlib import machinery
-        import tempfile
-        config = open(config_file).read()
-        config = config.replace("@@APP_ROOT@@", app_root)
+    config = open(config_file).read()
+    config = config.replace("@@APP_ROOT@@", app_root)
+    exec(config, globals())  # Config object will be imported
+    return Config
 
-        with tempfile.NamedTemporaryFile(delete=True) as tf:
-            tf.write(config.encode('utf-8'))
-            temp_file_name = tf.name
-            module_ = machinery.SourceFileLoader('Config', temp_file_name).load_module()
 
-        return module_.Config
+# def load_config(app_root, config_file):
+#     logger.info("Running on Python {}.".format(sys.version))
+#     logger.info("Loading a config file from {}".format(config_file))
 
-    elif version == 2:
-        """
-        Python 2 does not have importlib.machinery
-        So far, a naive implementation for loading module.
-        """
-        config = open(config_file).read()
-        config = config.replace("@@APP_ROOT@@", app_root)
-        exec(config, globals())  # Config object will be imported
-        return Config
-    else:
+#     version = sys.version_info.major
+#     if version == 3:
+#         from importlib import machinery
+#         import tempfile
+#         config = open(config_file).read()
+#         config = config.replace("@@APP_ROOT@@", app_root)
 
-        raise AssertionError
+#         with tempfile.NamedTemporaryFile(delete=True) as tf:
+#             tf.write(config.encode('utf-8'))
+#             temp_file_name = tf.name
+#             module_ = machinery.SourceFileLoader('Config', temp_file_name).load_module()
+
+#         return module_.Config
+
+#     elif version == 2:
+#         """
+#         Python 2 does not have importlib.machinery
+#         So far, a naive implementation for loading module.
+#         """
+#         config = open(config_file).read()
+#         config = config.replace("@@APP_ROOT@@", app_root)
+#         exec(config, globals())  # Config object will be imported
+#         return Config
+#     else:
+
+#         raise AssertionError
 
 
 
