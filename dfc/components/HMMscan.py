@@ -36,6 +36,7 @@ class HMMscan(BaseAnnotationComponent):
                 continue
             field = line.strip("\n").split()
             query_id, accession, name, description, evalue, score, bias = field[2], field[1], field[0], " ".join(field[18:]), field[4], field[5], field[6]
+            description = description.replace('"', "'")
             hmm = HmmHit(accession, name, description, evalue, score, bias, self.db_name)
             yield query_id, hmm
 

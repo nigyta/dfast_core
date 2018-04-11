@@ -96,7 +96,8 @@ class CDDsearch(BaseAnnotationComponent):
                  short_name, incomplete) in _read_rpsbproc_result(result_file):
 
                 cdd = cdd_definitions.get(pssm_id)
-                cdd_hit = CddHit(result_type, hit_type, pssm_id, from_, to_, evalue, score, accession, short_name, incomplete, cdd.description)
+                cdd_description = cdd.description.replace('"', "'")
+                cdd_hit = CddHit(result_type, hit_type, pssm_id, from_, to_, evalue, score, accession, short_name, incomplete, cdd_description)
                 feature = self.genome.features[query_id]
                 feature.secondary_hits.append(cdd_hit)
 
