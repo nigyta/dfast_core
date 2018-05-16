@@ -71,6 +71,9 @@ class Aragorn(StructuralAnnotationTool):
         D = {}
         i = 0
         for sequence, product, left, right, strand, anticodon, anticodon_position in _parseResult():
+            if product == "tRNA-???":
+                self.logger.warn("Skipped an ambiguous {} at {}:{}..{}({}).".format(product, sequence, left, right, strand))
+                continue
             if int(left) < 1:
                 left = 1
                 location = self.getLocation(left, right, strand, partial_flag="10")
