@@ -44,7 +44,7 @@ class tRNAscan(StructuralAnnotationTool):
         tRNAscan-SE -B -b -o tRNAscanSE.tsv genome.fna 2> tRNAscanSE.log
         """
         # TODO: check pseudogene output
-        cmd = ["tRNAscan-SE", self.model, self.cmd_options, "--brief --forceow", "--output", self.outputFile,
+        cmd = ["tRNAscan-SE", self.model, self.cmd_options, "--brief --forceow --thread 1", "--output", self.outputFile,
                self.genomeFasta, ">&", self.logFile]
         return cmd
 
