@@ -44,7 +44,11 @@ class tRNAscan(StructuralAnnotationTool):
         tRNAscan-SE -B -b -o tRNAscanSE.tsv genome.fna 2> tRNAscanSE.log
         """
         # TODO: check pseudogene output
-        cmd = ["tRNAscan-SE", self.model, self.cmd_options, "--brief --forceow --thread 1", "--output", self.outputFile,
+        if self.__class__.version[0] == "2":
+            default_option = "--brief --forceow --thread 1"
+        else:
+            default_option = "--brief --forceow"
+        cmd = ["tRNAscan-SE", self.model, self.cmd_options, default_option, "--output", self.outputFile,
                self.genomeFasta, ">&", self.logFile]
         return cmd
 
@@ -53,10 +57,24 @@ class tRNAscan(StructuralAnnotationTool):
         def _parseResult():
             with open(self.outputFile) as f:
                 for line in f:
-                    sequence, _, start, end, aa, anticodon, _, _, score = line.strip("\n\t ").split("\t")
-                    if aa == "Undet" or aa == "Pseudo":
-                        self.logger.warn("`Pseudo or Undet` tRNA found. Skipping...")
+                    cols = line.strip("\n\t ").split("\t")
+                    sequence, _, start, end, aa, anticodon, _, _, score = cols[0:9]
+                    pseudo = cols[9] if len(cols) == 10 else ""
+
+                    # Remove pseudo
+                    if aa == "Undet" or aa == "Pseudo" or pseudo == "Pseudo":
+                        self.logger.info("'Pseudo or Undet' tRNA found. Skipping... {}:{}..{}({})".format(
+                            sequence, start, end, aa))
                         continue
+
+                    # clean irregular
+                    if aa == "Ile2":
+                        aa = "Ile"
+                    elif aa == "SeC(p)":
+                        aa = "SeC"
+                    elif aa == "(Ile)":
+                        aa = "Ile"
+
                     if int(start) <= int(end):
                         left, right, strand = start, end, "+"
                     else:
