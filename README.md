@@ -12,6 +12,8 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Software distribution](#distribution)
 * [Trouble shoot](#trouble_shoot)
 * [Citation](#citation)
+* [FAQ](docs/FAQ.md)
+
 #### Advanced contents
 * [Workflow details](docs/workflow.md)
 * [INSDC submission](docs/insdc_submission.md)
@@ -195,6 +197,8 @@ Workflow options:
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp]
+  --use_prodigal        Use Prodigal to predict CDS instead of MGA
+  --use_trnascan        Use tRNAscan-SE to predict tRNA instead of Aragorn
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
 

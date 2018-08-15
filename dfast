@@ -9,7 +9,8 @@ from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
 
 from dfc import dfast_version
 from dfc.pipeline import Pipeline
-from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, disable_cdd_search, disable_hmm_scan
+from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, \
+    disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan
 from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
@@ -61,6 +62,8 @@ group_workflow = parser.add_argument_group('Workflow options')
 group_workflow.add_argument("--database", help="Additional reference database to search against prior to the default database", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
 group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
+group_workflow.add_argument("--use_prodigal", help="Use Prodigal to predict CDS instead of MGA", action="store_true")
+group_workflow.add_argument("--use_trnascan", help="Use tRNAscan-SE to predict tRNA instead of Aragorn", action="store_true")
 group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
 group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
 
@@ -178,6 +181,12 @@ if args.no_hmm:  # --no_hmm
 
 if args.no_cdd:  # --no_cdd
     disable_cdd_search(config)
+
+if args.use_prodigal:  # --use_prodigal
+    enable_prodigal(config)
+    
+if args.use_trnascan:  # --use_trnascan
+    enable_trnascan(config)
 
 if args.seq_names:  # --seq_names
     config.GENOME_SOURCE_INFORMATION["seq_names"] = args.seq_names
