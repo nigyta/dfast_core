@@ -109,6 +109,24 @@ def disable_hmm_scan(config):
             setting["enabled"] = False
 
 
+def enable_trnascan(config, model):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") == "tRNAscan":
+            setting["enabled"] = True
+            model = "-A" if model == "arch" else "-B"
+            setting["options"]["model"] = model
+        if setting.get("tool_name", "") == "Aragorn":
+            setting["enabled"] = False
+
+
+def enable_prodigal(config):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") == "Prodigal":
+            setting["enabled"] = True
+        if setting.get("tool_name", "") == "MGA":
+            setting["enabled"] = False
+
+
 def set_gff(config, gff_file_name):
     targets = []
     for setting in config.STRUCTURAL_ANNOTATION:

@@ -12,6 +12,8 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Software distribution](#distribution)
 * [Trouble shoot](#trouble_shoot)
 * [Citation](#citation)
+* [FAQ](docs/FAQ.md)
+
 #### Advanced contents
 * [Workflow details](docs/workflow.md)
 * [INSDC submission](docs/insdc_submission.md)
@@ -52,17 +54,17 @@ For **RedHat/CentOS/Fedora**, the Time::Piece module should be installed:
 
 ### Source code
 Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigyta/dfast_core).
-* **Via git command** (recommended)  
-  ```
-  git clone https://github.com/nigyta/dfast_core.git
-  cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
-  ```
 * **Download the distribution**  
 Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta/dfast_core/releases), then unarchive it.
   ```
   wget https://github.com/nigyta/dfast_core/archive/x.x.x.tar.gz  
   tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
   cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
+  ```
+* **Via git command**  
+  ```
+  git clone https://github.com/nigyta/dfast_core.git
+  cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 
 For your convenience, add $DFAST_APP_ROOT to your `PATH`.
@@ -141,6 +143,8 @@ The following tools are run in parallel to predict biological features (e.g. CDS
 * CRISPR prediction (CRT)
 * Assembly gaps within sequences
 
+Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (You need to install them manually.)
+
 ### Functional annotation
 1. OrthoSearch (Optional. Set `--references` option to enable this.)
 2. DBsearch using the Ghostx aligner against the DFAST default database
@@ -195,6 +199,9 @@ Workflow options:
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp]
+  --use_prodigal        Use Prodigal to predict CDS instead of MGA
+  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn,
+                        [bact|arch]
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
 

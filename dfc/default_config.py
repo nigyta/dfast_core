@@ -118,7 +118,7 @@ class Config:
             "tool_name": "tRNAscan",
             "enabled": False,
             "options": {
-                "model": "--bact",  # --bact, --arch, --organ, --general
+                "model": "-B",  # --bact or -B, --arch or -A, --organ, --general
                 "cmd_options": ""
             },
         },

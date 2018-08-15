@@ -22,7 +22,7 @@ class tRNAscan(StructuralAnnotationTool):
     SHELL = True
     def __init__(self, options=None, workDir="OUT"):
         """
-        aragorn options:
+        tRNAscan options:
           -B  --bact            : search for bacterial tRNAs (use bacterial tRNA model)
           -A  --arch            : search for archaeal tRNAs (use archaeal tRNA model)
           -O  --organ           : search for organellar (mitochondrial/chloroplast) tRNAs
@@ -41,11 +41,11 @@ class tRNAscan(StructuralAnnotationTool):
 
     def getCommand(self):
         """
-        tRNAscan-SE --bact --nopseudo -b -o tRNAscanSE.tsv genome.fna 2> tRNAscanSE.log
+        tRNAscan-SE -B -b -o tRNAscanSE.tsv genome.fna 2> tRNAscanSE.log
         """
         # TODO: check pseudogene output
         cmd = ["tRNAscan-SE", self.model, self.cmd_options, "--brief --forceow", "--output", self.outputFile,
-               self.genomeFasta, "2>", self.logFile]
+               self.genomeFasta, ">&", self.logFile]
         return cmd
 
     def getFeatures(self):
@@ -53,7 +53,10 @@ class tRNAscan(StructuralAnnotationTool):
         def _parseResult():
             with open(self.outputFile) as f:
                 for line in f:
-                    sequence, _, start, end, aa, anticodon, _, _, score = line.strip("\n").split("\t")
+                    sequence, _, start, end, aa, anticodon, _, _, score = line.strip("\n\t ").split("\t")
+                    if aa == "Undet" or aa == "Pseudo":
+                        self.logger.warn("`Pseudo or Undet` tRNA found. Skipping...")
+                        continue
                     if int(start) <= int(end):
                         left, right, strand = start, end, "+"
                     else:
