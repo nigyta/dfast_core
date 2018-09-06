@@ -57,11 +57,13 @@ parser.add_argument("--hmm", nargs='+', choices=["Pfam", "TIGR", "dbCAN"],
                          help="Preformatted RPS-BLAST database. [Pfam|TIGR|dbCAN]", metavar="STR")
 parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
+parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
+                         help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("-o", "--out", help="Output directory", type=str, metavar="PATH")
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly]):
+if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta]):
     parser.print_help()
     exit()
 
@@ -120,6 +122,28 @@ def retrieve_assembly(accession, out_dir="."):
     ftp.quit()
     return output_file
 
+def retrieve_assembly_fasta(accession, out_dir="."):
+    def _get_ftp_directory(accession):
+        path1, path2, path3, path4 = accession[0:3], accession[4:7], accession[7:10], accession[10:13]
+        return "/".join(["/genomes", "all", path1, path2, path3, path4])
+
+    directory = _get_ftp_directory(accession)
+    ftp = FTP(host=ncbi_ftp_server)
+    logger.info("\tLogging in to the FTP server. {}".format(ncbi_ftp_server + directory))
+    ftp.login()
+    ftp.cwd(directory)
+    L = ftp.nlst()
+    if len(L) == 0:
+        logger.warning("\tFile not found. Skip retrieving file for {}".format(accession))
+        return None
+    asm_name = sorted([x for x in L if x.startswith(accession)])[-1]
+    target_file = "/".join([directory, asm_name, asm_name + "_genomic.fna.gz"])
+    logger.info("\tDownloading {}".format(ncbi_ftp_server + directory + "/" + asm_name + "/" + asm_name + "_genomic.fna.gz"))
+    output_file = os.path.join(out_dir, "_".join(asm_name.split("_")[0:2]) + ".fna.gz")
+    with open(output_file, "wb") as f:
+        ftp.retrbinary("RETR " + target_file, f.write)
+    ftp.quit()
+    return output_file
 
 def gunzip_file(input_file, output_file, cleanup=True):
     with open(output_file, "w") as fw:
@@ -197,6 +221,19 @@ if args.assembly:
             gunzip_file(retrieved_file, output_genbank_file)
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
 
+if args.assembly_fasta:
+    print(args.assembly_fasta)
+    out_dir = args.out or "."
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    logger.info("Ttyring to fetch FASTA file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
+    for accession in args.assembly_fasta:
+        logger.info("Downloading a flat file for {}...".format(accession))
+        retrieved_file = retrieve_assembly_fasta(accession, out_dir)
+        if retrieved_file:
+            output_genbank_file = retrieved_file.replace(".fna.gz", ".fna")
+            gunzip_file(retrieved_file, output_genbank_file)
+            logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
 # test GCF_000091005.1 GCA_000008865.1
     # accession = sys.argv[1]
     # retrieved_file = retrieve_assembly(accession)
