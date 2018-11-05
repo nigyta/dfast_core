@@ -161,6 +161,10 @@ Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (Yo
 ## <a id="options"></a>Options
 
 ```  
+usage: dfast -g your_genome.fna [options]
+
+DFAST: DDBJ Fast Annotation and Submission Tool version 1.0.8.
+
 Basic options:
   -g PATH, --genome PATH
                         Genomic FASTA file
@@ -194,14 +198,15 @@ Locus_tag settings:
                         [t(=default)|f]
 
 Workflow options:
-  --database PATH       Additional reference database to be searched prior to
-                        the default database
+  --database PATH       Additional reference database to search against prior
+                        to the default database
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp]
   --use_prodigal        Use Prodigal to predict CDS instead of MGA
   --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn,
                         [bact|arch]
+  --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
 
@@ -249,10 +254,12 @@ This distribution contains following external programs.
 * DBsearch is slow  
 The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
 If your machine does not have enough memory, decrease the number of CPUs (`--cpu 2` or `--cpu 1`) or use BLASTP instead (`--aligner blastp`). 
-* GLIBCXX not found error in Linux system  
+* GLIBCXX not found error on Linux system  
 If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
 In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
+* libidn-11 on ArchLinux  
+According to the user's report, DFAST fails on ArchLinux due to `libidn-11` required for BLASTP. You may need to install `libidn-133-compat` from the AUR repository.
 
 ## <a id="citation"></a>Citation
 * on-line version of DFAST  

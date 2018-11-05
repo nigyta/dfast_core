@@ -32,14 +32,19 @@ class Lastal(Tool):
     VERSION_PATTERN = r"^lastal (.+)$"
 
     def __init__(self, options=None):
-        super(Lastal, self).__init__(options=options)
         if options is None:
             options = {}
+        super(Lastal, self).__init__(options=options)
+        self.transl_table = options.get("transl_table", 11)
+        # self.genetic_code_file = options.get("genetic_code_file", "")
         # self.evalue_cutoff = options.get("evalue_cutoff", 1e-5)
 
     def get_command(self, query_file, db_name, result_file):
         # ./lastal -f MAF -F15 fd_ref fd_query0.fasta > result.out
-        return ["lastal", "-f MAF", "-F 15", db_name, query_file, ">", result_file]
+        if self.transl_table == 4 or self.transl_table == 25:
+            return ["lastal4", "-f MAF", "-F 15", db_name, query_file, ">", result_file]
+        else:
+            return ["lastal", "-f MAF", "-F 15", db_name, query_file, ">", result_file]
 
 if __name__ == '__main__':
     from logging import getLogger, INFO, DEBUG, StreamHandler

@@ -33,7 +33,7 @@ class Prodigal(StructuralAnnotationTool):
 
     def getCommand(self):
         """prodigal -f gff genome.fna > out.gff 2> out.log"""
-        cmd = ["prodigal", self.cmd_options, "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
+        cmd = ["prodigal", self.cmd_options, "-g", str(self.transl_table), "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
         return cmd
 
 

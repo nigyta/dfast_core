@@ -33,13 +33,14 @@ class Aragorn(StructuralAnnotationTool):
         super(Aragorn, self).__init__(options, workDir)
         self.gcode = options.get("gcode", "-gcbact")
         self.cmd_options = options.get("cmd_options", "-l")
+        self.transl_table = options.get("transl_table", 11)
 
     def getCommand(self):
         """
         "aragorn -l -gc$gcode $aragorn_opt -w \Q$outdir/$prefix.fna\E"; # -t/-m
         -l : for linear sequence,  -c : for circular sequence
         """
-        cmd = ["aragorn", self.gcode, self.cmd_options, "-w", "-o", self.outputFile, self.genomeFasta]
+        cmd = ["aragorn", self.gcode, self.cmd_options, "-gc" + str(self.transl_table), "-w", "-o", self.outputFile, self.genomeFasta]
         return cmd
 
     def getFeatures(self):

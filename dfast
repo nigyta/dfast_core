@@ -10,7 +10,7 @@ from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
 from dfc import dfast_version
 from dfc.pipeline import Pipeline
 from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, \
-    disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan
+    disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan, set_genetic_code
 from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
@@ -64,6 +64,7 @@ group_workflow.add_argument("--references", help="Reference file(s) for OrthoSea
 group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
 group_workflow.add_argument("--use_prodigal", help="Use Prodigal to predict CDS instead of MGA", action="store_true")
 group_workflow.add_argument("--use_trnascan", help="Use tRNAscan-SE to predict tRNA instead of Aragorn, [bact|arch]", choices=["bact", "arch"], metavar="STR")
+group_workflow.add_argument("--gcode", help="Genetic code [11(=default),4(=Mycoplasma)]", metavar="INT", type=int, default=11)
 group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
 group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
 
@@ -181,6 +182,12 @@ if args.no_hmm:  # --no_hmm
 
 if args.no_cdd:  # --no_cdd
     disable_cdd_search(config)
+
+if args.gcode != 11:
+    set_genetic_code(config, args.gcode)    
+    # if gcode is set to the value other than 11, prodigal and aragorn will be used.
+    args.use_prodigal = False  # ignore --use_prodigal option
+    args.use_trnascan = False  # ignore --use_trnascan option
 
 if args.use_prodigal:  # --use_prodigal
     enable_prodigal(config)

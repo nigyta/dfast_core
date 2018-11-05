@@ -139,3 +139,30 @@ def set_gff(config, gff_file_name):
             target = setting.get("target", "-")
             if target in targets:
                 setting["enabled"] = False
+
+def set_genetic_code(config, value):
+    if value not in [4, 11]:
+        logger.warning("[WARNING] Unsupported genetic code {} is specified.".format(value))
+    if value == 11:
+        pass
+    else:
+        logger.warning("Genetic code is set to {}. Prodigal and Aragorn will be used for gene prediction.".format(value))
+        for setting in config.STRUCTURAL_ANNOTATION:
+            if setting.get("tool_name", "") == "Prodigal":
+                setting["enabled"] = True
+                setting["options"]["transl_table"] = value 
+            if setting.get("tool_name", "") == "MGA":
+                setting["enabled"] = False
+            if setting.get("tool_name", "") == "Aragorn":
+                setting["enabled"] = True
+                setting["options"]["transl_table"] = value 
+            if setting.get("tool_name", "") == "tRNAscan":
+                setting["enabled"] = False
+        for setting in config.FUNCTIONAL_ANNOTATION:
+            if setting.get("component_name", "") == "PseudoGeneDetection":
+                setting["options"]["transl_table"] = value
+        #         if value == 4:
+        #             setting["options"]["genetic_code_file"] = setting["options"].get("genetic_code_file", "").replace("transl_table_11.txt", "transl_table_4.txt")
+        #         if value == 25:
+        #             setting["options"]["genetic_code_file"] = setting["options"].get("genetic_code_file", "").replace("transl_table_11.txt", "transl_table_25.txt")
+

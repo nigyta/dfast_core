@@ -110,6 +110,7 @@ class Config:
             "options": {
                 "gcode": "-gcbact",  # -gcbact for Bacterial/Plant Chloroplast genetic code, "-gcstd" for standard genetic code.
                 "cmd_options": "-l",  # DFAST assumes linear sequences as input.
+                "transl_table": 11,
             },
         },
         {
@@ -250,6 +251,8 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "extension": 300,
                 "scov_cutoff": 85,
+                "transl_table": 11,
+                # "genetic_code_file": "@@APP_ROOT@@/bin/common/transl_table_11.txt"
             },
         },
         {

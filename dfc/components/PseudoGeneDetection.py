@@ -27,8 +27,8 @@ class PseudoGeneDetection(BaseAnnotationComponent):
         self.min_extension = 50
         self.candidates = []  # candidates for pseudogenes. should be tuple (query_cds.id, protein.id)
         # self.database = options.get("database", "")
-        self.lastdb = Lastdb()
-        self.lastal = Lastal()
+        self.lastdb = Lastdb(options)
+        self.lastal = Lastal(options)
         self.components = []
         self.references = {}
 
