@@ -146,7 +146,7 @@ def set_genetic_code(config, value):
     if value == 11:
         pass
     else:
-        logger.warning("Genetic code is set to {}. Prodigal and Aragorn will be used for gene prediction.".format(value))
+        logger.warning("Genetic code is set to {}. Prodigal will be used for CDS prediction.".format(value))
         for setting in config.STRUCTURAL_ANNOTATION:
             if setting.get("tool_name", "") == "Prodigal":
                 setting["enabled"] = True
@@ -154,10 +154,11 @@ def set_genetic_code(config, value):
             if setting.get("tool_name", "") == "MGA":
                 setting["enabled"] = False
             if setting.get("tool_name", "") == "Aragorn":
-                setting["enabled"] = True
+                # setting["enabled"] = True
                 setting["options"]["transl_table"] = value 
             if setting.get("tool_name", "") == "tRNAscan":
-                setting["enabled"] = False
+                pass
+                # setting["enabled"] = False
         for setting in config.FUNCTIONAL_ANNOTATION:
             if setting.get("component_name", "") == "PseudoGeneDetection":
                 setting["options"]["transl_table"] = value

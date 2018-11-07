@@ -187,7 +187,7 @@ if args.gcode != 11:
     set_genetic_code(config, args.gcode)    
     # if gcode is set to the value other than 11, prodigal and aragorn will be used.
     args.use_prodigal = False  # ignore --use_prodigal option
-    args.use_trnascan = False  # ignore --use_trnascan option
+    # args.use_trnascan = False  # ignore --use_trnascan option
 
 if args.use_prodigal:  # --use_prodigal
     enable_prodigal(config)
