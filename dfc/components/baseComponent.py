@@ -10,12 +10,13 @@ from concurrent import futures
 from ..tools.ghostz import Ghostz
 from ..tools.ghostx import Ghostx
 from ..tools.blastp import Blastp
-
+from ..tools.diamond import Diamond
 
 ALIGNERS = {
     "ghostz": Ghostz,
     "ghostx": Ghostx,
     "blastp": Blastp,
+    "diamond": Diamond
  }
 
 class BaseAnnotationComponent(object):

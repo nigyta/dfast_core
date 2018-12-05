@@ -13,6 +13,7 @@ sys.path.append(app_root)
 from dfc.utils.path_util import set_binaries_path
 from dfc.tools.ghostx import Ghostx
 from dfc.tools.ghostz import Ghostz
+from dfc.tools.diamond import Diamond
 from dfc.tools.blastp import Blastp
 from dfc.tools.hmmer import Hmmer_hmmpress
 from dfc.models.protein import Protein
@@ -132,6 +133,18 @@ def run_hmmpress(file_name):
     logger.setLevel(INFO)
     logger.info("Done")
 
+def prepare_database_dmnd(file_name):
+    base_name, ext = (os.path.splitext(file_name))
+    output_file = base_name + ".faa"
+    logger.info("Converting DFAST reference '{0}' to FASTA '{1}'".format(file_name, output_file))
+    fasta_file = dfast2fasta(file_name, output_file)
+    diamond = Diamond()
+    logger.info("Preparing a database for Diamond. (DB_FILE_NAME={0}.dmnd)".format(base_name))
+    logger.setLevel(DEBUG)
+    diamond.format_db(fasta_file, base_name)
+    logger.setLevel(INFO)
+    logger.info("Done")
+
 if __name__ == '__main__':
 
     def f2d(args):
@@ -163,6 +176,12 @@ if __name__ == '__main__':
             parser_format_hmm.print_help()
             exit()
         run_hmmpress(args.input)
+
+    def format_dmnddb(args):
+        if args.input is None:
+            parser_format_dmnddb.print_help()
+            exit()
+        prepare_database_dmnd(args.input)
 
     import argparse
 
@@ -197,6 +216,10 @@ if __name__ == '__main__':
     parser_format_hmm = subparsers.add_parser('formathmm', help='Create profile-HMM database using hmmpress.')
     parser_format_hmm.add_argument("-i", "--input", help="Input HMM library", metavar="PATH", required=True)
     parser_format_hmm.set_defaults(func=formathmm)
+
+    parser_format_dmnddb = subparsers.add_parser('formatdb-dmnd', help='[Beta] Create a database file for Diamond from a DFAST reference file.')
+    parser_format_dmnddb.add_argument("-i", "--input", help="Input reference file", metavar="PATH", required=True)
+    parser_format_dmnddb.set_defaults(func=format_dmnddb)
 
     args = parser.parse_args()
     if not hasattr(args, "func"):

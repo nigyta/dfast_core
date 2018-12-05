@@ -46,7 +46,9 @@ class GFFimporter(StructuralAnnotationTool):
             i = 0
             with open(self.gff_file_name) as f:
                 for line in f:
-                    if line.startswith("#"):
+                    if line.startswith("##FASTA"):
+                        break
+                    elif line.startswith("#"):
                         continue
                     sequence_id, tool_name, feature_type, left, right, score, strand, _, qualifiers = line.strip("\n").split("\t")
                     tool_name = tool_name.replace(" ", "-")
@@ -77,6 +79,9 @@ class GFFimporter(StructuralAnnotationTool):
                         feature.qualifiers = {
                             "product": [qualifiers.get("product", "unknown product")]
                         }
+                    gff_id = qualifiers.get("ID")
+                    if gff_id:
+                        feature.qualifiers["note"] = ["gff_gene_id:" + gff_id]
                     yield feature
 
         for feature in _parse_gff():

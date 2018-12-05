@@ -182,7 +182,7 @@ if use_separate_tags is not None:
 if args.references:  # --references
     set_references(config, args.references)
 
-if args.database:  # --databse
+if args.database:  # --database
     set_database(config, args.database)
 
 if args.aligner:  # --aligner

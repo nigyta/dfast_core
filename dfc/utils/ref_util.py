@@ -113,6 +113,8 @@ def check_db_file(db_name, aligner):
         file_extensions = [".pin", ".phr", ".psq"]
     elif aligner in ["ghostx", "ghostz"]:
         file_extensions = [".inf"]
+    elif aligner == "diamond":
+        file_extensions = [".dmnd"]
     else:
         file_extensions = []
     for file_ext in file_extensions:
