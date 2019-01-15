@@ -94,16 +94,20 @@ class CRT(StructuralAnnotationTool):
             cols = line.strip().split()
             start, end = int(cols[3]), int(cols[5])
 
-            extracted = [x for x in self.seq_info if x.start - self.__class__.INTERVAL < start and end < x.end + self.__class__.INTERVAL]
+            extracted = [x for x in self.seq_info if x.start - self.__class__.INTERVAL <= start and end <= x.end + self.__class__.INTERVAL]
             # extracted = [x for x in self.seq_info if x.start <= start and end <= x.end]
+            # if len(extracted) != 1:
+            #     print(extracted)
+            #     print(self.seq_info)
+            #     print(start, end)
             assert len(extracted) == 1
             crt_seq = extracted[0]
             seq_id = crt_seq.id
             start = start - crt_seq.start
             end = end - crt_seq.start + 1
 
-            start_position = BeforePosition(0) if start < 0 else start
-            end_position = AfterPosition(crt_seq.length) if end > crt_seq.length else end
+            start_position = BeforePosition(0) if start <= 0 else start
+            end_position = AfterPosition(crt_seq.length) if end >= crt_seq.length else end
             location = FeatureLocation(start_position, end_position, strand=1)
             return ExtendedFeature(location=location, type="CRISPR", seq_id=seq_id)
 
