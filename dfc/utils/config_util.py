@@ -104,7 +104,7 @@ def set_database(config, database):
 def set_threshold(config, args):
     args = args.split(",")
     for setting in config.FUNCTIONAL_ANNOTATION:
-        if setting.get("component_name", "") == "DBsearch" and setting["options"].get("db_name") == "DFAST-default":
+        if setting.get("component_name", "") == "DBsearch" and setting.get("default"):
             _set_threshold(args, setting["options"])
 
 

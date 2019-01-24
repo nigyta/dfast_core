@@ -233,6 +233,7 @@ class Config:
             # Sequence homology search against the default DB.
             "component_name": "DBsearch",
             "enabled": True,
+            "default": True,
             "options": {
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
@@ -243,7 +244,7 @@ class Config:
                 "aligner": "ghostx",  # ghostz, ghostx or blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "@@APP_ROOT@@/db/protein/DFAST-default.ref",
-                "db_name": "DFAST-default",
+                "db_name": "",
             },
         },
         {
