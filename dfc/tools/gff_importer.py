@@ -25,7 +25,7 @@ class GFFimporter(StructuralAnnotationTool):
         self.gff_file_name = options.get("gff_file_name")
         self.targets = options.get("targets", ["CDS"])
         self.imported_features = {}
-
+        self.logger.info("Following features will be imported from GFF: " + ", ".join(self.targets))
     def setVersion(self):
         """
         GFFimporter is not an external program.
@@ -57,13 +57,15 @@ class GFFimporter(StructuralAnnotationTool):
                     i += 1
                     qualifiers = dict([x.split("=") for x in qualifiers.strip(";").split(";")])
 
+                    gff_id = qualifiers.get("ID", "{0}_{1}".format(tool_name, i))
                     location = self.getLocation(left, right, strand)
-                    feature = ExtendedFeature(location=location, type=feature_type, id="{0}_{1}".format(tool_name, i),
+                    feature = ExtendedFeature(location=location, type=feature_type, id=gff_id,
                                               seq_id=sequence_id, annotations={})
 
                     if feature_type == "CDS":
                         feature.qualifiers = {
-                            "product": [qualifiers.get("product", "hypothetical protein")],
+                            # "product": [qualifiers.get("product", "hypothetical protein")],
+                            "product": ["hypothetical protein"],
                             "transl_table": [qualifiers.get("transl_table", 11)],
                             "codon_start": [qualifiers.get("codon_start", 1)]
                         }
@@ -79,9 +81,8 @@ class GFFimporter(StructuralAnnotationTool):
                         feature.qualifiers = {
                             "product": [qualifiers.get("product", "unknown product")]
                         }
-                    gff_id = qualifiers.get("ID")
-                    if gff_id:
-                        feature.qualifiers["note"] = ["gff_gene_id:" + gff_id]
+                    # if gff_id:
+                    #     feature.qualifiers["note"] = ["gff_gene_id:" + gff_id]
                     yield feature
 
         for feature in _parse_gff():

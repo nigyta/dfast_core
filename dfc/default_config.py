@@ -88,8 +88,19 @@ class Config:
 
     STRUCTURAL_ANNOTATION = [
         {
+            # Preliminary implementation.
+            "tool_name": "GFF_import",
+            "enabled": False,
+            "options": {
+                # "targets": ["CDS", "tRNA", "rRNA"],
+                "targets": ["CDS"],  # feature types to be imported
+                "gff_file_name": None,
+            },
+        },
+        {
             # GAP is a Gap Annotation Process that identifies gap regions (N's or n's runs) in the sequence.
             "tool_name": "GAP",
+            "target": "assembly_gap",
             "enabled": True,
             "options": {
                 "len_cutoff": 5,  # Gaps shorter than len_cutoff are ignored.
@@ -100,12 +111,14 @@ class Config:
         {
             # MetaGeneAnnotator for CDS prediction
             "tool_name": "MGA",
+            "target": "CDS",
             "enabled": True,
             "options": {"cmd_options": "-s"},  # -s for single species, -m for multiple species
         },
         {
             # Aragorn for tRNA and tmRNA prediction
             "tool_name": "Aragorn",
+            "target": "tRNA",
             "enabled": True,
             "options": {
                 "gcode": "-gcbact",  # -gcbact for Bacterial/Plant Chloroplast genetic code, "-gcstd" for standard genetic code.
@@ -117,6 +130,7 @@ class Config:
             # tRNAscan-SE for tRNA prediction. By default, this is disabled.
             # Please insall tRNAscan-SE and put it in your PATH to enable this.
             "tool_name": "tRNAscan",
+            "target": "tRNA",
             "enabled": False,
             "options": {
                 "model": "-B",  # --bact or -B, --arch or -A, --organ, --general
@@ -126,7 +140,8 @@ class Config:
         {
             # Barrnap for rRNA prediction
             "tool_name": "Barrnap",
-             "enabled": True,
+            "target": "rRNA",
+            "enabled": True,
              "options": {
                  # Currently, Barrnap will run with default settings.
                  # You can set parameters such as --reject and --lencutoff to cmd_options.
@@ -137,6 +152,7 @@ class Config:
             # RNAmmer for rRNA prediction. By default, this is disabled.
             # Please insall RNAmmer and put it in your PATH to enable this.
             "tool_name": "RNAmmer",
+            "target": "rRNA",
             "enabled": False,
             "options": {
                 "model": "bac",  # arc/bac/euk
@@ -149,6 +165,7 @@ class Config:
             # Example
             #     "java_options": "-Xmx256m"
             "tool_name": "CRT",
+            "target": "CRISPR",
             "enabled": True,
             "options": {
                 "jar_file": "@@APP_ROOT@@/bin/common/CRT1.2-CLI.jar",
@@ -160,6 +177,7 @@ class Config:
             # Prodigal for CDS prediction
             # By default Prodigal is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
             "tool_name": "Prodigal",
+            "tool_type": "CDS",
             "enabled": False,
             "options": {
                 "transl_table": 11,
@@ -204,9 +222,11 @@ class Config:
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
+                "pident_cutoff": 0,
                 "aligner": "ghostx",  # ghostx, ghostz or blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "",
+                "db_name": "",
             },
         },
         {
@@ -219,9 +239,11 @@ class Config:
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
+                "pident_cutoff": 0,
                 "aligner": "ghostx",  # ghostz, ghostx or blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "@@APP_ROOT@@/db/protein/DFAST-default.ref",
+                "db_name": "DFAST-default",
             },
         },
         {
@@ -235,10 +257,12 @@ class Config:
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
+                "pident_cutoff": 0,
                 "aligner": "blastp",  # must be blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "dbtype": "auto",  # Must be either of auto/ncbi/uniprot/plain
                 "database": "",
+                "db_name": "",
             },
         },
         {

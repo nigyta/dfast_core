@@ -10,7 +10,8 @@ from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
 from dfc import dfast_version
 from dfc.pipeline import Pipeline
 from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, \
-    disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan, set_genetic_code
+    disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan, disable_rrna_prediction, \
+    disable_trna_prediction, disable_cds_prediction, disable_crispr_prediction, set_genetic_code, set_gff, set_threshold
 from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
@@ -59,7 +60,8 @@ group_lt.add_argument("--use_separate_tags", choices=["t", "true", "f", "false"]
                       help="Use separate tags according to feature types [t(=default)|f]", default=None, metavar="BOOL")
 
 group_workflow = parser.add_argument_group('Workflow options')
-group_workflow.add_argument("--database", help="Additional reference database to search against prior to the default database", metavar="PATH")
+group_workflow.add_argument("--threshold", help='Thresholds for default database search (format: "pident,q_cov,s_cov,e_value", default: "0,75,75,1e-6")', metavar="STR")
+group_workflow.add_argument("--database", help="Additional reference database to be searched against prior to the default database. (format: db_path[,db_name[,pident,q_cov,s_cov,e_value]])", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
 group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
 group_workflow.add_argument("--use_prodigal", help="Use Prodigal to predict CDS instead of MGA", action="store_true")
@@ -67,6 +69,12 @@ group_workflow.add_argument("--use_trnascan", help="Use tRNAscan-SE to predict t
 group_workflow.add_argument("--gcode", help="Genetic code [11(=default),4(=Mycoplasma)]", metavar="INT", type=int, default=11)
 group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
 group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
+group_workflow.add_argument("--no_cds", help="Disable CDS prediction", action="store_true")
+group_workflow.add_argument("--no_rrna", help="Disable rRNA prediction", action="store_true")
+group_workflow.add_argument("--no_trna", help="Disable tRNA prediction", action="store_true")
+group_workflow.add_argument("--no_crispr", help="Disable CRISPR prediction", action="store_true")
+# Preliminary implementation for GFF parsing
+group_workflow.add_argument("--gff", help="[Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.")
 
 
 group_source = parser.add_argument_group('Genome source modifiers and metadata [advanced]',
@@ -143,6 +151,16 @@ if args.organism:  # --organism
 if args.strain:  # --strain
     config.GENOME_SOURCE_INFORMATION["strain"] = args.strain
 
+if args.gff:
+    set_gff(config, args.gff)
+    logger.warning("[Preliminary implementation!] GFF parser enabled. Will import features from GFF file. " + \
+                   "fix_origin is set to disabled, use_original_name is set to enabled, minimum_length is set to 0.")
+    args.fix_origin = False
+    args.use_original_name = "t"
+    # args.sort_sequence = "f"
+    args.minimum_length = 0
+
+
 complete = parse_bool(args.complete)  # --complete
 if complete is not None:
     config.GENOME_CONFIG["complete"] = complete
@@ -177,11 +195,11 @@ if args.database:  # --databse
 if args.aligner:  # --aligner
     set_aligner(config, args.aligner)
 
-if args.no_hmm:  # --no_hmm
-    disable_hmm_scan(config)
+if args.threshold:
+    set_threshold(config, args.threshold)
 
-if args.no_cdd:  # --no_cdd
-    disable_cdd_search(config)
+if args.no_crispr:  # --no_crispr
+    disable_crispr_prediction(config)
 
 if args.gcode != 11:
     set_genetic_code(config, args.gcode)    
@@ -194,6 +212,21 @@ if args.use_prodigal:  # --use_prodigal
     
 if args.use_trnascan:  # --use_trnascan
     enable_trnascan(config, args.use_trnascan)
+
+if args.no_hmm:  # --no_hmm
+    disable_hmm_scan(config)
+
+if args.no_cdd:  # --no_cdd
+    disable_cdd_search(config)
+
+if args.no_cds:  # --no_cds
+    disable_cds_prediction(config)
+
+if args.no_rrna:  # --no_rrna
+    disable_rrna_prediction(config)
+
+if args.no_trna:  # --no_trna
+    disable_trna_prediction(config)
 
 if args.seq_names:  # --seq_names
     config.GENOME_SOURCE_INFORMATION["seq_names"] = args.seq_names

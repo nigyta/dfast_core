@@ -38,7 +38,7 @@ class FormatConverter(object):
         aa_fasta = os.path.join(self.work_dir, "protein.faa")
         write_aa_fasta(genome, aa_fasta)
 
-        rna_fasta = os.path.join(self.work_dir, "rna.faa")
+        rna_fasta = os.path.join(self.work_dir, "rna.fna")
         write_rna_fasta(genome, rna_fasta)
 
         gff_file = os.path.join(self.work_dir, "genome.gff")
@@ -49,6 +49,7 @@ class FormatConverter(object):
 
         embl_file = os.path.join(self.work_dir, "genome.embl")
         write_embl(genome, embl_file)
+
 
 def write_genbank(genome, file_name):
     logger.info("Writing a GenBank format file to {}".format(file_name))

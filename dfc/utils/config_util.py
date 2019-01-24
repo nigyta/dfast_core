@@ -2,6 +2,7 @@
 # coding: UTF8
 
 import sys
+import os
 import pprint
 from logging import getLogger
 
@@ -86,9 +87,49 @@ def set_references(config, references):
 def set_database(config, database):
     for setting in config.FUNCTIONAL_ANNOTATION:
         if setting.get("component_name", "") == "DBsearch":
-            setting["options"]["database"] = database
+            args = database.split(",")
+            db_path = args[0]
+            if len(args) > 1:
+                db_name = args[1]
+                setting["options"]["db_name"] = db_name
+            else:
+                setting["options"]["db_name"] = os.path.basename(db_path)
+            if len(args) > 2:
+                _set_threshold(args[2:], setting["options"])
+            setting["options"]["database"] = db_path
             setting["enabled"] = True
             return
+
+
+def set_threshold(config, args):
+    args = args.split(",")
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        if setting.get("component_name", "") == "DBsearch" and setting["options"].get("db_name") == "DFAST-default":
+            _set_threshold(args, setting["options"])
+
+
+def _set_threshold(args, options):
+    # helper function for set_threashold and set_database
+    if len(args) > 0:
+        arg = args[0]
+        if arg:
+            pident = float(arg)
+            options["pident_cutoff"] = pident
+    if len(args) > 1:
+        arg = args[1]
+        if arg:
+            q_cov = float(arg)
+            options["qcov_cutoff"] = q_cov
+    if len(args) > 2:
+        arg = args[2]
+        if arg:
+            s_cov = float(arg)
+            options["scov_cutoff"] = s_cov
+    if len(args) > 3:
+        arg = args[3]
+        if arg:
+            e_value = float(arg)
+            options["evalue_cutoff"] = e_value
 
 
 def set_aligner(config, aligner):
@@ -108,6 +149,25 @@ def disable_hmm_scan(config):
         if setting.get("component_name", "") == "HMMscan":
             setting["enabled"] = False
 
+def disable_cds_prediction(config):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") == "CDS":
+            setting["enabled"] = False
+
+def disable_trna_prediction(config):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") == "tRNA":
+            setting["enabled"] = False
+
+def disable_rrna_prediction(config):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") == "rRNA":
+            setting["enabled"] = False
+
+def disable_crispr_prediction(config):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") == "CRISPR":
+            setting["enabled"] = False
 
 def enable_trnascan(config, model):
     for setting in config.STRUCTURAL_ANNOTATION:
@@ -166,4 +226,8 @@ def set_genetic_code(config, value):
         #             setting["options"]["genetic_code_file"] = setting["options"].get("genetic_code_file", "").replace("transl_table_11.txt", "transl_table_4.txt")
         #         if value == 25:
         #             setting["options"]["genetic_code_file"] = setting["options"].get("genetic_code_file", "").replace("transl_table_11.txt", "transl_table_25.txt")
+
+
+
+
 

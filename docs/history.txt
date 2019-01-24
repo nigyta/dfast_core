@@ -1,0 +1,96 @@
+
+Ver 1.2.0 (20190124) ---------------------------------------
+ 
+
+# Import annotation from GFF
+
+    Genes annotated in the GFF format can be imported with using --gff option.
+    By default, CDS features are imported. Other features such as tRNA and rRNA can be imported by changing the config file.
+    The sequence names in the genome FASTA file and those in the GFF files must be identical.
+    If you use --gff option, --use_original_name option is automatically set to enabled.
+
+    Note that this option is preliminary, so the result may not be compliant to DDBJ data submission format.
+
+    dfast --genome example/sample.genome.fna --gff example/sample.prodigal.gff 
+
+    default configuration is as below:
+        {
+            # Preliminary implementation.
+            "tool_name": "GFF_import",
+            "enabled": False,
+            "options": {
+                # "targets": ["CDS", "tRNA", "rRNA"],
+                "targets": ["CDS"],  # feature types to be imported
+                "gff_file_name": None,
+            },
+        },
+
+
+# Database name and the pident (percent of identity) threshold for homology search can be specified.
+    The corresponding part in the config file is as follows:
+        {   
+            # Sequence homology search against the default DB.
+            "component_name": "DBsearch",
+            "enabled": True,
+            "options": {
+                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "skipAnnotatedFeatures": True,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 75,
+                "scov_cutoff": 75,
+                "pident_cutoff": 0,   # NEW! cutoff for identity percentage (default:0)
+                "aligner": "ghostx", 
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "@@APP_ROOT@@/db/protein/DFAST-default.ref",
+                "db_name": "DFAST-default",    # NEW! Database name will appear in /note qualifier
+            }
+        }    
+    
+    Accordingly, the output format is slightly changed.
+        (Before)
+                     /note="Partial hit; WP_003131759.1
+                     methylphosphotriester-DNA alkyltransferase (Lactococcus
+                     lactis subsp. lactis Il1403) [pid:52.0%, q_cov:99.0%,
+                     s_cov:54.8%, Eval:6.9e-26]"
+
+        (After)
+                     /note="DFAST-default:WP_003131759.1
+                     methylphosphotriester-DNA alkyltransferase (Lactococcus
+                     lactis subsp. lactis Il1403) [pid:52.0%, q_cov:99.0%,
+                     s_cov:54.8%, Eval:6.9e-26, partial hit]"
+
+                     /note="DFAST-default:WP_000531736.1 cadmium resistance
+                     protein CadD (Streptococcus agalactiae 2603V/R) [pid:57.6%,
+                     q_cov:100.0%, s_cov:99.5%, Eval:7.2e-64, low identity]"
+    
+    The default cutoff value for pident is 0(%), so no filtering is performed.
+
+
+# Command line option for cutoff values for default homology search (--threshold)
+    format: --threshold pident,q_cov,s_cov,e_value
+    default: 0,75,75,1e-6
+    example: --threshold 80,,,1e-10
+             (Default values are used if not specified)
+    
+
+# Command line option for cutoff values for additional homology search (--database)
+    In the previous versions, --database option simply accepts the path to the reference database.
+        e.g. --database db/protein/DFAST-ECOLI.ref
+    Now, database name and cutoff values can be specified.
+        Format: db_path[,db_name[,pident,q_cov,s_cov,e_value]]
+        e.g. --database your_database.ref,your_DBNAME
+        e.g. --database your_database.ref,your_DBNAME,90,80,80,1e-10
+    
+    If you have a reference database from very closely-related species, using more stringent thresholds is recommendable.
+    (Predicted protein sequences are queried against the additional database first, then against the default database.)      
+        e.g. dfast --genome your.genome.fna --threshold 0,75,75,1e-6 --database db/protein/DFAST-ECOLI.ref,ECOLI,90,85,85,1e-10
+    
+    
+# New commandline options:
+    --no_cds    Disable CDS prediction
+    
+    --no_rrna    Disable rRNA prediction
+    
+    --no_trna    Disable tRNA prediction
+    
+    --no_crispr    Disable CRISPR prediction

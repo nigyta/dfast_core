@@ -112,7 +112,7 @@ class OrthoSearch(BaseAnnotationComponent):
 
     def find_orthologues(self):
 
-        # ProteinHit: id_, description, gene, ec_number, source_db, organism, method, e_value, score, identity, q_cov, s_cov, notes=[]
+        # ProteinHit: id_, description, gene, ec_number, source_db, organism, db_name, e_value, score, identity, q_cov, s_cov, notes=[]
         def _get_protein_hit(alignment, flag):
             protein = self.references[alignment.s_id]
             qlen = len(self.query_sequences[alignment.q_id])

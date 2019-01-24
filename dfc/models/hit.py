@@ -17,7 +17,7 @@ class Hit(object):
 
 
 class ProteinHit(Hit):
-    def __init__(self, id_, description, gene, ec_number, source_db, organism, method, e_value, score, identity, q_cov,
+    def __init__(self, id_, description, gene, ec_number, source_db, organism, db_name, e_value, score, identity, q_cov,
                  s_cov, flag, notes=None):
         self.id = id_
         self.description = description
@@ -25,7 +25,7 @@ class ProteinHit(Hit):
         self.ec_number = ec_number
         self.source_db = source_db
         self.organism = organism
-        self.method = method
+        self.db_name = db_name
         self.score = score
         self.e_value = float(e_value)
         self.identity = float(identity)
@@ -37,19 +37,21 @@ class ProteinHit(Hit):
         self.notes = notes
 
     def __str__(self):
+        gene_id = self.id
+        if self.db_name:
+            gene_id = self.db_name + ":" + gene_id
+
         if self.organism:
-            ret = "{self.id} {self.description} ({self.organism}) [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(
-            self=self)
+            ret = "{gene_id} {self.description} ({self.organism}) [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(gene_id=gene_id, self=self)
         else:
-            ret = "{self.id} {self.description} [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(
-            self=self)
+            ret = "{gene_id} {self.description} [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(gene_id=gene_id, self=self)
         if self.flag:
-            ret = self.flag + "; " + ret
+            ret = ret[:-1] + ", " + self.flag + "]"
         return ret
 
     def assign(self, feature, verbosity=2):
         feature.qualifiers["product"] = [self.description]
-
+        # print("DEBUG setting product", self.description)
         if self.gene:
             feature.qualifiers["gene"] = [self.gene]
         if self.ec_number:
@@ -62,7 +64,7 @@ class ProteinHit(Hit):
 
     def assign_as_note(self, feature, verbosity=2):
         if not self.flag:
-            self.flag = "Alternative hit"
+            self.flag = "alternative hit"
         if verbosity >= 2:
             feature.qualifiers.setdefault("note", []).append(str(self))
 
@@ -202,9 +204,9 @@ class PseudoGene(Hit):
             if len(self.stop_codon) > 0 or len(self.insertion) > 0 or len(self.deletion) > 0:
                 note = "possible pseudo"
                 if len(self.stop_codon) > 0:
-                    note += "; internal stop codon"
+                    note += ", internal stop codon"
                 if len(self.insertion) > 0 or len(self.deletion) > 0:
-                    note += "; frameshifted"
+                    note += ", frameshifted"
                 feature.qualifiers.setdefault("note", []).append(note)
 
         elif verbosity >= 2:
@@ -216,9 +218,9 @@ class PseudoGene(Hit):
             if len(self.insertion) > 0 or len(self.deletion) > 0:
                 note = "frameshifted"
                 if len(self.insertion) > 0:
-                    note += "; insertion at around " + ",".join(map(str, self.insertion))
+                    note += ", insertion at around " + ",".join(map(str, self.insertion))
                 if len(self.deletion) > 0:
-                    note += "; deletion at around " + ",".join(map(str, self.deletion))
+                    note += ", deletion at around " + ",".join(map(str, self.deletion))
                 feature.qualifiers.setdefault("note", []).append(note)
 
 

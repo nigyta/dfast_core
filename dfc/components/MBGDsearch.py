@@ -37,7 +37,7 @@ def MBGD_fasta_reader(fasta_file_name, mbgd_definition_file):
             clst_descr, gene_symbol = "", ""
         ref = MBGDreference(seq_id, clst_id, clst_descr, gene_symbol, gene_descr, str(r.seq))
         D[seq_id] = ref
-    return D
+    return DFP
 
 
 class MBGDsearch(BaseAnnotationComponent):
