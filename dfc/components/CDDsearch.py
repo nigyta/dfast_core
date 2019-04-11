@@ -62,7 +62,8 @@ class CDDsearch(BaseAnnotationComponent):
             for line in open(file_name):
                 line = line.strip()
                 if line == "":
-                    raise StopIteration  # the end of data
+                    return  # Bug fix for Python 3.7
+                    # raise StopIteration  # the end of data
                 elif line.startswith("END") or line.startswith("#") or line.startswith("SESSION") or line.startswith(
                         "DATA"):
                     continue
