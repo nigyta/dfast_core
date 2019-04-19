@@ -3,6 +3,7 @@
 
 from .base_tools import StructuralAnnotationTool
 from ..models.bio_feature import ExtendedFeature
+from Bio import SeqIO
 
 
 class Aragorn(StructuralAnnotationTool):
@@ -44,7 +45,10 @@ class Aragorn(StructuralAnnotationTool):
         return cmd
 
     def getFeatures(self):
-
+        def get_length_dict():
+            dict_length = {r.id: len(r) for r in SeqIO.parse(self.genomeFasta, "fasta")}
+            return dict_length
+        
         def _parseResult():
             with open(self.outputFile) as f:
                 # Example of an output
@@ -69,15 +73,20 @@ class Aragorn(StructuralAnnotationTool):
                         # anticodon_position represents translated region
                         yield sequence, product, left, right, strand, anticodon, anticodon_position
 
+        dict_length = get_length_dict()
         D = {}
         i = 0
         for sequence, product, left, right, strand, anticodon, anticodon_position in _parseResult():
+            seq_length = dict_length[sequence]
             if product == "tRNA-???":
                 self.logger.warn("Skipped an ambiguous {} at {}:{}..{}({}).".format(product, sequence, left, right, strand))
                 continue
             if int(left) < 1:
                 left = 1
                 location = self.getLocation(left, right, strand, partial_flag="10")
+            elif int(right) > seq_length:
+                right = seq_length
+                location = self.getLocation(left, right, strand, partial_flag="01")
             else:
                 location = self.getLocation(left, right, strand)
             i += 1
