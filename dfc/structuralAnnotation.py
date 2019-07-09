@@ -94,14 +94,11 @@ class StructuralAnnotation(object):
                 transl_table = tool.transl_table
             else:
                 transl_table = feature.qualifiers.get("transl_table", [11])[0]
-<<<<<<< HEAD
             if transl_table == 4:
                 start_codons = ["TTA", "TTG", "CTG", "ATT", "ATC", "ATA", "GTG"]  # and ATG  for transl_table 4
             else:
                 start_codons = ["TTG", "CTG", "ATT", "ATC", "ATA", "GTG"]  # and ATG   for transl_table 11
 
-=======
->>>>>>> 6041d3e... Bumped version to 1.2.3
             if right_offset == 0:
                 if isinstance(feature.location.start, ExactPosition) and isinstance(feature.location.end,
                                                                                     ExactPosition):
@@ -128,15 +125,11 @@ class StructuralAnnotation(object):
                     translation = nucseq[offset:].translate(table=transl_table, to_stop=True)
             else:
                 translation = nucseq[offset:right_offset].translate(table=transl_table)  # , stop_symbol="")
-<<<<<<< HEAD
             translation = str(translation)
             first_codon = str(nucseq[offset:offset + 3]).upper()
             if first_codon in start_codons:
                 translation = "M" + translation[1:]
             return translation
-=======
-            return str(translation)
->>>>>>> 6041d3e... Bumped version to 1.2.3
 
         for tool in self.tools:
             dict_features = tool.getFeatures()
