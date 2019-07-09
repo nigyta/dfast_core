@@ -5,7 +5,7 @@ import os
 import shutil
 from logging import getLogger
 from concurrent import futures
-from Bio.SeqFeature import ExactPosition
+from Bio.SeqFeature import ExactPosition, FeatureLocation
 from Bio.Data.CodonTable import TranslationError
 from .tools.mga import MGA
 from .tools.barrnap import Barrnap
@@ -17,6 +17,7 @@ from .tools.prodigal import Prodigal
 from .tools.tRNAscan import tRNAscan
 from .tools.rnammer import RNAmmer
 from .tools.gff_importer import GFFimporter
+
 TOOLS = {
     "GAP": GAP,
     "MGA": MGA,
@@ -84,6 +85,43 @@ class StructuralAnnotation(object):
         :param genome:
         :return:
         """
+        
+        def _get_translation(feature, seq):
+            nucseq = feature.location.extract(seq)
+            offset = feature.qualifiers.get("codon_start", [1])[0] - 1
+            right_offset = -1 * ((len(nucseq) - offset) % 3)
+            if hasattr(tool, "transl_table"):
+                transl_table = tool.transl_table
+            else:
+                transl_table = feature.qualifiers.get("transl_table", [11])[0]
+            if right_offset == 0:
+                if isinstance(feature.location.start, ExactPosition) and isinstance(feature.location.end,
+                                                                                    ExactPosition):
+                    try:
+                        translation = nucseq[offset:].translate(table=transl_table, cds=True)
+                    except TranslationError:
+                        translation = nucseq[offset:].translate(table=transl_table, to_stop=True)
+                        if len(translation) * 3 != len(nucseq[offset:]):
+                            self.logger.warning(
+                                "Translation error in {}. In-frame stop codon exists. Translation was terminated at the first in-frame stop codon.".format(
+                                    feature.id))
+                            before = str(feature.location)
+                            if feature.location.strand == 1:
+                                start = feature.location.start
+                                end = ExactPosition(start + offset + len(translation) * 3 + 3)  # Trailing +3 for stop-codon
+                                feature.location = FeatureLocation(start, end, 1)
+                            else:
+                                end = feature.location.end
+                                start = ExactPosition(end - offset - len(translation) * 3 - 3)  # Trailing -3 for stop-codon
+                                feature.location = FeatureLocation(start, end, -1)
+                            after = str(feature.location)
+                            self.logger.warning("CDS[{}] was fixed from {} to {}.".format(feature.id, before, after))
+                else:
+                    translation = nucseq[offset:].translate(table=transl_table, to_stop=True)
+            else:
+                translation = nucseq[offset:right_offset].translate(table=transl_table)  # , stop_symbol="")
+            return str(translation)
+
         for tool in self.tools:
             dict_features = tool.getFeatures()
 
@@ -94,32 +132,52 @@ class StructuralAnnotation(object):
                 detected_features += len(features)
                 if tool.TYPE == "CDS":
                     for feature in features:
-                        nucseq = feature.location.extract(record.seq)
-                        offset = feature.qualifiers.get("codon_start", [1])[0] - 1
-                        rightOffset = -1 * ((len(nucseq) - offset) % 3)
-                        if rightOffset == 0:
-                            if isinstance(feature.location.start, ExactPosition) and isinstance(feature.location.end, ExactPosition):
-                                translation = nucseq[offset:].translate(table=tool.transl_table, cds=True)
-                            else:
-                                translation = nucseq[offset:].translate(table=tool.transl_table, stop_symbol="")
-                        else:
-                            translation = nucseq[offset:rightOffset].translate(table=tool.transl_table, stop_symbol="")
-                        feature.qualifiers["translation"] = [str(translation)]
+                        translation = _get_translation(feature, record.seq)
+                        # nucseq = feature.location.extract(record.seq)
+                        # offset = feature.qualifiers.get("codon_start", [1])[0] - 1
+                        # right_offset = -1 * ((len(nucseq) - offset) % 3)
+                        # if right_offset == 0:
+                        #     if isinstance(feature.location.start, ExactPosition) and isinstance(feature.location.end, ExactPosition):
+                        #         try:
+                        #             translation = nucseq[offset:].translate(table=tool.transl_table, cds=True)
+                        #         except TranslationError:
+                        #             translation = nucseq[offset:].translate(table=tool.transl_table, to_stop=True)
+                        #             if len(translation) * 3 != len(nucseq[offset:]):
+                        #                 self.logger.warning("Translation error. In-frame stop codon exists. Translation was terminated at the first in-frame stop codon. [{}]".format(feature.id))
+                        #                 before = str(feature.location)
+                        #                 if feature.location.strand == 1:
+                        #                     start = feature.location.start
+                        #                     end = ExactPosition(start + offset + len(translation) * 3)
+                        #                     feature.location = FeatureLocation(start, end, 1)
+                        #                 else:
+                        #                     end = feature.location.end
+                        #                     start = ExactPosition(end - offset - len(translation) * 3)
+                        #                     feature.location = FeatureLocation(start, end, -1)
+                        #                 after = str(feature.location)
+                        #                 self.logger.warning("CDS is fixed from {} to {}. [{}]".format(before, after, feature.id))
+                        #     else:
+                        #         translation = nucseq[offset:].translate(table=tool.transl_table, to_stop=True)
+                        # else:
+                        #     translation = nucseq[offset:right_offset].translate(table=tool.transl_table)  # , stop_symbol="")
+                        feature.qualifiers["translation"] = [translation]
                 elif tool.TYPE == "GFF":  # TODO: preliminary implementation (redundant implementation of the code above) 
                     for feature in features:
                         if feature.type == "CDS":
-                            nucseq = feature.location.extract(record.seq)
-                            offset = feature.qualifiers.get("codon_start", [1])[0] - 1
-                            transl_table = feature.qualifiers.get("transl_table", [11])[0]
-                            rightOffset = -1 * ((len(nucseq) - offset) % 3)
-                            if rightOffset == 0:
-                                try:
-                                    translation = nucseq[offset:].translate(table=transl_table, cds=True)
-                                except TranslationError:
-                                    translation = nucseq[offset:].translate(table=transl_table, stop_symbol="")
-                            else:
-                                translation = nucseq[offset:rightOffset].translate(table=transl_table, stop_symbol="")
-                            feature.qualifiers["translation"] = [str(translation)]
+                            translation = _get_translation(feature, record.seq)
+                            # nucseq = feature.location.extract(record.seq)
+                            # offset = feature.qualifiers.get("codon_start", [1])[0] - 1
+                            # transl_table = feature.qualifiers.get("transl_table", [11])[0]
+                            # right_offset = -1 * ((len(nucseq) - offset) % 3)
+                            # if right_offset == 0:
+                            #     try:
+                            #         translation = nucseq[offset:].translate(table=transl_table, cds=True)
+                            #     except TranslationError as e:
+                            #         print(e)
+                            #         self.logger.warning("Warning: Translation error. In-frame stop codon may exist. {}".format(feature.id))
+                            #         translation = nucseq[offset:].translate(table=transl_table, to_stop=True)
+                            # else:
+                            #     translation = nucseq[offset:right_offset].translate(table=transl_table)  # , stop_symbol="")
+                            feature.qualifiers["translation"] = [translation]
                 record.features += features
             self.logger.info("{num} {tool.TYPE} features were detected by {tool.__class__.NAME}.".format(
                 num=detected_features, tool=tool))

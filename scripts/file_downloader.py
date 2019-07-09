@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # coding: UTF8
-
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 import argparse
 import sys
 import os
@@ -21,7 +22,7 @@ logger = getLogger("")
 logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
-app_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 db_root = os.path.join(app_root, "db")
 ncbi_ftp_server = "ftp.ncbi.nlm.nih.gov"
 cdd_directory = "/pub/mmdb/cdd/little_endian/"

@@ -4,7 +4,7 @@ import os
 # import platform
 from logging import getLogger, DEBUG, INFO, StreamHandler
 
-app_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 logger = getLogger("")
 logger.setLevel(INFO)
 
