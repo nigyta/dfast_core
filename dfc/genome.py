@@ -169,25 +169,25 @@ class Genome(object):
                     "organism": self.organism, "source": source, "strain": self.strain, "complete": self.complete
                 }
 
-    def load_metadata(self, config):
-        def _read_file(file_name):
-            D = {}
-            for line in open(file_name):
-                key, value = line.strip("\n").split("\t")
-                if value:
-                    D[key] = value
-            return D
-
-        metadata_file = config.GENOME_SOURCE_INFORMATION.get("metadata_file")
-        if metadata_file:
-            if not os.path.exists(metadata_file):
-                logger.error("Metadata file ({}) does not exist. Aborting...".format(metadata_file))
-                exit(1)
-            logger.info("Loading a metadata file from {}".format(metadata_file))
-
-            return _read_file(metadata_file)
-        else:
-            return {}
+    # def load_metadata(self, config):
+    #     def _read_file(file_name):
+    #         D = {}
+    #         for line in open(file_name):
+    #             key, value = line.strip("\n").split("\t")
+    #             if value:
+    #                 D[key] = value
+    #         return D
+    # 
+    #     metadata_file = config.GENOME_SOURCE_INFORMATION.get("metadata_file")
+    #     if metadata_file:
+    #         if not os.path.exists(metadata_file):
+    #             logger.error("Metadata file ({}) does not exist. Aborting...".format(metadata_file))
+    #             exit(1)
+    #         logger.info("Loading a metadata file from {}".format(metadata_file))
+    # 
+    #         return _read_file(metadata_file)
+    #     else:
+    #         return {}
 
     def sort_features(self):
         for record in self.seq_records.values():

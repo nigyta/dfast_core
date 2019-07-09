@@ -230,4 +230,33 @@ def set_genetic_code(config, value):
 
 
 
+def set_values_from_metadata(config):
+    metadata_file = config.DDBJ_SUBMISSION.get("metadata_file")
+    if not metadata_file or not os.path.exists(metadata_file):
+        return
+    logger.info("Loading metadata from {}. (Will be overidden by command-line options)".format(metadata_file))
+    D = {}
+    with open(metadata_file) as f:
+        for line in f:
+            key, value = line.strip("\n").split("\t")
+            if value:
+                D[key] = value
 
+    keys = ["organism", "strain", "seq_names", "seq_types", "seq_topologies", "additional_modifiers"]
+    for key in keys:
+        value = D.get(key)
+        if value:
+            config.GENOME_SOURCE_INFORMATION[key] = value
+
+    keys = ["locus_tag_prefix"]
+    for key in keys:
+        value = D.get(key)
+        if value:
+            config.LOCUS_TAG_SETTINGS[key] = value
+
+    complete = D.get("complete", "false")
+    complete = True if complete.lower() in ["t", "true"] else False
+    project_type = D.get("project_type") or D.get("projectType", "")
+    if project_type == "gnm":
+        complete = True    
+    config.GENOME_CONFIG["complete"] = complete
