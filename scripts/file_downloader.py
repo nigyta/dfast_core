@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 # coding: UTF8
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+
 import argparse
 import sys
 import os
@@ -21,6 +20,13 @@ from reference_util import run_hmmpress, prepare_database
 logger = getLogger("")
 logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
+
+try:
+    # This part was added to avoid error under a specific environment.
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
+except Exception as e:
+    logger.warning("SSL configuration failed. Will continue processing without SSL configuration.")
 
 app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 db_root = os.path.join(app_root, "db")
