@@ -175,7 +175,6 @@ class Config:
         },
         {
             # Prodigal for CDS prediction
-            # By default Prodigal is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
             "tool_name": "Prodigal",
             "tool_type": "CDS",
             "enabled": False,

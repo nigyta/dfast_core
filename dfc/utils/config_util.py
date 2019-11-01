@@ -186,6 +186,13 @@ def enable_prodigal(config):
         if setting.get("tool_name", "") == "MGA":
             setting["enabled"] = False
 
+def enable_mga(config):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") == "MGA":
+            setting["enabled"] = True
+        if setting.get("tool_name", "") == "Prodigal":
+            setting["enabled"] = False
+
 
 def set_gff(config, gff_file_name):
     targets = []

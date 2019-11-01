@@ -6,7 +6,7 @@ import os
 from .baseComponent import BaseAnnotationComponent
 from ..models.hit import HmmHit
 from ..tools.hmmer import Hmmer_hmmscan
-
+from ..utils.reffile_util import check_hmm_db_file
 
 class HMMscan(BaseAnnotationComponent):
     instances = 0
@@ -16,6 +16,7 @@ class HMMscan(BaseAnnotationComponent):
         self.hmmer = Hmmer_hmmscan(options=options)
         self.database = options.get("database", "")
         self.db_name = options.get("db_name", "")
+        check_hmm_db_file(self.database)
 
     def createCommands(self):
         for i, query in self.query_files.items():

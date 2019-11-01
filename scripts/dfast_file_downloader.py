@@ -15,8 +15,15 @@ if version == 3:
 else:
     from six.moves.urllib import request
 
-from reference_util import run_hmmpress, prepare_database
+app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+logger = getLogger("")
+logger.setLevel(INFO)
 
+sys.path.append(app_root)
+from dfc.utils.reffile_util import prepare_database, run_hmmpress
+from dfc.utils.path_util import set_binaries_path
+
+set_binaries_path(app_root)
 logger = getLogger("")
 logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
@@ -45,7 +52,7 @@ db_urls = {
 hmm_urls = {
     "Pfam": "ftp://ftp.ebi.ac.uk//pub/databases/Pfam/releases/Pfam31.0/Pfam-A.hmm.gz",
     "dbCAN": "http://csbl.bmb.uga.edu/dbCAN/download/dbCAN-fam-HMMs.txt",
-    "TIGR": "ftp://ftp.jcvi.org//pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.LIB.gz"
+    "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
 parser = argparse.ArgumentParser(description='File downloader for DFAST reference databases',
@@ -66,6 +73,8 @@ parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
+parser.add_argument("--no_indexing", action="store_true",
+                         help="Does not perform database indexing")
 parser.add_argument("-o", "--out", help="Output directory", type=str, metavar="PATH")
 args = parser.parse_args()
 
@@ -134,18 +143,18 @@ def retrieve_assembly_fasta(accession, out_dir="."):
         path1, path2, path3, path4 = accession[0:3], accession[4:7], accession[7:10], accession[10:13]
         return "/".join(["/genomes", "all", path1, path2, path3, path4])
 
-    directory = _get_ftp_directory(accession)
+    directory2 = _get_ftp_directory(accession)
     ftp = FTP(host=ncbi_ftp_server)
-    logger.info("\tLogging in to the FTP server. {}".format(ncbi_ftp_server + directory))
+    logger.info("\tLogging in to the FTP server. {}".format(ncbi_ftp_server + directory2))
     ftp.login()
-    ftp.cwd(directory)
+    ftp.cwd(directory2)
     L = ftp.nlst()
     if len(L) == 0:
         logger.warning("\tFile not found. Skip retrieving file for {}".format(accession))
         return None
     asm_name = sorted([x for x in L if x.startswith(accession)])[-1]
-    target_file = "/".join([directory, asm_name, asm_name + "_genomic.fna.gz"])
-    logger.info("\tDownloading {}".format(ncbi_ftp_server + directory + "/" + asm_name + "/" + asm_name + "_genomic.fna.gz"))
+    target_file = "/".join([directory2, asm_name, asm_name + "_genomic.fna.gz"])
+    logger.info("\tDownloading {}".format(ncbi_ftp_server + directory2 + "/" + asm_name + "/" + asm_name + "_genomic.fna.gz"))
     output_file = os.path.join(out_dir, "_".join(asm_name.split("_")[0:2]) + ".fna.gz")
     with open(output_file, "wb") as f:
         ftp.retrbinary("RETR " + target_file, f.write)
@@ -178,11 +187,11 @@ if args.protein:
             output_file = retrieved_file.replace(".ref.gz", ".ref")
             gunzip_file(retrieved_file, output_file)
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_file)))
-
-            prepare_database(output_file)
+            if not args.no_indexing:
+                prepare_database(output_file)
 
 if args.cdd:
-    print(args.cdd)
+    # print(args.cdd)
     out_dir = args.out or os.path.join(db_root, "cdd")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -196,7 +205,7 @@ if args.cdd:
             logger.info("\tUnarchived {}".format(retrieved_file))
 
 if args.hmm:
-    print(args.hmm)
+    # print(args.hmm)
     out_dir = args.out or os.path.join(db_root, "hmm")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -212,10 +221,11 @@ if args.hmm:
                 logger.info("\tUnarchived to {}".format(output_file))
             else:
                 output_file = retrieved_file
-            run_hmmpress(output_file)
+            if not args.no_indexing:
+                run_hmmpress(output_file)
 
 if args.assembly:
-    print(args.assembly)
+    # print(args.assembly)
     out_dir = args.out or "."
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -229,7 +239,7 @@ if args.assembly:
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
 
 if args.assembly_fasta:
-    print(args.assembly_fasta)
+    # print(args.assembly_fasta)
     out_dir = args.out or "."
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)

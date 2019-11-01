@@ -90,7 +90,7 @@ class Aragorn(StructuralAnnotationTool):
             else:
                 location = self.getLocation(left, right, strand)
             i += 1
-            if product == "tmRNA":
+            if product.startswith("tmRNA"):
                 type_ = "tmRNA"
                 product = "transfer-messenger RNA"
                 annotations = {"tag_peptide_translated_region": anticodon_position,
