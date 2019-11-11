@@ -74,7 +74,7 @@ parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
 parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--no_indexing", action="store_true",
-                         help="Does not perform database indexing")
+                         help="Do not perform database indexing")
 parser.add_argument("-o", "--out", help="Output directory", type=str, metavar="PATH")
 args = parser.parse_args()
 
@@ -143,18 +143,18 @@ def retrieve_assembly_fasta(accession, out_dir="."):
         path1, path2, path3, path4 = accession[0:3], accession[4:7], accession[7:10], accession[10:13]
         return "/".join(["/genomes", "all", path1, path2, path3, path4])
 
-    directory2 = _get_ftp_directory(accession)
+    directory = _get_ftp_directory(accession)
     ftp = FTP(host=ncbi_ftp_server)
-    logger.info("\tLogging in to the FTP server. {}".format(ncbi_ftp_server + directory2))
+    logger.info("\tLogging in to the FTP server. {}".format(ncbi_ftp_server + directory))
     ftp.login()
-    ftp.cwd(directory2)
+    ftp.cwd(directory)
     L = ftp.nlst()
     if len(L) == 0:
         logger.warning("\tFile not found. Skip retrieving file for {}".format(accession))
         return None
     asm_name = sorted([x for x in L if x.startswith(accession)])[-1]
-    target_file = "/".join([directory2, asm_name, asm_name + "_genomic.fna.gz"])
-    logger.info("\tDownloading {}".format(ncbi_ftp_server + directory2 + "/" + asm_name + "/" + asm_name + "_genomic.fna.gz"))
+    target_file = "/".join([directory, asm_name, asm_name + "_genomic.fna.gz"])
+    logger.info("\tDownloading {}".format(ncbi_ftp_server + directory + "/" + asm_name + "/" + asm_name + "_genomic.fna.gz"))
     output_file = os.path.join(out_dir, "_".join(asm_name.split("_")[0:2]) + ".fna.gz")
     with open(output_file, "wb") as f:
         ftp.retrbinary("RETR " + target_file, f.write)
