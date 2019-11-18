@@ -137,7 +137,7 @@ class FeatureUtil(object):
                 return features[0]
             features.sort(key=lambda x: _get_priority(x))
 
-            features_with_rbs = [x for x in features if x.extended_attributes.get("rbs")]
+            features_with_rbs = [x for x in features if x.annotations.get("rbs")]
             if len(features_with_rbs) > 0:
                 return features_with_rbs[0]
             return features[0]
