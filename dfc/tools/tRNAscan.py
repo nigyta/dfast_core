@@ -50,7 +50,7 @@ class tRNAscan(StructuralAnnotationTool):
         else:
             default_option = "--brief --forceow"
         cmd = ["tRNAscan-SE", self.model, self.cmd_options, default_option, "--output", self.outputFile,
-               self.genomeFasta, ">&", self.logFile]
+               self.genomeFasta, "2>&1", self.logFile]
         return cmd
 
     def getFeatures(self):
