@@ -1,0 +1,235 @@
+#! /usr/bin/env python
+# coding: UTF8
+
+import os
+import sys
+import argparse
+import tempfile
+from logging import getLogger, DEBUG, INFO, StreamHandler, Formatter
+
+
+app_root = os.path.normpath(os.path.dirname(__file__))
+if app_root == "":
+    app_root = "."
+
+# Currently this file is located in dfc/dev/reannotation
+app_root = os.path.normpath(os.path.join(app_root, "..", "..", ".."))
+sys.path.append(app_root)
+
+from dfc import dfast_version
+from dfc.dev.reannotation.pipeline_re import Pipeline
+from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, disable_cdd_search, disable_hmm_scan
+from dfc.utils.path_util import set_binaries_path
+from dfc.utils.fix_origin import fix_origin
+
+
+def parse_bool(arg):
+    if arg in ["t", "true", "TRUE", "True"]:
+        return True
+    elif arg in ["f", "false", "FALSE", "False"]:
+        return False
+    else:
+        return None
+
+
+parser = argparse.ArgumentParser(description='DFAST: DDBJ Fast Annotation and Submission \tTool\nRe-annotation pipeline (Beta)\n' +
+                                 "version {}.  ".format(dfast_version),
+                                 usage="dfast_re -g your_genome.gbk [options]", epilog=None, # "-- prolog",
+                                 # formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                 add_help=False  # , allow_abbrev=False
+                                 # argument_default=argparse.SUPPRESS
+                                 )
+
+group_basic = parser.add_argument_group("Basic options")
+group_basic.add_argument("-g", "--genome", help="Genome sequence file (GenBank format)", metavar="PATH")
+group_basic.add_argument("-o", "--out", help="Output directory (default:OUT)", type=str, metavar="PATH")
+group_basic.add_argument("-c", "--config", help="Configuration file (default config will be used if not specified)", type=str, metavar="PATH")
+group_basic.add_argument("--organism", help="Organism name", metavar="STR", default="")
+group_basic.add_argument("--strain", help="Strain name", metavar="STR", default="")
+
+
+group_genome = parser.add_argument_group('Genome settings')
+group_genome.add_argument("--complete", choices=["t", "true", "f", "false"], metavar="BOOL",
+                          help="Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f(=default)]")
+group_genome.add_argument("--use_original_name", choices=["t", "true", "f", "false"],
+                          help="Use original sequence names in a query FASTA file [t|f(=default)]", metavar="BOOL")
+group_genome.add_argument("--sort_sequence", choices=["t", "true", "f", "false"],
+                          help="Sort sequences by length [t(=default)|f]", metavar="BOOL")
+group_genome.add_argument("--minimum_length", help="Minimum sequence length (default:200)", type=int, metavar="INT")
+# group_genome.add_argument("--fix_origin", help="Rotate/flip the chromosome so that the dnaA gene comes first. (ONLY FOR A FINISHED GENOME)", action="store_true")
+# group_genome.add_argument("--offset", help="Offset from the start codon of the dnaA gene. (for --fix_origin option, default=0)", default=0, type=int, metavar="INT")
+
+
+group_lt = parser.add_argument_group('Locus_tag settings')
+group_lt.add_argument("--locus_tag_prefix", help="Locus tag prefix (defaut:LOCUS)", metavar="STR")
+group_lt.add_argument("--step", help="Increment step of locus tag (default:10)", metavar="INT", type=int)
+group_lt.add_argument("--use_separate_tags", choices=["t", "true", "f", "false"],
+                      help="Use separate tags according to feature types [t(=default)|f]", default=None, metavar="BOOL")
+
+group_workflow = parser.add_argument_group('Workflow options')
+group_workflow.add_argument("--database", help="Additional reference database to search against prior to the default database", metavar="PATH")
+group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
+group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
+group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
+group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
+
+
+group_source = parser.add_argument_group('Genome source modifiers and metadata [advanced]',
+                                         description='These values are only used to create INSDC submission files and do not affect the annotation result. See documents for more detail.')
+group_source.add_argument("--seq_names", help="Sequence names for each sequence (for complete genome)", metavar="STR")
+group_source.add_argument("--seq_types", help="Sequence types for each sequence (chromosome/plasmid, for complete genome)", metavar="STR")
+group_source.add_argument("--seq_topologies", help="Sequence topologies for each sequence (linear/circular, for complete genome)", metavar="STR")
+group_source.add_argument("--additional_modifiers", help="Additional modifiers for source features", metavar="STR")
+group_source.add_argument("--metadata_file", help="Path to a metadata file (optional for DDBJ submission file)", metavar="PATH")
+group_source.add_argument("--center_name", help="Genome center name (optional for GenBank submission file)", metavar="STR")
+
+
+group_run = parser.add_argument_group('Run options')
+group_run.add_argument("--cpu", help="Number of CPUs to use", type=int, metavar="INT")
+group_run.add_argument("--force", help="Force overwriting output", action="store_true")
+group_run.add_argument("--debug", help="Run in debug mode (Extra logging and retaining temporary files)", action="store_true")
+group_run.add_argument("--show_config", help="Show pipeline configuration and exit", action="store_true")
+group_run.add_argument('--version', version='DFAST ver. {version}'.format(prog="DFAST", version=dfast_version),
+                       action='version', help="Show program version", default=False)
+group_run.add_argument("-h", "--help", help="Show this help message", action="store_true")
+
+
+args = parser.parse_args()
+
+if len(sys.argv) == 1:
+    parser.print_help()
+    exit()
+
+logger = getLogger()
+handler = StreamHandler(sys.stdout)
+handler.setLevel(DEBUG)
+handler.setFormatter(Formatter("%(asctime)s %(message)s", datefmt='%Y/%m/%d %H:%M:%S'))
+logger.addHandler(handler)
+logger.setLevel(DEBUG)
+
+
+if args.help:
+    parser.print_help()
+    exit()
+
+
+# loading config file
+config_file = args.config or os.path.join(app_root, "dfc/default_config.py")
+config = load_config(app_root, config_file)
+
+if args.debug:  # --debug
+    config.DEBUG = True
+    handler.setFormatter(Formatter("%(asctime)s %(levelname)8s %(message)s [%(module)s %(lineno)d]", datefmt='%Y/%m/%d %H:%M:%S'))
+    logger.setLevel(DEBUG)
+    logger.warning("Debug mode enabled. Logger level is set to DEBUG and temporary files will be kept.")
+else:
+    config.DEBUG = False
+    logger.setLevel(INFO)
+
+if args.cpu is not None:  # --cpu
+    config.CPU = args.cpu
+
+if args.force:  # --force
+    config.FORCE_OVERWRITE = True
+
+# override config by command options
+if args.genome:  # --genome
+    config.GENOME_FASTA = args.genome
+
+if args.out:  # --out
+    config.WORK_DIR = args.out
+
+if args.organism:  # --organism
+    config.GENOME_SOURCE_INFORMATION["organism"] = args.organism
+
+if args.strain:  # --strain
+    config.GENOME_SOURCE_INFORMATION["strain"] = args.strain
+
+complete = parse_bool(args.complete)  # --complete
+if complete is not None:
+    config.GENOME_CONFIG["complete"] = complete
+
+use_original_name = parse_bool(args.use_original_name)  # --use_original_name
+if use_original_name is not None:
+    config.GENOME_CONFIG["use_original_name"] = use_original_name
+
+sort_sequence = parse_bool(args.sort_sequence)  # --sort_sequence
+if sort_sequence is not None:
+    config.GENOME_CONFIG["sort_sequence"] = sort_sequence
+
+if args.minimum_length:  # --minimum_length
+    config.GENOME_CONFIG["minimum_length"] = args.minimum_length
+
+if args.locus_tag_prefix:  # --locus_tag_prefix
+    config.LOCUS_TAG_SETTINGS["locus_tag_prefix"] = args.locus_tag_prefix
+
+if args.step:  # --step
+    config.LOCUS_TAG_SETTINGS["step"] = args.step
+
+use_separate_tags = parse_bool(args.use_separate_tags)  # --use_separate_tags
+if use_separate_tags is not None:
+    config.LOCUS_TAG_SETTINGS["use_separate_tags"] = use_separate_tags
+
+if args.references:  # --references
+    set_references(config, args.references)
+
+if args.database:  # --databse
+    set_database(config, args.database)
+
+if args.aligner:  # --aligner
+    set_aligner(config, args.aligner)
+
+if args.no_hmm:  # --no_hmm
+    disable_hmm_scan(config)
+
+if args.no_cdd:  # --no_cdd
+    disable_cdd_search(config)
+
+if args.seq_names:  # --seq_names
+    config.GENOME_SOURCE_INFORMATION["seq_names"] = args.seq_names
+
+if args.seq_types:  # --seq_types
+    config.GENOME_SOURCE_INFORMATION["seq_types"] = args.seq_types
+
+if args.seq_topologies:  # --seq_topologies
+    config.GENOME_SOURCE_INFORMATION["seq_topologies"] = args.seq_topologies
+
+if args.additional_modifiers:  # --additional_modifiers
+    config.GENOME_SOURCE_INFORMATION["additional_modifiers"] = args.additional_modifiers
+
+if args.metadata_file:  # --metadata_file
+    config.DDBJ_SUBMISSION["metadata_file"] = args.metadata_file
+
+if args.center_name:  # --center_name
+    config.GENBANK_SUBMISSION["center_name"] = args.center_name
+
+if args.show_config:
+    show_config(config)
+    exit()
+# pp = pprint.PrettyPrinter(indent=1)
+# pp.pprint(config.FUNCTIONAL_ANNOTATION)
+# print(dir(config))
+
+
+# set environmental path
+set_binaries_path(app_root)
+
+# rotate the chromosome so that dnaA comes first.
+# if args.fix_origin:
+#     query_genome_fasta = config.GENOME_FASTA
+#     fd, temporary_fasta_file = tempfile.mkstemp()
+#     fix_origin(query_genome_fasta, temporary_fasta_file, offset=args.offset, logger=logger)
+#     logger.info("Created a temporary file for the origin-fixed genome. ({0})".format((temporary_fasta_file )))
+#     config.GENOME_FASTA = temporary_fasta_file
+
+pipeline = Pipeline(config, logger)
+pipeline.execute()
+
+# cleanup unwanted files
+if not config.DEBUG:
+    pipeline.cleanup()
+# if args.fix_origin:
+#     os.remove(temporary_fasta_file)
+
+if __name__ == '__main__':
+  pass

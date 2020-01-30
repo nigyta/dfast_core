@@ -175,6 +175,7 @@ class Config:
         },
         {
             # Prodigal for CDS prediction
+            # By default Prodigal is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
             "tool_name": "Prodigal",
             "tool_type": "CDS",
             "enabled": False,
@@ -182,7 +183,20 @@ class Config:
                 "transl_table": 11,
                 "cmd_options": "",
             },
-         },
+	},
+        {
+            # GeneMarkS2 for CDS prediction
+            # By default GeneMarkS2 is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
+            "tool_name": "GeneMarkS2",
+            "tool_type": "CDS",
+            "enabled": False,
+            "options": {
+                "transl_table": 11,
+                "genome_type": "bacteria",
+                "format": "gff",
+                "cmd_options": "",
+            },
+        },
     ]
 
     FUNCTIONAL_ANNOTATION = [

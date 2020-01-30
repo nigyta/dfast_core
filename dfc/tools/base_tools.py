@@ -35,7 +35,6 @@ class Tool(object):
         Check the tool version.
         This method uses VERSION_CHECK_CMD and VERSION_PATTERN.
         """
-
         self.logger.info("Checking {0} version... ".format(self.__class__.NAME))
         out, err = self.executeCommand(self.__class__.VERSION_CHECK_CMD, shell=True)
         if err:

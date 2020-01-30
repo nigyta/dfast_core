@@ -11,6 +11,7 @@ from .tools.mga import MGA
 from .tools.barrnap import Barrnap
 from .tools.aragorn import Aragorn
 from .tools.gap import GAP
+from .tools.gene_marks_2 import GeneMarkS2
 from .tools.CRT import CRT
 # from .tools.glimmer import Glimmer
 from .tools.prodigal import Prodigal
@@ -21,6 +22,7 @@ from .tools.gff_importer import GFFimporter
 TOOLS = {
     "GAP": GAP,
     "MGA": MGA,
+    "GeneMarkS2": GeneMarkS2,
     "Barrnap": Barrnap,
     "Aragorn": Aragorn,
     "CRT": CRT,

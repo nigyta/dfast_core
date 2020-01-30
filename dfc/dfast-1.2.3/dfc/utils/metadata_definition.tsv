@@ -1,0 +1,49 @@
+# Ver. 20170404						登録に必須		DFAST自動補完の値
+# oprnapi:name	 oprnapi:description						openapi:pattern	
+# name	description	qualifier	feature	entry	type	mss_required	pattern	default_value
+#---------- KEYWORD ----------								
+keyword	Keyword	keyword	KEYWORD	COMMON	string	FALSE	(STANDARD_DRAFT)|(HIGH_QUALITY_DRAFT)|(IMPROVED_HIGH_QUALITY_DRAFT)|(NON_CONTIGUOUS_FINISHED)	
+#---------- DBLINK ----------								
+bioproject	BioProject ID	project	DBLINK	COMMON	string	TRUE	PRJ[A-Z]{1,2}\d{4,8}	
+biosample	BioSample ID	biosample	DBLINK	COMMON	string	TRUE	SAM[A-Z]{1,2}\d{4,8}	
+sra	SRA accession	sequence read archive	DBLINK	COMMON	array	FALSE	[DES]RR\d{6}	
+#								
+#---------- SUBMITTER ----------								
+submitter	Submitter	ab_name	SUBMITTER	COMMON	array	TRUE	[A-Za-z0-9',\.\-]*	
+consrtm	Consortium	consrtm	SUBMITTER	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+contact	Contact Person	contact	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9 ',\.\-]*	
+email	Email	email	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9_@,\.\-]*	
+url	URL	url	SUBMITTER	COMMON	string	FALSE	[^ `\\<>]*	
+phone	Phone	phone	SUBMITTER	COMMON	string	TRUE	[\d\-]{0,16}	
+phext	Phone ext.	phext	SUBMITTER	COMMON	string	FALSE	[\d\-]{0,16}	
+fax	Fax	fax	SUBMITTER	COMMON	string	TRUE	[\d\-]{0,16}	
+institute	Institute	institute	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+department	Department	department	SUBMITTER	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+country	Country	country	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+state	State	state	SUBMITTER	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+city	City	city	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+street	Street	street	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+zip	Zip	zip	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9\-]{0,16}	
+#								
+#---------- Reference ----------								
+reference	Reference Title	title	REFERENCE	COMMON	string	TRUE	[^`\\]*	
+author	Author	ab_name	REFERENCE	COMMON	array	TRUE	[A-Za-z0-9',\.\-]*	
+ref_consrtm	Consortium	consrtm	REFERENCE	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
+status	Status	status	REFERENCE	COMMON	string	TRUE	(Unpublished)|(In press)|(Published)	Unpublished
+year	Year	year	REFERENCE	COMMON	string	TRUE	\d{4}	
+journal	Journal	journal	REFERENCE	COMMON	string	FALSE	[^`<>\\]*	
+volume	Volume	volume	REFERENCE	COMMON	string	FALSE	[A-Za-z0-9\-]{0,8}	
+start_page	Start Page	start_page	REFERENCE	COMMON	string	FALSE	[A-Za-z0-9\-]{0,8}	
+end_page	End Page	end_page	REFERENCE	COMMON	string	FALSE	[A-Za-z0-9\-]{0,8}	
+#								
+#---------- DATE ----------								
+hold_date	Hold Date	hold_date	DATE	COMMON	string	FALSE	\d{8}	
+#								
+#---------- COMMENT ----------								
+comment	Comment	line	COMMENT	COMMON	array	FALSE	[^`<>\\]*	
+#								
+#---------- ST_COMMENT ----------								
+tagset_id	Tag set ID	tagset_id	ST_COMMENT	COMMON	string	TRUE	Genome\-Assembly\-Data	Genome-Assembly-Data
+assembly_method	Assembly Method	Assembly Method	ST_COMMENT	COMMON	string	TRUE	[A-Za-z0-9 ,_;:\[\]\(\)\-\.]+	
+coverage	Genome Coverage	Genome Coverage	ST_COMMENT	COMMON	string	TRUE	\d+[Xx]	
+sequencing_technology	Sequencing Technology	Sequencing Technology	ST_COMMENT	COMMON	string	TRUE	[A-Za-z0-9 ,_;:\[\]\(\)\-\.]+	

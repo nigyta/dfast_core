@@ -1,0 +1,33 @@
+keyword	HIGH-QUALITY-DRAFT
+bioproject	PRJDB1726
+biosample	SAMD00000344
+sra	DRR024501; DRR054113
+submitter	Tanizawa,Y.; Tohno,M.
+consrtm	
+contact	Masanori Tohno
+email	dfast@nig.ac.jp
+url	https://dfast.nig.ac.jp/
+phone	81-55-981-6853
+phext	
+fax	81-55-981-6853
+institute	National Institute of Genetics
+department	Genome Informatics Labotatory
+country	Japan
+state	Shizuoka
+city	Mishima
+street	Yata 1111
+zip	411-8540
+reference	Complete genome sequence of Lactobacillus hokkaidonensis LOOC260.
+author	Tanizawa,Y.; Arita,M.; Nakamura,Y.; Tohno,M.
+ref_consrtm	
+status	Unpublished
+year	2017
+journal	
+volume	
+start_page	
+end_page	
+hold_date	20181010
+comment	These metadata are examples for the DDBJ submission using MSS (Mass Submission System).; 2nd comment line
+assembly_method	HGAP protocol 3
+sequencing_technology	MiSeq; PacBio RSII
+coverage	120x
