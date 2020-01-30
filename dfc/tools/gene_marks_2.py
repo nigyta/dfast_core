@@ -19,7 +19,7 @@ class GeneMarkS2(StructuralAnnotationTool):
     version = None
     TYPE = "CDS"
     NAME = "GeneMarkS2"
-    VERSION_CHECK_CMD = ["/home/apfennig3/Team1-GenePrediction/bin/gms2.pl | tail -n 1"]
+    VERSION_CHECK_CMD = ["gms2.pl | tail -n 1"]
     VERSION_PATTERN = r"Version: (.+).lic"
     SHELL = True
 
@@ -33,15 +33,14 @@ class GeneMarkS2(StructuralAnnotationTool):
         self.cmd_options = options.get("cmd_options", "")
 
     def getCommand(self):
-        """/home/apfennig3/Team1-GenePrediction/bin/gms2.pl --seq $genome --genome-type bacteria --output $tmp_dir/output.gtf --format gff"""
-        cmd = ["/home/apfennig3/Team1-GenePrediction/bin/gms2.pl", self.cmd_options, "--genome-type", self.genome_type, "--gcode", str(self.transl_table), "--format", self.out_format, "--seq", self.genomeFasta, "--output", self.outputFile]
+        """gms2.pl --seq $genome --genome-type bacteria --output $tmp_dir/output.gtf --format gff"""
+        cmd = ["gms2.pl", self.cmd_options, "--genome-type", self.genome_type, "--gcode", str(self.transl_table), "--format", self.out_format, "--seq", self.genomeFasta, "--output", self.outputFile]
         return cmd
 
 
     def getFeatures(self):
         """GeneMarkS2 generates standard GFF format.
-           
-
+        Chromosome      GeneMark.hmm2   CDS     453     911     24.74   +       0       gene_id 1; gene_type native; gc 46; length 459;
         """
 
         def _parseResult():
