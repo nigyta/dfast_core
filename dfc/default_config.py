@@ -155,7 +155,7 @@ class Config:
             "target": "rRNA",
             "enabled": False,
             "options": {
-                "model": "bac",  # arc/bac/euk
+                "model": "bac",  # arc/bac
                 "cmd_options": ""
             },
         },
@@ -176,13 +176,26 @@ class Config:
         {
             # Prodigal for CDS prediction
             "tool_name": "Prodigal",
-            "tool_type": "CDS",
+            "target": "CDS",
             "enabled": False,
             "options": {
                 "transl_table": 11,
                 "cmd_options": "",
             },
-         },
+        },
+        {
+            # GeneMarkS2 for CDS prediction
+            # By default GeneMarkS2 is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
+            "tool_name": "GeneMarkS2",
+            "target": "CDS",
+            "enabled": False,
+            "options": {
+                "transl_table": 11,
+                "genome_type": "bacteria",
+                "format": "gff",
+                "cmd_options": "",
+            },
+        },
     ]
 
     FUNCTIONAL_ANNOTATION = [

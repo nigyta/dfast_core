@@ -90,6 +90,7 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     ```
     dfast_file_downloader.py -h
     ```
+
 ## <a id="condainstallation"></a>Installation via conda
 DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast/README.html). Install with:
 ```
@@ -151,7 +152,7 @@ The following tools are run in parallel to predict biological features (e.g. CDS
 * CRISPR prediction (CRT)
 * Assembly gaps within sequences
 
-Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (You need to install them manually.)
+Optionally, you can choose Prodigal/GeneMarkS2, RNAmmer, tRNAscan-SE to predict CDS, rRNA, tRNA, respectively. See [FAQ](docs/FAQ.md). (You need to install them manually.)
 
 ### Functional annotation
 1. OrthoSearch (Optional. Set `--references` option to enable this.)
@@ -159,6 +160,8 @@ Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (Yo
 3. PseudoGeneDetection (internal stop codons and frameshifts)
 4. HMMscan against the profile HMM database of TIGRFAM
 5. CDDsearch against COG database from NCBI Conserved Domain Database
+
+By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be used optionally. See [FAQ](docs/FAQ.md). (Diamond needs to be installed manually.) 
 
 ### Output
 * Sequence and annotation data in GFF3 and GenBank format
@@ -171,7 +174,7 @@ Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (Yo
 ```  
 usage: dfast -g your_genome.fna [options]
 
-DFAST: DDBJ Fast Annotation and Submission Tool version 1.2.3.
+DFAST: DDBJ Fast Annotation and Submission Tool version 1.x.x.
 
 Basic options:
   -g PATH, --genome PATH
@@ -213,10 +216,11 @@ Workflow options:
                         db_path[,db_name[,pident,q_cov,s_cov,e_value]])
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
-  --aligner STR         Aligner to use [ghostx(=default)|blastp]
+  --aligner STR         Aligner to use [ghostx(=default)|blastp|diamond]
   --use_prodigal        Use Prodigal to predict CDS instead of MGA
-  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn,
-                        [bact|arch]
+  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
+  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
+  --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
@@ -287,8 +291,8 @@ According to the user's report, DFAST fails on ArchLinux due to `libidn-11` requ
     Yasuhiro TANIZAWA, Takatomo FUJISAWA, Eli KAMINUMA, Yasukazu NAKAMURA, and Masanori ARITA  
 * stand-alone version (DFAST-core)  
     DFAST: a flexible prokaryotic genome annotation pipeline for faster genome publication.  
-    *Bioinformatics*. 2017 Nov 2. doi: 10.1093/bioinformatics/btx713 (advance article).  
+    *Bioinformatics*; 2018; 34(6): 1037–1039.  
     Yasuhiro TANIZAWA, Takatomo FUJISAWA, Yasukazu NAKAMURA  
-    https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btx713  
+    https://academic.oup.com/bioinformatics/article/34/6/1037/4587587
 
 

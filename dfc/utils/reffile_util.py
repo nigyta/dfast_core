@@ -44,7 +44,7 @@ def check_db_file(db_name, aligner):
         file_ext = ".dmnd"
         file_name = db_name + file_ext
         if not os.path.exists(file_name):
-            logger.warning("Diamond index files do not exist.")
+            logger.warning("Diamond index file does not exist.")
             prepare_database_dmnd(ref_file)
     else:
         logger.error(
@@ -208,8 +208,8 @@ def run_hmmpress(file_name):
 def prepare_database_dmnd(file_name):
     base_name, _ext = (os.path.splitext(file_name))
     output_file = base_name + ".faa"
-    logger.info("Converting DFAST reference '{0}' to FASTA '{1}'".format(
-        file_name, output_file))
+    # logger.info("Converting DFAST reference '{0}' to FASTA '{1}'".format(
+        # file_name, output_file))
     fasta_file = dfast2fasta(file_name, output_file)
     diamond = Diamond()
     logger.info(
