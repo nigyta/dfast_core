@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# Written by Aaron Pfennig
 # coding: UTF8
 
 from .base_tools import StructuralAnnotationTool
