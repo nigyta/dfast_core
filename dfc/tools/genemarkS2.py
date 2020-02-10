@@ -1,6 +1,7 @@
 #! /usr/bin/env python
-# Written by Aaron Pfennig
 # coding: UTF8
+
+# Written by Aaron Pfennig
 
 from .base_tools import StructuralAnnotationTool
 from Bio import SeqIO
