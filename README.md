@@ -75,7 +75,8 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
 ```
 
 ### Reference databases
-  After downloading/cloning the source code, prepare reference databases using the bundled utility script. Database files will be generated into the directory under $DFAST_APP_ROOT/db/
+  After downloading/cloning the source code, prepare reference databases using the bundled utility script.  
+  By default, database files will be generated into the directory under $DFAST_APP_ROOT/db/. You can also change the location of the directory by specifying either `--dbroot` option or `DFAST_DB_ROOT` environmental variable.
 1. **Default protein database**
     ```
     dfast_file_downloader.py --protein dfast
@@ -96,7 +97,7 @@ DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast
 ```
 conda install -c bioconda dfast
 ```
-It may take time since it automatically attempts to download reference libraries after installing the softwares. DFAST executables are added to the `PATH` environmental variable.  
+After installing DFAST, you need to prepare reference databases following the procedure above. DFAST executables are added to the `PATH` environmental variable.  
 DFAST software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)
 ## <a id="howto"></a>How to run
 1. **Help**  
@@ -174,7 +175,7 @@ By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be use
 ```  
 usage: dfast -g your_genome.fna [options]
 
-DFAST: DDBJ Fast Annotation and Submission Tool version 1.x.x.
+DFAST: DDBJ Fast Annotation and Submission Tool version 1.2.7.
 
 Basic options:
   -g PATH, --genome PATH
@@ -250,12 +251,18 @@ Genome source modifiers and metadata [advanced]:
 
 Run options:
   --cpu INT             Number of CPUs to use
+  --use_locustag_as_gene_id
+                        Use locustag as gene ID for FASTA and GFF. (Useful
+                        when providing DFAST results to other tools such as
+                        Roary)
+  --dbroot PATH         DB root directory (default:APP_ROOT/db
   --force               Force overwriting output
   --debug               Run in debug mode (Extra logging and retaining
                         temporary files)
   --show_config         Show pipeline configuration and exit
   --version             Show program version
   -h, --help            Show this help message
+
 
 ```
 ## <a id="distribution"></a>Software distribution
