@@ -115,7 +115,13 @@ class Metadata(object):
         self.refNumber = 0
         self.commentNumber = 0
 
-        for line in open(self.__class__.METADATA_DEFINITION_FILE):
+        try:
+            f = open(self.__class__.METADATA_DEFINITION_FILE, encoding="UTF-8")
+        except TypeError as e:
+            # For python 2.7 compatibility. Will be removed in the future
+            f = open(self.__class__.METADATA_DEFINITION_FILE)
+
+        for line in f:
             if line.startswith("#"):
                 continue
             else:
