@@ -94,6 +94,7 @@ group_source.add_argument("--center_name", help="Genome center name (optional fo
 
 group_run = parser.add_argument_group('Run options')
 group_run.add_argument("--cpu", help="Number of CPUs to use", type=int, metavar="INT")
+group_run.add_argument("--dbroot", help="DB root directory (default:APP_ROOT/db", type=str, metavar="PATH")
 group_run.add_argument("--force", help="Force overwriting output", action="store_true")
 group_run.add_argument("--debug", help="Run in debug mode (Extra logging and retaining temporary files)", action="store_true")
 group_run.add_argument("--show_config", help="Show pipeline configuration and exit", action="store_true")
@@ -127,7 +128,7 @@ if app_root == "":
 
 # loading config file
 config_file = args.config or os.path.join(app_root, "dfc/default_config.py")
-config = load_config(app_root, config_file)
+config = load_config(app_root, config_file, args.dbroot)
 
 if args.debug:  # --debug
     config.DEBUG = True

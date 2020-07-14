@@ -9,12 +9,21 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 
-def load_config(app_root, config_file):
+def load_config(app_root, config_file, db_root=None):
     logger.info("Running on Python {}.".format(sys.version))
     logger.info("Loading a config file from {}".format(config_file))
 
     config = open(config_file).read()
     config = config.replace("@@APP_ROOT@@", app_root)
+    db_root_env = os.getenv('DFAST_DB_ROOT')
+    if db_root:
+        logger.info("DB_ROOT is specified by a command-line option --dbroot %s", db_root)
+    elif db_root_env:
+        logger.info("DFAST_DB_ROOT is specified [%s]", db_root_env)
+        db_root = db_root_env
+    else:
+        db_root = os.path.join(app_root, "db")
+    config = config.replace("@@DB_ROOT@@", db_root)
     exec(config, globals())  # Config object will be imported
     return Config
 

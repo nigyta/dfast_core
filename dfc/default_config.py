@@ -255,7 +255,7 @@ class Config:
                 "pident_cutoff": 0,
                 "aligner": "ghostx",  # ghostz, ghostx or blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
-                "database": "@@APP_ROOT@@/db/protein/DFAST-default.ref",
+                "database": "@@DB_ROOT@@/protein/DFAST-default.ref",
                 "db_name": "",
             },
         },
@@ -301,7 +301,7 @@ class Config:
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
                 "evalue_cutoff": 1e-6,
-                "database": "@@APP_ROOT@@/db/hmm/TIGRFAMs_15.0_HMM.LIB",
+                "database": "@@DB_ROOT@@/hmm/TIGRFAMs_15.0_HMM.LIB",
                 "db_name": "TIGR",
             },
         },
@@ -314,7 +314,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "db_name": "",  # eg 'Pfam',
-                "database": ""  # eg '@@APP_ROOT@@/db/hmm/Pfam-A.hmm'
+                "database": ""  # eg '@@DB_ROOT@@/hmm/Pfam-A.hmm'
             },
         },
         {
@@ -326,7 +326,7 @@ class Config:
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
-                "database": "@@APP_ROOT@@/db/cdd/Cog",
+                "database": "@@DB_ROOT@@/cdd/Cog",
                 "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
             },
         },
@@ -338,7 +338,7 @@ class Config:
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
-                "database": "",  # eg @@APP_ROOT@@/db/cdd/Prk
+                "database": "",  # eg @@DB_ROOT@@/cdd/Prk
                 "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
             },
         },

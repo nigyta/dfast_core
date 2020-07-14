@@ -16,17 +16,15 @@ else:
     from six.moves.urllib import request
 
 app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-logger = getLogger("")
+logger = getLogger(__name__)
 logger.setLevel(INFO)
+logger.addHandler(StreamHandler())
 
 sys.path.append(app_root)
 from dfc.utils.reffile_util import prepare_database, run_hmmpress
 from dfc.utils.path_util import set_binaries_path
 
 set_binaries_path(app_root)
-logger = getLogger("")
-logger.setLevel(INFO)
-logger.addHandler(StreamHandler())
 
 try:
     # This part was added to avoid error under a specific environment.
@@ -36,7 +34,7 @@ except Exception as e:
     logger.warning("SSL configuration failed. Will continue processing without SSL configuration.")
 
 app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
-db_root = os.path.join(app_root, "db")
+
 ncbi_ftp_server = "ftp.ncbi.nlm.nih.gov"
 cdd_directory = "/pub/mmdb/cdd/little_endian/"
 host_dfast = "https://dfast.nig.ac.jp"
@@ -55,11 +53,24 @@ hmm_urls = {
     "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
-parser = argparse.ArgumentParser(description='File downloader for DFAST reference databases',
+description = """\
+DFAST file downloader\n\
+
+    --protein, --cdd, --hmm: For DFAST reference libraries. 
+        Files will be downloaded to DB root directory by default.
+        DB root can be specified with "--dbroot" option.
+
+    --assembly, --assembly_fasta: For Reference genomes
+        Reference genome file will be downloaded from NCBI Assembly Database either in GenBank or Fasta format.
+        Files will be written to the current directory or the directory specified with "--out" option.
+
+"""
+parser = argparse.ArgumentParser(description=description,
                                  usage=None, epilog=None,
                                  # formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                 add_help=True # allow_abbrev=False
+                                 add_help=True, # allow_abbrev=False
                                  # argument_default=argparse.SUPPRESS
+                                 formatter_class=argparse.RawTextHelpFormatter
                                  )
 
 # group_basic = parser.add_argument_group("Basic options")
@@ -75,7 +86,10 @@ parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--no_indexing", action="store_true",
                          help="Do not perform database indexing")
-parser.add_argument("-o", "--out", help="Output directory", type=str, metavar="PATH")
+group_out = parser.add_mutually_exclusive_group()
+group_out.add_argument("-o", "--out", help="Output directory (default: current directory.\nFor --assembly, --assembly_fasta. Not allowed with argument --dbroot)", type=str, metavar="PATH")
+group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm. Not allowed with argument --out)", type=str, metavar="PATH")
+
 args = parser.parse_args()
 
 
@@ -175,8 +189,21 @@ def extract_tar_file(input_file, output_dir, cleanup=True):
     if cleanup:
         os.remove(input_file)
 
+def get_db_root(args):
+    db_root_env = os.getenv('DFAST_DB_ROOT')
+
+    if args.dbroot:
+        db_root = args.dbroot
+    elif db_root_env:
+        db_root = db_root_env
+    else:
+        db_root = os.path.join(app_root, "db")
+    return db_root
+
+
 if args.protein:
-    out_dir = args.out or os.path.join(db_root, "protein")
+    db_root = get_db_root(args)
+    out_dir = os.path.join(db_root, "protein")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     logger.info("Downloading DFAST reference. Files will be written into '{}'".format(out_dir))
@@ -191,8 +218,8 @@ if args.protein:
                 prepare_database(output_file)
 
 if args.cdd:
-    # print(args.cdd)
-    out_dir = args.out or os.path.join(db_root, "cdd")
+    db_root = get_db_root(args)
+    out_dir = os.path.join(db_root, "cdd")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     logger.info("Trying to fetch RPS-BLAST databases from NCBI-CDD. Files will be written into '{}'".format(out_dir))
@@ -206,7 +233,8 @@ if args.cdd:
 
 if args.hmm:
     # print(args.hmm)
-    out_dir = args.out or os.path.join(db_root, "hmm")
+    db_root = get_db_root(args)
+    out_dir = os.path.join(db_root, "hmm")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     logger.info("Ttyring to fetch profile-HMM databases for {0}. Files will be written into '{1}'".format(",".join(args.hmm), out_dir))
