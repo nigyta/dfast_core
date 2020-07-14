@@ -70,7 +70,8 @@ class Config:
 
     OUTPUT_RESULT = {
         # output verbosity level for .gff and .gbk
-        "verbosity": 3  # 1: minimum, 2: standard, 3: rich
+        "verbosity": 3,  # 1: minimum, 2: standard, 3: rich
+        "use_locustag_as_gene_id": False
     }
 
     DDBJ_SUBMISSION = {

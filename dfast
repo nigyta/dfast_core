@@ -94,6 +94,7 @@ group_source.add_argument("--center_name", help="Genome center name (optional fo
 
 group_run = parser.add_argument_group('Run options')
 group_run.add_argument("--cpu", help="Number of CPUs to use", type=int, metavar="INT")
+group_run.add_argument("--use_locustag_as_gene_id", help="Use locustag as gene ID for FASTA and GFF. (Useful when providing DFAST results to other tools such as Roary)", action="store_true")
 group_run.add_argument("--dbroot", help="DB root directory (default:APP_ROOT/db", type=str, metavar="PATH")
 group_run.add_argument("--force", help="Force overwriting output", action="store_true")
 group_run.add_argument("--debug", help="Run in debug mode (Extra logging and retaining temporary files)", action="store_true")
@@ -261,6 +262,9 @@ if args.additional_modifiers:  # --additional_modifiers
 
 if args.center_name:  # --center_name
     config.GENBANK_SUBMISSION["center_name"] = args.center_name
+
+if args.use_locustag_as_gene_id:
+    config.OUTPUT_RESULT["use_locustag_as_gene_id"] = True
 
 if args.show_config:
     show_config(config)
