@@ -49,7 +49,7 @@ db_urls = {
 
 hmm_urls = {
     "Pfam": "ftp://ftp.ebi.ac.uk//pub/databases/Pfam/releases/Pfam31.0/Pfam-A.hmm.gz",
-    "dbCAN": "http://csbl.bmb.uga.edu/dbCAN/download/dbCAN-fam-HMMs.txt",
+    "dbCAN": "http://bcb.unl.edu/dbCAN2/download/dbCAN-HMMdb-V9.txt",
     "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
