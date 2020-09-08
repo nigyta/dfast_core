@@ -70,6 +70,15 @@ class Genome(object):
         minimum_length = config.GENOME_CONFIG.get("minimum_length", 0)
         R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta", IUPAC.ambiguous_dna)]
 
+        # trim leading/trailing Ns
+        for r in R:
+            r.seq = r.seq.upper()
+            if r.seq.startswith("N") or r.seq.endswith("N"):
+                length_original = len(r.seq)
+                r.seq = r.seq.strip("N")
+                length_trimmed = len(r.seq)
+                logger.warning("The sequence '{}' has leading/trainling Ns, which will be trimmed ({}bp to {}bp) .".format(r.id, length_original, length_trimmed))
+
         seq_dict = OrderedDict()
 
         if self.complete:
