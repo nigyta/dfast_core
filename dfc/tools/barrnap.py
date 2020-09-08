@@ -20,7 +20,7 @@ class Barrnap(StructuralAnnotationTool):
     TYPE = "rRNA"
     NAME = "Barrnap"
     VERSION_CHECK_CMD = ["barrnap", "--version", "2>&1"]
-    VERSION_PATTERN = r"^barrnap (.+)$"
+    VERSION_PATTERN = r"barrnap (.+)$"
     VERSION_ERROR_MSG = "This may happen if Time::Piece cannot be found. " + \
       "If you are using CentOS/RedHat, try 'sudo yum install perl-Time-Piece'."
     SHELL = True

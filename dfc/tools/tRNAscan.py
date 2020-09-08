@@ -3,6 +3,7 @@
 
 from .base_tools import StructuralAnnotationTool
 from ..models.bio_feature import ExtendedFeature
+from Bio import SeqIO
 
 
 class tRNAscan(StructuralAnnotationTool):
@@ -49,10 +50,13 @@ class tRNAscan(StructuralAnnotationTool):
         else:
             default_option = "--brief --forceow"
         cmd = ["tRNAscan-SE", self.model, self.cmd_options, default_option, "--output", self.outputFile,
-               self.genomeFasta, ">&", self.logFile]
+               self.genomeFasta, "2>&1", self.logFile]
         return cmd
 
     def getFeatures(self):
+        def get_length_dict():
+            dict_length = {r.id: len(r) for r in SeqIO.parse(self.genomeFasta, "fasta")}
+            return dict_length
 
         def _parseResult():
             with open(self.outputFile) as f:
@@ -82,11 +86,21 @@ class tRNAscan(StructuralAnnotationTool):
                     sequence = sequence.strip()  # Remove trailing blank
                     yield sequence, left, right, strand, aa, anticodon, score
 
+        dict_length = get_length_dict()
         D = {}
         i = 0
         for sequence, left, right, strand, aa, anticodon, score in _parseResult():
+            seq_length = dict_length[sequence]
+            if int(left) < 1:
+                left = 1
+                location = self.getLocation(left, right, strand, partial_flag="10")
+            elif int(right) > seq_length:
+                right = seq_length
+                location = self.getLocation(left, right, strand, partial_flag="01")
+            else:
+                location = self.getLocation(left, right, strand)
 
-            location = self.getLocation(left, right, strand)
+
             i += 1
 
             type_ = "tRNA"

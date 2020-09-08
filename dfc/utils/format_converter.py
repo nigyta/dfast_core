@@ -20,6 +20,7 @@ class FormatConverter(object):
         self.genome = genome
         self.work_dir = genome.workDir
         self.verbosity = config.OUTPUT_RESULT.get("verbosity", 3)
+        self.use_locustag_as_gene_id = config.OUTPUT_RESULT.get("use_locustag_as_gene_id", False)
         self.logger = getLogger(__name__)
 
     def write(self):
@@ -33,16 +34,16 @@ class FormatConverter(object):
         write_genome_fasta(genome, genome_fasta)
 
         cds_fasta = os.path.join(self.work_dir, "cds.fna")
-        write_cds_fasta(genome, cds_fasta)
+        write_cds_fasta(genome, cds_fasta, self.use_locustag_as_gene_id)
 
         aa_fasta = os.path.join(self.work_dir, "protein.faa")
-        write_aa_fasta(genome, aa_fasta)
+        write_aa_fasta(genome, aa_fasta, self.use_locustag_as_gene_id)
 
         rna_fasta = os.path.join(self.work_dir, "rna.fna")
-        write_rna_fasta(genome, rna_fasta)
+        write_rna_fasta(genome, rna_fasta, self.use_locustag_as_gene_id)
 
         gff_file = os.path.join(self.work_dir, "genome.gff")
-        write_gff(genome, gff_file)
+        write_gff(genome, gff_file, self.use_locustag_as_gene_id)
 
         gbk_file = os.path.join(self.work_dir, "genome.gbk")
         write_genbank(genome, gbk_file)
@@ -63,7 +64,7 @@ def write_embl(genome, file_name):
         SeqIO.write(list(genome.seq_records.values()), f, "embl")
 
 
-def write_gff(genome, output_file):
+def write_gff(genome, output_file, use_locustag_as_gene_id):
 
     def _get_phase(feature):
         return str(int(feature.qualifiers.get("codon_start", [1])[0]) - 1) if feature.type == "CDS" else "."
@@ -75,13 +76,19 @@ def write_gff(genome, output_file):
         return "DFAST"
 
     def _quote(x):
-        return str(x).replace("%", "%25").replace("=", "%3d").replace(";", "%3B")
+        return str(x).replace("%", "%25").replace(",", "%2C").replace("=", "%3D").replace(";", "%3B").replace("&", "%26").replace("\t", "%09")
+        # return str(x).replace("%", "%25").replace("=", "%3D").replace(";", "%3B")
 
-    def _create_attribute(feature):
+    def _create_attribute(feature, use_locustag_as_gene_id):
         ignored_key = ["codon_start", "transl_table"]
         attributes = ";".join([key + "=" + ",".join(map(_quote, value))
                                for key, value in feature.qualifiers.items() if key not in ignored_key])
-        return "ID=" + feature.id + ";" + attributes
+        locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
+        if use_locustag_as_gene_id and locus_tag:
+            ID = locus_tag
+        else:
+            ID = feature.id            
+        return "ID=" + ID + ";" + attributes
 
     gff_buffer = "##gff-version 3\n"
     for record in genome.seq_records.values():
@@ -94,7 +101,7 @@ def write_gff(genome, output_file):
                 score = "."  # col5
                 strand = "-" if feature.location.strand == -1 else "+"  # col6
                 phase = _get_phase(feature)
-                attributes = _create_attribute(feature)
+                attributes = _create_attribute(feature, use_locustag_as_gene_id)
                 line = "\t".join([seq_id, inference_source, feature.type, start_pos, end_pos, score, strand, phase,
                                   attributes]) + "\n"
                 gff_buffer += line
@@ -107,59 +114,54 @@ def write_gff(genome, output_file):
         f.write(gff_buffer)
 
 
-def write_aa_fasta(genome, output_file):
+def get_gene_fasta_header(feature, use_locustag_as_gene_id):
+    locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
+    product = feature.qualifiers.get("product", [None])[0]
+    if use_locustag_as_gene_id and locus_tag:
+        header = ">" + locus_tag
+    else:
+        header = ">" + feature.id
+        if locus_tag:
+            header += "|" + locus_tag
+    if product:
+        header += " " + product
+    return header
+
+def write_aa_fasta(genome, output_file, use_locustag_as_gene_id):
     logger.info("Writing a protein fasta file to {}".format(output_file))
     fasta_buffer = ""
     for record in genome.seq_records.values():
         for feature in record.features:
             if feature.type == "CDS":
-                locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
-                product = feature.qualifiers.get("product", [None])[0]
+                header = get_gene_fasta_header(feature, use_locustag_as_gene_id)
                 translation = feature.qualifiers.get("translation", [None])[0]
-                header = ">" + feature.id
-                if locus_tag:
-                    header += "|" + locus_tag
-                if product:
-                    header += " " + product
                 if translation:
                     fasta_buffer += "{}\n{}\n".format(header, translation)
     with open(output_file, "w") as f:
         f.write(fasta_buffer)
 
 
-def write_cds_fasta(genome, output_file):
+def write_cds_fasta(genome, output_file, use_locustag_as_gene_id):
     logger.info("Writing a CDS fasta file to {}".format(output_file))
     fasta_buffer = ""
     for record in genome.seq_records.values():
         for feature in record.features:
             if feature.type == "CDS":
-                locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
-                product = feature.qualifiers.get("product", [None])[0]
+                header = get_gene_fasta_header(feature, use_locustag_as_gene_id)
                 nucleotide = feature.location.extract(record.seq)
-                header = ">" + feature.id
-                if locus_tag:
-                    header += "|" + locus_tag
-                if product:
-                    header += " " + product
                 fasta_buffer += "{}\n{}\n".format(header, nucleotide)
     with open(output_file, "w") as f:
         f.write(fasta_buffer)
 
 
-def write_rna_fasta(genome, output_file):
+def write_rna_fasta(genome, output_file, use_locustag_as_gene_id):
     logger.info("Writing an RNA fasta file to {}".format(output_file))
     fasta_buffer = ""
     for record in genome.seq_records.values():
         for feature in record.features:
             if feature.type.endswith("RNA"):
-                locus_tag = feature.qualifiers.get("locus_tag", [None])[0]
-                product = feature.qualifiers.get("product", [None])[0]
+                header = get_gene_fasta_header(feature, use_locustag_as_gene_id)
                 nucleotide = feature.location.extract(record.seq)
-                header = ">" + feature.id
-                if locus_tag:
-                    header += "|" + locus_tag
-                if product:
-                    header += " " + product
                 fasta_buffer += "{}\n{}\n".format(header, nucleotide)
     with open(output_file, "w") as f:
         f.write(fasta_buffer)

@@ -31,6 +31,7 @@ DFAST can annotate a typical-sized bacterial genome within several minutes. In a
 As its name suggested, DFAST is intended to support rapid genome submission to the INSDC, especially through DDBJ. DFAST generates submission files for DDBJ Mass Submission System (MSS) as well as .tbl and .fsa file for GenBank tbl2asn.
 
 ## <a id="installation"></a>Installation
+If you use Anaconda/Miniconda, see [here](#condainstallation) to install via conda.
 ### Prerequisites
 * **Python (3.4- or 2.7)**  
   DFAST is developed in Python 3.6 and runs both on Python 3.4 or later and Python 2.7.
@@ -67,30 +68,39 @@ Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta
   cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 
-For your convenience, add $DFAST_APP_ROOT to your `PATH`.
+For your convenience, create links to DFAST executables in a directory specified by the `PATH` environment variable. For example,
 ```
-export PATH=$DFAST_APP_ROOT:$PATH
+ln -s $DFAST_APP_ROOT/dfast /usr/local/bin/
+ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
 ```
 
 ### Reference databases
-  After downloading/cloning the source code, prepare reference databases using the bundled utility script.
+  After downloading/cloning the source code, prepare reference databases using the bundled utility script.  
+  By default, database files will be generated into the directory under $DFAST_APP_ROOT/db/. You can also change the location of the directory by specifying either `--dbroot` option or `DFAST_DB_ROOT` environmental variable.
 1. **Default protein database**
     ```
-    python scripts/file_downloader.py --protein dfast
+    dfast_file_downloader.py --protein dfast
     ```
-    File downloading and database indexing for GHOSTX and BLASTP will be performed.
+    File downloading and database indexing for GHOSTX and BLASTP will be performed. 
 2. **HMMer and RPS-BLAST databases (this may take time)**
     ```
-    python scripts/file_downloader.py --cdd Cog --hmm TIGR
+    dfast_file_downloader.py --cdd Cog --hmm TIGR
     ```
     DFAST default workflow requires COG database for RPS-BLAST and TIGRFAM database for hmmerscan.
 * **See help for more information.**
     ```
-    python scripts/file_downloader.py -h
+    dfast_file_downloader.py -h
     ```
+
+## <a id="condainstallation"></a>Installation via conda
+DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast/README.html). Install with:
+```
+conda install -c bioconda dfast
+```
+After installing DFAST, you need to prepare reference databases following the procedure above. DFAST executables are added to the `PATH` environmental variable.  
+DFAST software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)
 ## <a id="howto"></a>How to run
 1. **Help**  
-    Make sure that $DFAST_APP_ROOT has been added to your `PATH`.
     ```
     dfast -h
     ```
@@ -143,7 +153,7 @@ The following tools are run in parallel to predict biological features (e.g. CDS
 * CRISPR prediction (CRT)
 * Assembly gaps within sequences
 
-Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (You need to install them manually.)
+Optionally, you can choose Prodigal/GeneMarkS2, RNAmmer, tRNAscan-SE to predict CDS, rRNA, tRNA, respectively. See [FAQ](docs/FAQ.md). (You need to install them manually.)
 
 ### Functional annotation
 1. OrthoSearch (Optional. Set `--references` option to enable this.)
@@ -151,6 +161,8 @@ Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (Yo
 3. PseudoGeneDetection (internal stop codons and frameshifts)
 4. HMMscan against the profile HMM database of TIGRFAM
 5. CDDsearch against COG database from NCBI Conserved Domain Database
+
+By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be used optionally. See [FAQ](docs/FAQ.md). (Diamond needs to be installed manually.) 
 
 ### Output
 * Sequence and annotation data in GFF3 and GenBank format
@@ -163,7 +175,7 @@ Optionally, you can choose Prodigal and tRNAscan-SE to predict CDS and tRNA. (Yo
 ```  
 usage: dfast -g your_genome.fna [options]
 
-DFAST: DDBJ Fast Annotation and Submission Tool version 1.0.8.
+DFAST: DDBJ Fast Annotation and Submission Tool version 1.2.7.
 
 Basic options:
   -g PATH, --genome PATH
@@ -198,17 +210,28 @@ Locus_tag settings:
                         [t(=default)|f]
 
 Workflow options:
-  --database PATH       Additional reference database to search against prior
-                        to the default database
+  --threshold STR       Thresholds for default database search (format:
+                        "pident,q_cov,s_cov,e_value", default: "0,75,75,1e-6")
+  --database PATH       Additional reference database to be searched against
+                        prior to the default database. (format:
+                        db_path[,db_name[,pident,q_cov,s_cov,e_value]])
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
-  --aligner STR         Aligner to use [ghostx(=default)|blastp]
+  --aligner STR         Aligner to use [ghostx(=default)|blastp|diamond]
   --use_prodigal        Use Prodigal to predict CDS instead of MGA
-  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn,
-                        [bact|arch]
+  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
+  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
+  --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
+  --no_cds              Disable CDS prediction
+  --no_rrna             Disable rRNA prediction
+  --no_trna             Disable tRNA prediction
+  --no_crispr           Disable CRISPR prediction
+  --gff GFF             [Preliminary implementation] Read GFF to import
+                        structural annotation. Ignores --use_original_name,
+                        --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
   These values are only used to create INSDC submission files and do not
@@ -228,12 +251,19 @@ Genome source modifiers and metadata [advanced]:
 
 Run options:
   --cpu INT             Number of CPUs to use
+  --use_locustag_as_gene_id
+                        Use locustag as gene ID for FASTA and GFF. (Useful
+                        when providing DFAST results to other tools such as
+                        Roary)
+  --dbroot PATH         DB root directory (default:APP_ROOT/db
   --force               Force overwriting output
   --debug               Run in debug mode (Extra logging and retaining
                         temporary files)
   --show_config         Show pipeline configuration and exit
   --version             Show program version
   -h, --help            Show this help message
+
+
 ```
 ## <a id="distribution"></a>Software distribution
 DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](docs/LICENSE)).
@@ -268,8 +298,8 @@ According to the user's report, DFAST fails on ArchLinux due to `libidn-11` requ
     Yasuhiro TANIZAWA, Takatomo FUJISAWA, Eli KAMINUMA, Yasukazu NAKAMURA, and Masanori ARITA  
 * stand-alone version (DFAST-core)  
     DFAST: a flexible prokaryotic genome annotation pipeline for faster genome publication.  
-    *Bioinformatics*. 2017 Nov 2. doi: 10.1093/bioinformatics/btx713 (advance article).  
+    *Bioinformatics*; 2018; 34(6): 1037–1039.  
     Yasuhiro TANIZAWA, Takatomo FUJISAWA, Yasukazu NAKAMURA  
-    https://academic.oup.com/bioinformatics/article-lookup/doi/10.1093/bioinformatics/btx713  
+    https://academic.oup.com/bioinformatics/article/34/6/1037/4587587
 
 

@@ -9,12 +9,21 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 
-def load_config(app_root, config_file):
+def load_config(app_root, config_file, db_root=None):
     logger.info("Running on Python {}.".format(sys.version))
     logger.info("Loading a config file from {}".format(config_file))
 
     config = open(config_file).read()
     config = config.replace("@@APP_ROOT@@", app_root)
+    db_root_env = os.getenv('DFAST_DB_ROOT')
+    if db_root:
+        logger.info("DB_ROOT is specified by a command-line option --dbroot %s", db_root)
+    elif db_root_env:
+        logger.info("DFAST_DB_ROOT is specified [%s]", db_root_env)
+        db_root = db_root_env
+    else:
+        db_root = os.path.join(app_root, "db")
+    config = config.replace("@@DB_ROOT@@", db_root)
     exec(config, globals())  # Config object will be imported
     return Config
 
@@ -178,14 +187,43 @@ def enable_trnascan(config, model):
         if setting.get("tool_name", "") == "Aragorn":
             setting["enabled"] = False
 
-
-def enable_prodigal(config):
+def enable_rnammer(config, model):
+    # model should be arc/bac
+    if model == "bact":
+        model = "bac"
+    elif model == "arch":
+        model = "arc"
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("tool_name", "") == "Prodigal":
+        if setting.get("tool_name", "") == "RNAmmer":
             setting["enabled"] = True
-        if setting.get("tool_name", "") == "MGA":
+            setting["options"]["model"] = model
+        if setting.get("tool_name", "") == "Barrnap":
             setting["enabled"] = False
 
+
+def _select_CDS_prediction_tool(config, tool_name):
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") == "CDS":
+            if setting.get("tool_name", "") == tool_name:
+                setting["enabled"] = True
+            else:
+                setting["enabled"] = False
+
+def enable_prodigal(config):
+    _select_CDS_prediction_tool(config, "Prodigal")
+
+def enable_mga(config):
+    _select_CDS_prediction_tool(config, "MGA")
+
+def enable_genemarks2(config, genome_type):
+    # genome type must be bacteria or archaea
+    if genome_type == "bact":
+        genome_type = "bacteria"
+    elif genome_type == "arch":
+        genome_type = "archaea"
+    _select_CDS_prediction_tool(config, "GeneMarkS2")
+    gms2_config = [conf for conf in config.STRUCTURAL_ANNOTATION if conf["tool_name"] == "GeneMarkS2"][0]
+    gms2_config["options"]["genome_type"] = genome_type
 
 def set_gff(config, gff_file_name):
     targets = []
@@ -206,26 +244,14 @@ def set_genetic_code(config, value):
     if value == 11:
         pass
     else:
-        logger.warning("Genetic code is set to {}. Prodigal will be used for CDS prediction.".format(value))
+        # genetic code 4 can be specified when using Prodigal/GeneMarkS2/Aragorn
+        logger.warning("Genetic code is set to {}.".format(value))
         for setting in config.STRUCTURAL_ANNOTATION:
-            if setting.get("tool_name", "") == "Prodigal":
-                setting["enabled"] = True
-                setting["options"]["transl_table"] = value 
-            if setting.get("tool_name", "") == "MGA":
-                setting["enabled"] = False
-            if setting.get("tool_name", "") == "Aragorn":
-                # setting["enabled"] = True
-                setting["options"]["transl_table"] = value 
-            if setting.get("tool_name", "") == "tRNAscan":
-                pass
-                # setting["enabled"] = False
+            if "transl_table" in setting["options"]:
+                setting["options"]["transl_table"] = value
         for setting in config.FUNCTIONAL_ANNOTATION:
             if setting.get("component_name", "") == "PseudoGeneDetection":
                 setting["options"]["transl_table"] = value
-        #         if value == 4:
-        #             setting["options"]["genetic_code_file"] = setting["options"].get("genetic_code_file", "").replace("transl_table_11.txt", "transl_table_4.txt")
-        #         if value == 25:
-        #             setting["options"]["genetic_code_file"] = setting["options"].get("genetic_code_file", "").replace("transl_table_11.txt", "transl_table_25.txt")
 
 
 

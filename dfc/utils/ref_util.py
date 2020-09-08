@@ -2,9 +2,12 @@
 # coding: UTF8
 
 import os
+import sys
 import re
-from logging import getLogger
+from logging import getLogger, DEBUG, INFO, StreamHandler
 from Bio import SeqIO
+# from .dbfile_util import prepare_ghostx_database
+
 
 logger = getLogger(__name__)
 
@@ -103,27 +106,6 @@ fasta_parsers = {
 }
 
 
-def check_db_file(db_name, aligner):
-    ref_file = db_name + ".ref"
-
-    if not os.path.exists(ref_file):
-        logger.error("Reference file ({}) does not exist. Aborting...".format(ref_file))
-        exit(1)
-    if aligner == "blastp":
-        file_extensions = [".pin", ".phr", ".psq"]
-    elif aligner in ["ghostx", "ghostz"]:
-        file_extensions = [".inf"]
-    elif aligner == "diamond":
-        file_extensions = [".dmnd"]
-    else:
-        file_extensions = []
-    for file_ext in file_extensions:
-        file_name = db_name + file_ext
-        if not os.path.exists(file_name):
-            logger.error("Database file ({}) does not exist. Aborting...".format(file_name))
-            exit(1)
-
-
 def get_source_db(prot_id):
     if "." in prot_id:
         if prot_id[2] == "_":
@@ -136,13 +118,8 @@ def get_source_db(prot_id):
         return ""
 
 
-def read_db_attributes(ref_file_name):
-    '''Read the first line of a reference file'''
-    pat_attribute = re.compile(r"\[(.+?)=(.*?)\]")
-    with open(ref_file_name) as f:
-        line = f.readline().strip()
-    attributes = pat_attribute.findall(line)
-    return dict(attributes)
+
+
 
 
 class RefUtil(object):
@@ -150,8 +127,9 @@ class RefUtil(object):
     def __init__(self):
         pass
 
-    def read_protein_from_gbk(file_name):
-        R = list(SeqIO.parse(open(gbkfile), "genbank"))
+    def read_protein_from_gbk(self, file_name):
+        pass
+        # R = list(SeqIO.parse(open(gbkfile), "genbank"))
 
 if __name__ == '__main__':
     pass

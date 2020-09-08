@@ -12,7 +12,7 @@ from dfc.pipeline import Pipeline
 from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, \
     disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan, disable_rrna_prediction, \
     disable_trna_prediction, disable_cds_prediction, disable_crispr_prediction, set_genetic_code, set_gff, \
-    set_threshold, set_values_from_metadata
+    set_threshold, set_values_from_metadata, enable_mga, enable_genemarks2, enable_rnammer
 from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
@@ -64,9 +64,13 @@ group_workflow = parser.add_argument_group('Workflow options')
 group_workflow.add_argument("--threshold", help='Thresholds for default database search (format: "pident,q_cov,s_cov,e_value", default: "0,75,75,1e-6")', metavar="STR")
 group_workflow.add_argument("--database", help="Additional reference database to be searched against prior to the default database. (format: db_path[,db_name[,pident,q_cov,s_cov,e_value]])", metavar="PATH")
 group_workflow.add_argument("--references", help="Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'", metavar="PATH")
-group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp]", choices=["ghostx", "blastp"], metavar="STR")
-group_workflow.add_argument("--use_prodigal", help="Use Prodigal to predict CDS instead of MGA", action="store_true")
-group_workflow.add_argument("--use_trnascan", help="Use tRNAscan-SE to predict tRNA instead of Aragorn, [bact|arch]", choices=["bact", "arch"], metavar="STR")
+group_workflow.add_argument("--aligner", help="Aligner to use [ghostx(=default)|blastp|diamond]", choices=["ghostx", "blastp", "diamond"], metavar="STR")
+group_genecall = group_workflow.add_mutually_exclusive_group()
+group_genecall.add_argument("--use_prodigal", help="Use Prodigal to predict CDS instead of MGA", action="store_true")
+group_genecall.add_argument("--use_genemarks2", help="Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]", choices=["auto", "bact", "arch", "bacteria", "archaea"], metavar="STR")
+# group_genecall.add_argument("--use_mga", help="Use MetaGeneAnnotator to predict CDS instead of Prodigal", action="store_true")
+group_workflow.add_argument("--use_trnascan", help="Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]", choices=["bac", "bact", "arc", "arch"], metavar="STR")
+group_workflow.add_argument("--use_rnammer", help="Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]", choices=["bact", "arch"], metavar="STR")
 group_workflow.add_argument("--gcode", help="Genetic code [11(=default),4(=Mycoplasma)]", metavar="INT", type=int, default=11)
 group_workflow.add_argument("--no_hmm", help="Disable HMMscan", action="store_true")
 group_workflow.add_argument("--no_cdd", help="Disable CDDsearch", action="store_true")
@@ -90,6 +94,8 @@ group_source.add_argument("--center_name", help="Genome center name (optional fo
 
 group_run = parser.add_argument_group('Run options')
 group_run.add_argument("--cpu", help="Number of CPUs to use", type=int, metavar="INT")
+group_run.add_argument("--use_locustag_as_gene_id", help="Use locustag as gene ID for FASTA and GFF. (Useful when providing DFAST results to other tools such as Roary)", action="store_true")
+group_run.add_argument("--dbroot", help="DB root directory (default:APP_ROOT/db", type=str, metavar="PATH")
 group_run.add_argument("--force", help="Force overwriting output", action="store_true")
 group_run.add_argument("--debug", help="Run in debug mode (Extra logging and retaining temporary files)", action="store_true")
 group_run.add_argument("--show_config", help="Show pipeline configuration and exit", action="store_true")
@@ -114,7 +120,7 @@ logger.setLevel(DEBUG)
 
 if args.help:
     parser.print_help()
-    exit()
+    exit(1)
 
 app_root = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
@@ -123,7 +129,7 @@ if app_root == "":
 
 # loading config file
 config_file = args.config or os.path.join(app_root, "dfc/default_config.py")
-config = load_config(app_root, config_file)
+config = load_config(app_root, config_file, args.dbroot)
 
 if args.debug:  # --debug
     config.DEBUG = True
@@ -208,16 +214,24 @@ if args.no_crispr:  # --no_crispr
     disable_crispr_prediction(config)
 
 if args.gcode != 11:
-    set_genetic_code(config, args.gcode)    
-    # if gcode is set to the value other than 11, prodigal and aragorn will be used.
-    args.use_prodigal = False  # ignore --use_prodigal option
-    # args.use_trnascan = False  # ignore --use_trnascan option
+    if not (args.use_prodigal or args.use_genemarks2):
+        logger.error("'--gcode 4' cannot be specified when using MGA. Please set '--use_prodigal' or '--use_genemarks2'")
+        exit(1)
+    set_genetic_code(config, args.gcode)
 
 if args.use_prodigal:  # --use_prodigal
     enable_prodigal(config)
+if args.use_genemarks2: # --use_genemarks2
+    enable_genemarks2(config, args.use_genemarks2)
+
+# if args.use_mga:
+#     enable_mga(config)
     
 if args.use_trnascan:  # --use_trnascan
     enable_trnascan(config, args.use_trnascan)
+
+if args.use_rnammer:  # --use_trnascan
+    enable_rnammer(config, args.use_rnammer)
 
 if args.no_hmm:  # --no_hmm
     disable_hmm_scan(config)
@@ -248,6 +262,9 @@ if args.additional_modifiers:  # --additional_modifiers
 
 if args.center_name:  # --center_name
     config.GENBANK_SUBMISSION["center_name"] = args.center_name
+
+if args.use_locustag_as_gene_id:
+    config.OUTPUT_RESULT["use_locustag_as_gene_id"] = True
 
 if args.show_config:
     show_config(config)

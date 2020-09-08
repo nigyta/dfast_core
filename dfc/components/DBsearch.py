@@ -5,7 +5,7 @@ import os
 from .baseComponent import BaseAnnotationComponent
 from ..models.protein import Protein
 from ..models.hit import ProteinHit
-from ..utils.ref_util import check_db_file, read_db_attributes
+from ..utils.reffile_util import check_db_file, read_db_attributes
 
 class DBsearch(BaseAnnotationComponent):
     instances = 0
