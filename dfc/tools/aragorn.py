@@ -78,6 +78,10 @@ class Aragorn(StructuralAnnotationTool):
         i = 0
         for sequence, product, left, right, strand, anticodon, anticodon_position in _parseResult():
             seq_length = dict_length[sequence]
+            if product == "tmRNA*":
+                self.logger.warn("Skipped 'tmRNA*' {} at {}:{}..{}({}).".format(product, sequence, left, right, strand))
+                continue
+
             if product == "tRNA-???":
                 self.logger.warn("Skipped an ambiguous {} at {}:{}..{}({}).".format(product, sequence, left, right, strand))
                 continue
