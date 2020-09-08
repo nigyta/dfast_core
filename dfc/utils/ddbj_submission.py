@@ -6,6 +6,7 @@ import os
 from logging import getLogger
 from copy import deepcopy
 from Bio import SeqIO
+from Bio.SeqFeature import BeforePosition, AfterPosition
 from dfc.genome import Genome
 from dfc.utils.metadata_util import Metadata
 from dfc import dfast_version
@@ -68,16 +69,20 @@ class DDBJsubmission(object):
 
 
 def get_location_string(location):
-    start = location.start + 1
-    end = location.end
-    before = "<" if "<" in str(location.start) else ""
-    after = ">" if ">" in str(location.end) else ""
 
-    if location.strand == 1:
-        return "{0}{1}..{2}{3}".format(before, start, after, end)
-    elif location.strand == -1:
-        return "complement({0}{1}..{2}{3})".format(before, start, after, end)
+    # modified because str(location) was changed because of biopython updates
+    # May need further revision
+    # before = "<" if "<" in str(location.start) else ""
+    # after = ">" if ">" in str(location.end) else ""
+    before = "<" if isinstance(location.start, BeforePosition) else ""
+    after = ">" if isinstance(location.end, AfterPosition) else ""
+    # if before or after:
+    #     print("DEBUG", str(location.start), str(location.end))
 
+    location_string = "{0}{1}..{2}{3}".format(before, int(location.start) + 1, after, int(location.end))
+    if location.strand == -1:
+        location_string = "complement({})".format(location_string)
+    return location_string
 
 def qualifier_to_table(qualifiers, key):
     ret = []
