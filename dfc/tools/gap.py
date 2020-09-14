@@ -4,7 +4,11 @@
 import re
 from Bio.SeqFeature import FeatureLocation
 from Bio import SeqIO
-from Bio.Alphabet import IUPAC
+# Compatible with both pre- and post Biopython 1.78:
+try:
+    from Bio.Alphabet import generic_dna
+except ImportError:
+    generic_dna = None
 from .base_tools import StructuralAnnotationTool
 from ..models.bio_feature import ExtendedFeature
 
@@ -47,7 +51,12 @@ class GAP(StructuralAnnotationTool):
     def run(self):
         def _generateGapFeature(genomeFasta):
             i = 0
-            for record in SeqIO.parse(open(self.genomeFasta), "fasta", IUPAC.ambiguous_dna):
+            # Compatible with both pre- and post Biopython 1.78:
+            if generic_dna:
+                records = SeqIO.parse(open(genomeFasta), "fasta", generic_dna)
+            else:
+                records = SeqIO.parse(open(genomeFasta), "fasta")
+            for record in records:
                 startPosition = 0
                 seq = str(record.seq).upper()
                 pat = "(" + "N" * self.len_cutoff + "+)"

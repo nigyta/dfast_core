@@ -11,7 +11,6 @@ import pickle
 from copy import deepcopy
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition, BeforePosition, AfterPosition
-from Bio.Alphabet import IUPAC
 from ...models.bio_feature import ExtendedFeature
 from ...genome import Genome
 logger = getLogger(__name__)

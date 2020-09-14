@@ -11,7 +11,11 @@ import pickle
 from copy import deepcopy
 from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition, BeforePosition, AfterPosition
-from Bio.Alphabet import IUPAC
+# Compatible with both pre- and post Biopython 1.78:
+try:
+    from Bio.Alphabet import generic_dna
+except ImportError:
+    generic_dna = None
 from .models.bio_feature import ExtendedFeature
 logger = getLogger(__name__)
 
@@ -68,7 +72,11 @@ class Genome(object):
         use_original_name = config.GENOME_CONFIG.get("use_original_name", False)
         sort_sequence = config.GENOME_CONFIG.get("sort_sequence", True)
         minimum_length = config.GENOME_CONFIG.get("minimum_length", 0)
-        R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta", IUPAC.ambiguous_dna)]
+        # Compatible with both pre- and post Biopython 1.78:
+        if generic_dna:
+            R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta", generic_dna)]
+        else:
+            R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta")]
 
         # trim leading/trailing Ns
         for r in R:
@@ -163,7 +171,7 @@ class Genome(object):
                 annotations = {
                     "organism": self.organism, "source": source, "strain": self.strain,
                     "complete": self.complete, "date": today, "topology": seq_topology,
-                    "data_file_division": "BCT",
+                    "data_file_division": "BCT", "molecule_type": "DNA",
                     # "sequence_version": 1, "data_file_division": "BCT",
                     # "taxonomy":['Eukaryota', 'Viridiplantae', 'Streptophyta', 'Embryophyta', 'Paphiopedilum'],
                 }
@@ -175,7 +183,8 @@ class Genome(object):
             for i, record in enumerate(self.seq_records.values()):
                 record.annotations = {
                     "date": today, "data_file_division": "BCT", "topology": "linear",
-                    "organism": self.organism, "source": source, "strain": self.strain, "complete": self.complete
+                    "organism": self.organism, "source": source, "strain": self.strain, "complete": self.complete,
+                    "molecule_type": "DNA"
                 }
 
     # def load_metadata(self, config):
