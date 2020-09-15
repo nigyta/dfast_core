@@ -81,6 +81,8 @@ class Genome(object):
         # trim leading/trailing Ns
         for r in R:
             r.seq = r.seq.upper()
+            if r.seq.endswith("/"):
+                r.seq = r.seq.strip("//")
             if r.seq.startswith("N") or r.seq.endswith("N"):
                 length_original = len(r.seq)
                 r.seq = r.seq.strip("N")
