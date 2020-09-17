@@ -38,7 +38,7 @@ class Aragorn(StructuralAnnotationTool):
 
     def getCommand(self):
         """
-        "aragorn -l -gc$gcode $aragorn_opt -w \Q$outdir/$prefix.fna\E"; # -t/-m
+        "aragorn -l -gc gcode $aragorn_opt -w -o $outdir/$prefix.fna"; # -t/-m
         -l : for linear sequence,  -c : for circular sequence
         """
         cmd = ["aragorn", self.gcode, self.cmd_options, "-gc" + str(self.transl_table), "-w", "-o", self.outputFile, self.genomeFasta]
@@ -79,12 +79,15 @@ class Aragorn(StructuralAnnotationTool):
         for sequence, product, left, right, strand, anticodon, anticodon_position in _parseResult():
             seq_length = dict_length[sequence]
             if product == "tmRNA*":
-                self.logger.warn("Skipped 'tmRNA*' {} at {}:{}..{}({}).".format(product, sequence, left, right, strand))
+                self.logger.warn("Skipped 'tmRNA*' at {}:{}..{}({}).".format(sequence, left, right, strand))
+                continue
+            elif product == "tRNA-Stop":
+                self.logger.warn("Skipped 'tRNA-Stop' at {}:{}..{}({}).".format(sequence, left, right, strand))
+                continue
+            elif product == "tRNA-???":
+                self.logger.warn("Skipped an ambiguous '{}'' at {}:{}..{}({}).".format(product, sequence, left, right, strand))
                 continue
 
-            if product == "tRNA-???":
-                self.logger.warn("Skipped an ambiguous {} at {}:{}..{}({}).".format(product, sequence, left, right, strand))
-                continue
             if int(left) < 1:
                 left = 1
                 location = self.getLocation(left, right, strand, partial_flag="10")
