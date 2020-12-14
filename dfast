@@ -214,9 +214,10 @@ if args.no_crispr:  # --no_crispr
     disable_crispr_prediction(config)
 
 if args.gcode != 11:
-    if not (args.use_prodigal or args.use_genemarks2):
-        logger.error("'--gcode 4' cannot be specified when using MGA. Please set '--use_prodigal' or '--use_genemarks2'")
-        exit(1)
+    # As of ver 1.2.11, gcode 4 become available when using MGA
+    # if not (args.use_prodigal or args.use_genemarks2):
+    #     logger.error("'--gcode 4' cannot be specified when using MGA. Please set '--use_prodigal' or '--use_genemarks2'")
+    #     exit(1)
     set_genetic_code(config, args.gcode)
 
 if args.use_prodigal:  # --use_prodigal

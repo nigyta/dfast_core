@@ -24,9 +24,13 @@ class MGA(StructuralAnnotationTool):
     SHELL = True  # Run through shell
 
     def __init__(self, options=None, workDir="OUT"):
-        super(MGA, self).__init__(options, workDir)
         self.transl_table = options.get("transl_table", 11)  # MGA always uses transl_table = 11
         self.cmd_options = options.get("cmd_options", "-s")  # -s for single species, -m for multiple species
+        if self.transl_table == 4:
+            self.binary_name = "mga_4"
+        else:
+            self.binary_name = "mga"
+        super(MGA, self).__init__(options, workDir)
 
     def setVersion(self):
         """
@@ -35,7 +39,7 @@ class MGA(StructuralAnnotationTool):
         """
         version = "2008/08/19"
         self.logger.info("Checking {0}... ".format(self.__class__.NAME))
-        out, err = self.executeCommand(["mga 2>&1"], shell=True)
+        out, err = self.executeCommand([self.binary_name + " 2>&1"], shell=True)
         if out.decode("utf-8").startswith("usage: mga"):
             self.__class__.version = version
             self.logger.info("{self.__class__.NAME} initialized. (Version {self.__class__.version})".format(self=self))
@@ -45,7 +49,7 @@ class MGA(StructuralAnnotationTool):
 
     def getCommand(self):
         """mga -s testDir/INPUT/genome.fna"""
-        cmd = ["mga", self.cmd_options, self.genomeFasta, ">", self.outputFile]
+        cmd = [self.binary_name, self.cmd_options, self.genomeFasta, ">", self.outputFile]
         return cmd
 
     def getFeatures(self):

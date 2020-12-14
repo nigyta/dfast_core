@@ -246,6 +246,8 @@ def set_genetic_code(config, value):
     else:
         # genetic code 4 can be specified when using Prodigal/GeneMarkS2/Aragorn
         logger.warning("Genetic code is set to {}.".format(value))
+        logger.warning("Prodigal (--use_prodigal), GeneMarkS2 (--use_genemarks2), or customized binary of MGA is required.")
+
         for setting in config.STRUCTURAL_ANNOTATION:
             if "transl_table" in setting["options"]:
                 setting["options"]["transl_table"] = value

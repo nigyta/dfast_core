@@ -114,7 +114,7 @@ class Config:
             "tool_name": "MGA",
             "target": "CDS",
             "enabled": True,
-            "options": {"cmd_options": "-s"},  # -s for single species, -m for multiple species
+            "options": {"cmd_options": "-s", "transl_table": 11},  # -s for single species, -m for multiple species
         },
         {
             # Aragorn for tRNA and tmRNA prediction
