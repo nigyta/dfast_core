@@ -3,15 +3,18 @@ FROM python:3.8.2
 # 環境変数の設定
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV INFERNAL_NCPU 1
 
 # Create working directory
-RUN mkdir /work
+RUN mkdir /work && chmod 777 /work 
 
 # Install dependency
 RUN pip install biopython && \
     apt-get update && \
     apt install -y default-jre zip prodigal infernal && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
+    ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* 
 
 # Install dfast_core
 RUN cd / && \
@@ -26,7 +29,7 @@ RUN cd /tmp  && \
 	cd tRNAscan-SE-2.0.6 && \
 	./configure && make && make install && \
     cd .. && \
-	rm -r /tmp/tRNAscan-SE-2.0.6 && \
+	rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
 	cd /work
 
 # Prepare reference data (currently disabled)
