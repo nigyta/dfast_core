@@ -53,6 +53,8 @@ hmm_urls = {
     "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
+cdd_url = "https://ftp.ncbi.nlm.nih.gov//pub/mmdb/cdd/little_endian/DBNAME_LE.tar.gz"
+
 description = """\
 DFAST file downloader\n\
 
@@ -114,8 +116,8 @@ def retrieve_hmm(db_name, out_dir="."):
     logger.info("\tDownloading {}".format(target_url))
     return output_file
 
-
-def retrieve_cdd(db_name, out_dir="."):
+# deprecated
+def retrieve_cdd_ftp(db_name, out_dir="."):
     ftp = FTP(host=ncbi_ftp_server)
     logger.info("\tLogging in to the FTP server. {}".format(ncbi_ftp_server + cdd_directory))
     ftp.login()
@@ -127,6 +129,14 @@ def retrieve_cdd(db_name, out_dir="."):
     with open(output_file, "wb") as f:
         ftp.retrbinary("RETR " + cdd_directory + target_file, f.write)
     ftp.quit()
+    return output_file
+
+def retrieve_cdd(db_name, out_dir="."):
+    target_url = cdd_url.replace("DBNAME", db_name)
+    target_file = os.path.basename(target_url)
+    output_file = os.path.join(out_dir, target_file)
+    request.urlretrieve(target_url, output_file)
+    logger.info("\tDownloading {}".format(target_url))
     return output_file
 
 def retrieve_assembly(accession, out_dir="."):
