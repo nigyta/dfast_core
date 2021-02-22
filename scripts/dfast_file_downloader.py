@@ -37,7 +37,7 @@ app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file_
 
 ncbi_ftp_server = "ftp.ncbi.nlm.nih.gov"
 cdd_directory = "/pub/mmdb/cdd/little_endian/"
-host_dfast = "https://dfast.nig.ac.jp"
+host_dfast = "https://dfast.ddbj.nig.ac.jp"
 
 db_urls = {
     "dfast": host_dfast + "/dfc/distribution/DFAST-default.ref.gz",
