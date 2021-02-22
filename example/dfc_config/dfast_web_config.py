@@ -16,7 +16,8 @@ class Config:
     GENOME_FASTA = None  # Normally this value is left None, can be specified by -g or --genome option
     WORK_DIR = "OUT"  # Overridden by --out or -o option 
 
-    CPU = min(max(int(multiprocessing.cpu_count() / 2), 1), 4)  # Number of CPUs to use. Default: Half of the number of processor cores.
+    CPU = 3
+    # CPU = min(max(int(multiprocessing.cpu_count() / 2), 1), 4)  # Number of CPUs to use. Default: Half of the number of processor cores.
     # Note that this is the global setting of CPU. You can also set different numbers of CPUs to each functional annotation processes. 
 
     FORCE_OVERWRITE = False  # Overridden to True by specifying --force option. 
@@ -220,7 +221,7 @@ class Config:
             "component_name": "DBsearch",
             "enabled": False,
             "options": {
-                "cpu": 1,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 3,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
@@ -238,7 +239,7 @@ class Config:
             "enabled": True,
             "default": True,
             "options": {
-                "cpu": 1,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 3,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
@@ -289,7 +290,7 @@ class Config:
             "component_name": "HMMscan",
             "enabled": True,
             "options": {
-                "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 3,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "@@DB_ROOT@@/hmm/TIGRFAMs_15.0_HMM.LIB",
@@ -314,7 +315,7 @@ class Config:
             "component_name": "CDDsearch",
             "enabled": True,
             "options": {
-                "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "cpu": 3,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "@@DB_ROOT@@/cdd/Cog",
