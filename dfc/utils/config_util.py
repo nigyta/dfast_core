@@ -225,6 +225,24 @@ def enable_genemarks2(config, genome_type):
     gms2_config = [conf for conf in config.STRUCTURAL_ANNOTATION if conf["tool_name"] == "GeneMarkS2"][0]
     gms2_config["options"]["genome_type"] = genome_type
 
+def disable_func_annotation(config):
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        setting["enabled"] = False
+
+def enable_metagenome_mode(config):
+    logger.info("Metagenome mode is enabled.")
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") == "CDS":
+            tool_name = setting.get("tool_name", "")
+            if tool_name == "MGA":
+                if setting.get("enabled"):
+                    logger.info("MGA will be invoked with '-m' option (for multiple species).")
+                setting["options"]["cmd_options"] = "-m"
+            if tool_name == "Prodigal":
+                if setting.get("enabled"):
+                    logger.info("Prodigal will be invoked with '-p meta' option.")
+                setting["options"]["cmd_options"] = "-p meta"
+
 def set_gff(config, gff_file_name):
     targets = []
     for setting in config.STRUCTURAL_ANNOTATION:
