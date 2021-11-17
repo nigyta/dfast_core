@@ -181,7 +181,7 @@ class Config:
             "enabled": False,
             "options": {
                 "transl_table": 11,
-                "cmd_options": "",
+                "cmd_options": "",  # -p meta for metagenome contigs
             },
         },
         {

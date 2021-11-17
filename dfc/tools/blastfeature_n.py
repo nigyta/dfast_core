@@ -40,8 +40,8 @@ class BlastFeatureN(StructuralAnnotationTool):
 
     def get_aln_command(self, query_file, db_name, result_file):
         outfmt = "'6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen'"
-        return ["blastn", "-query", query_file, "-db", db_name, "-out", result_file,
-                "-outfmt", outfmt, "-num_alignments 1 -max_hsps 1"]
+        return ["blastn", "-task", "blastn", "-query", query_file, "-db", db_name, "-out", result_file,
+                "-outfmt", outfmt, "-num_alignments 10 -max_hsps 5"]
 
 
 
@@ -176,7 +176,12 @@ def add_translation_qualifier(dict_features, dict_query_genome):
         for feature in features:
             # todo: add transl_table
             if feature.type == "CDS":
-                translation = feature.translate(seq_record.seq)
+                # translation = feature.translate(seq_record.seq)
+                print(len(feature.location))
+                if len(feature.location) % 3 == 0:
+                    translation = feature.translate(seq_record.seq)
+                else:
+                    translation = feature.translate(seq_record.seq, cds=False, to_stop=False)
                 feature.qualifiers["translation"] = [translation]
 
 

@@ -10,6 +10,8 @@ from Bio.SeqFeature import BeforePosition, AfterPosition
 from dfc.genome import Genome
 from dfc.utils.metadata_util import Metadata
 from dfc import dfast_version
+from Bio.SeqIO.InsdcIO import _insdc_location_string
+
 
 class DDBJsubmission(object):
 
@@ -68,16 +70,10 @@ class DDBJsubmission(object):
             self.logger.warning("'Generate DDBJ Submission file' is disabled. Skip processing")
 
 
+# deprecated as replaced by _insdc_location_string.
 def get_location_string(location):
-
-    # modified because str(location) was changed because of biopython updates
-    # May need further revision
-    # before = "<" if "<" in str(location.start) else ""
-    # after = ">" if ">" in str(location.end) else ""
     before = "<" if isinstance(location.start, BeforePosition) else ""
     after = ">" if isinstance(location.end, AfterPosition) else ""
-    # if before or after:
-    #     print("DEBUG", str(location.start), str(location.end))
 
     location_string = "{0}{1}..{2}{3}".format(before, int(location.start) + 1, after, int(location.end))
     if location.strand == -1:
@@ -91,9 +87,10 @@ def qualifier_to_table(qualifiers, key):
     return ret
 
 
-def feature_to_table(feature):
+def feature_to_table(feature, rec_length):
     ret = []
-    location_string = get_location_string(feature.location)
+    # location_string = get_location_string(feature.location)
+    location_string = _insdc_location_string(feature.location, rec_length)
     for key in feature.qualifiers:
         if key == "translation":
             continue  # translation is not required for MSS
@@ -103,14 +100,17 @@ def feature_to_table(feature):
             value = feature.qualifiers[key][0]
             feature.qualifiers[key][0] = value.replace("complement(", "").replace("),", ",")
         ret += qualifier_to_table(feature.qualifiers, key)
+    if not ret:
+        ret.append(["", "", "", "", ""])  # add emtpty line
     ret[0][1] = feature.type
     ret[0][2] = location_string
     return ret
 
 
-def source_feature_to_table(feature, record, seq_rank):
+def source_feature_to_table(feature, record, seq_rank, rec_length):
     ret = []
-    location_string = get_location_string(feature.location)
+    # location_string = get_location_string(feature.location)
+    location_string = _insdc_location_string(feature.location, rec_length)
     for key in feature.qualifiers:
         ret += qualifier_to_table(feature.qualifiers, key)
     topology = record.annotations.get("topology", "linear")
@@ -171,14 +171,15 @@ def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, ver
     ann_buffer = metadata.render_common_entry(dfast_version=dfast_version, complete=genome.complete)
     fasta_buffer = ""
     for record in R:
+        rec_length = len(record)
         entry_buffer = []
         for feature in record.features:
             feature.assign_hit(verbosity=verbosity)
             if feature.type == "source":
-                entry_buffer += source_feature_to_table(feature, record, seq_rank)
+                entry_buffer += source_feature_to_table(feature, record, seq_rank, rec_length)
                 # entry_buffer.append(create_ff_definiton(genome, seq_rank))
             else:
-                entry_buffer += feature_to_table(feature)
+                entry_buffer += feature_to_table(feature, rec_length)
         entry_buffer[0][0] = record.name
         ann_buffer += entry_buffer
         fasta_buffer += record_to_fasta(record)

@@ -175,7 +175,7 @@ By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be use
 ```  
 usage: dfast -g your_genome.fna [options]
 
-DFAST: DDBJ Fast Annotation and Submission Tool version 1.2.7.
+DFAST: DDBJ Fast Annotation and Submission Tool version 1.2.14.
 
 Basic options:
   -g PATH, --genome PATH
@@ -219,16 +219,21 @@ Workflow options:
                         multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp|diamond]
   --use_prodigal        Use Prodigal to predict CDS instead of MGA
-  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
-  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
-  --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
+  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA.
+                        [auto|bact|arch]
+  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn.
+                        [bact|arch]
+  --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap.
+                        [bact|arch]
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
+  --no_func_anno        Disable all functional annotation steps
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
   --no_cds              Disable CDS prediction
   --no_rrna             Disable rRNA prediction
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
+  --metagenome          Set options of MGA/Prodigal for metagenome contigs
   --gff GFF             [Preliminary implementation] Read GFF to import
                         structural annotation. Ignores --use_original_name,
                         --sort_sequence, --fix_origin.
@@ -262,8 +267,6 @@ Run options:
   --show_config         Show pipeline configuration and exit
   --version             Show program version
   -h, --help            Show this help message
-
-
 ```
 ## <a id="distribution"></a>Software distribution
 DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](docs/LICENSE)).

@@ -75,7 +75,9 @@ class Config:
 
     DDBJ_SUBMISSION = {
         "enabled": True,
-        "output_verbosity": 1,
+
+        "output_verbosity": 3,
+
         "metadata_file": None
     }
 

@@ -18,6 +18,7 @@ from .tools.genemarkS2 import GeneMarkS2
 from .tools.tRNAscan import tRNAscan
 from .tools.rnammer import RNAmmer
 from .tools.gff_importer import GFFimporter
+from .tools.blastfeature_n import BlastFeatureN
 
 TOOLS = {
     "GAP": GAP,
@@ -31,6 +32,7 @@ TOOLS = {
     "tRNAscan": tRNAscan,
     "RNAmmer": RNAmmer,
     "GFF_import": GFFimporter,
+    "BlastFeatureN": BlastFeatureN
 }
 
 
