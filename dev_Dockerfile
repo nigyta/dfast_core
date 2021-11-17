@@ -1,0 +1,28 @@
+FROM python:3.8.2
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+# 配置ディレクトリを作成
+
+
+
+RUN pip install biopython
+# ADD . /code
+# dfast_core インストール
+RUN apt-get update && \
+    apt install -y default-jre zip prodigal && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    mkdir /code
+
+# install trnascan-se
+RUN cd /tmp  && \
+	curl -LO http://trna.ucsc.edu/software/trnascan-se-2.0.5.tar.gz && \
+	tar xvfz trnascan-se-2.0.5.tar.gz  && \
+	cd tRNAscan-SE-2.0/ && \
+	./configure && make && make install && \
+	rm -r /tmp/tRNAscan-SE-2.0 && \
+	cd /code
+
+WORKDIR /code
+
+CMD /bin/bash
