@@ -182,19 +182,20 @@ cog_categories = {
 class PseudoGene(Hit):
 
 
-    def __init__(self, stop_codon, insertion, deletion):
+    def __init__(self, ref_id, stop_codon, insertion, deletion):
         """
         :param stop_codons: set of (stopcodon_start, stopcodon_end, strand)
         :param insertion: set of insertion location
         :param deletion: set of deletion location
         """
+        self.ref_id = ref_id
         self.stop_codon = stop_codon
         self.insertion = insertion
         self.deletion = deletion
 
     def __repr__(self):
-        return "{hmm.db_name}:{hmm.accession}; {hmm.description} [Name:{hmm.name}, Eval:{hmm.evalue:.1e}, score:{hmm.score:.1f}, bias:{hmm.bias:.1f}]".format(
-            hmm=self)
+        return "<PseudoGene: Ref:{pseudogene.ref_id} in-frame stop:{pseudogene.stop_codon} insertion:{pseudogene.insertion} deletion:{pseudogene.deletion}>".format(
+            pseudogene=self)
 
     def assign(self, feature, verbosity=2):
         self.assign_as_note(feature, verbosity=verbosity)

@@ -235,7 +235,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 if not (query_alignment.id, ref_alignment.id) in self.candidates:
                     continue
                 tmp_dict = all_results.setdefault(
-                    query_alignment.id, {"insertion": set(), "deletion": set(), "stop_codon": set(), "transl_except": None})
+                    query_alignment.id, {"ref_id": ref_alignment.id, "insertion": set(), "deletion": set(), "stop_codon": set(), "transl_except": None})
                 D = self.scan_alignment(query_alignment, ref_alignment)
 
                 query = self.query_sequences[query_alignment.id]
@@ -277,7 +277,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
         pseudo_count = 0
         for feature_id, result in all_results.items():
             feature = self.genome.features[feature_id]
-            pseudo_gene = PseudoGene(result["stop_codon"], result["insertion"], result["deletion"])
+            pseudo_gene = PseudoGene(result["ref_id"], result["stop_codon"], result["insertion"], result["deletion"])
             feature.secondary_hits.append(pseudo_gene)
             if len(result["stop_codon"]) > 0:
                 pseudo_count += 1
@@ -314,7 +314,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 elif feature.location.end < stop_codon_location.start:
                     other_idx = my_idx + 1
                 else:
-                    self.logger.warning("Stop codon was found outside of the CDS Skip processing."
+                    self.logger.warning("Stop codon was found outside of the CDS, Skip processing."
                       + "CDS:{0} Location:{1}, Stop codon:{2}".format(feature_id, feature.location, stop_codon_location))
                     return None
             return feature_list[min(my_idx, other_idx)], feature_list[max(my_idx, other_idx)]

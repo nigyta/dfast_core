@@ -16,7 +16,7 @@ from dfc.utils.ddbj_submission import DDBJsubmission
 from dfc.utils.genbank_submission import GenBankSubmission
 from dfc.utils.genome_stat import GenomeStat
 from dfc import dfast_version
-
+from dfc.utils.summarize_pseudo import summarize_pseudo
 
 class Pipeline():
     def __init__(self, config, logger):
@@ -60,7 +60,8 @@ class Pipeline():
         GenomeStat.execute(self.genome)
         self.ddbj.create_submission_file()
         self.genbank.create_submission_file()
-
+        summarize_pseudo(self.genome, os.path.join(self.config.WORK_DIR, "pseudogene_summary.tsv"))
+        
         if self.config.DEBUG:
             self.genome.to_pickle(os.path.join(self.config.WORK_DIR, "genome.pickle"))
         
