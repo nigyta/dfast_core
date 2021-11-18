@@ -171,6 +171,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                     yield score, eg2, evalue, ref_alignment, query_alignment
 
     def scan_alignment(self, alignment, ref_alignment):
+        """ read the lastal result file and search for insertion/deletion/stop_codons"""
 
         def _to_abs(pos, query):
             """convert relative position to absolute position"""
@@ -223,6 +224,14 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 pos += 3
             else:
                 pos += 3
+
+        # Ignore transl_except when insertion/deletion/stop_cond was found in the same alignment
+        if D["transl_except"] and (D["deletion"] or D["insertion"] or D["stop_codon"]):
+            abs_start, abs_end, strand, aa, stop_codon_location = D["transl_except"]
+            self.logger.warning("Ignore transl_except candidate for {0} found in {1} [{2}..{3}({4})] because of insertion/deletion/stop_codon found in the same alingment.".format(
+                        aa, alignment.id, abs_start + 1, abs_end, strand))
+            D["transl_except"] = None
+
         return D
 
     def find_pseudo(self):
