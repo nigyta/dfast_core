@@ -16,13 +16,6 @@ RUN pip install biopython && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
     apt-get clean && rm -rf /var/lib/apt/lists/* 
 
-# Install dfast_core
-RUN cd / && \
-    git clone https://github.com/nigyta/dfast_core && \
-    ln -s /dfast_core/dfast /usr/local/bin/ && \
-    ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
-    ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/
-
 RUN cd /tmp  && \
 	curl -LO https://github.com/UCSC-LoweLab/tRNAscan-SE/archive/v2.0.6.tar.gz && \
 	tar xfz v2.0.6.tar.gz && \
@@ -31,6 +24,14 @@ RUN cd /tmp  && \
     cd .. && \
 	rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
 	cd /work
+
+
+# Install dfast_core
+RUN cd / && \
+    git clone https://github.com/nigyta/dfast_core && \
+    ln -s /dfast_core/dfast /usr/local/bin/ && \
+    ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
+    ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
