@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # coding: UTF8
 
 import os
@@ -29,7 +29,9 @@ def check_db_file(db_name, aligner):
     if aligner == "blastp":
         file_ext = ".pin"
         file_name = db_name + file_ext
-        if not os.path.exists(file_name):
+        file_ext_pal = ".pal"
+        file_name_pal = db_name + file_ext_pal
+        if not (os.path.exists(file_name) or os.path.exists(file_name_pal)):
             logger.warning("BLAST index files do not exist.")
             prepare_blast_database(ref_file)
     elif aligner == "ghostx":
