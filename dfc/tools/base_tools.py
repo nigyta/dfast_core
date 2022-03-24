@@ -70,8 +70,7 @@ class Tool(object):
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, shell=shell)
         out, err = p.communicate()
-        # self.logger.debug(out)
-        if err:
+        if p.returncode != 0 and err:
             self.logger.error("Process aborted due to an error in {self.__class__.__name__}.".format(self=self))
             self.logger.error(err.decode("utf8"))
             exit(1)
