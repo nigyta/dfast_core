@@ -182,7 +182,7 @@ cog_categories = {
 class PseudoGene(Hit):
 
 
-    def __init__(self, ref_id, stop_codon, insertion, deletion):
+    def __init__(self, ref_id, stop_codon, indel):
         """
         :param stop_codons: set of (stopcodon_start, stopcodon_end, strand)
         :param insertion: set of insertion location
@@ -190,11 +190,13 @@ class PseudoGene(Hit):
         """
         self.ref_id = ref_id
         self.stop_codon = stop_codon
-        self.insertion = insertion
-        self.deletion = deletion
+        # As of 1.2.16, insertion and deletion are integrated as indel
+        self.indel = indel
+        # self.insertion = insertion
+        # self.deletion = deletion
 
     def __repr__(self):
-        return "<PseudoGene: Ref:{pseudogene.ref_id} in-frame stop:{pseudogene.stop_codon} insertion:{pseudogene.insertion} deletion:{pseudogene.deletion}>".format(
+        return "<PseudoGene: Ref:{pseudogene.ref_id} in-frame stop:{pseudogene.stop_codon} indel:{pseudogene.indel}>".format(
             pseudogene=self)
 
     def assign(self, feature, verbosity=2):
@@ -202,11 +204,11 @@ class PseudoGene(Hit):
 
     def assign_as_note(self, feature, verbosity=2):
         if verbosity == 1:
-            if len(self.stop_codon) > 0 or len(self.insertion) > 0 or len(self.deletion) > 0:
+            if len(self.stop_codon) > 0 or len(self.indel) > 0:
                 note = "possible pseudo"
                 if len(self.stop_codon) > 0:
                     note += ", internal stop codon"
-                if len(self.insertion) > 0 or len(self.deletion) > 0:
+                if len(self.indel) > 0:
                     note += ", frameshifted"
                 feature.qualifiers.setdefault("note", []).append(note)
 
@@ -216,12 +218,13 @@ class PseudoGene(Hit):
                 stop_codons = sorted(list(stop_codons))
                 note = "internal stop codon at " + ",".join(stop_codons)
                 feature.qualifiers.setdefault("note", []).append(note)
-            if len(self.insertion) > 0 or len(self.deletion) > 0:
+            if len(self.indel) > 0:
                 note = "frameshifted"
-                if len(self.insertion) > 0:
-                    note += ", insertion at around " + ",".join(map(str, self.insertion))
-                if len(self.deletion) > 0:
-                    note += ", deletion at around " + ",".join(map(str, self.deletion))
+                note += ", insertion/deletion at around " + ",".join(map(str, self.indel))
+                # if len(self.insertion) > 0:
+                #     note += ", insertion at around " + ",".join(map(str, self.insertion))
+                # if len(self.deletion) > 0:
+                #     note += ", deletion at around " + ",".join(map(str, self.deletion))
                 feature.qualifiers.setdefault("note", []).append(note)
 
 

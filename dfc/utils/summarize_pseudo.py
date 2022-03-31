@@ -1,6 +1,6 @@
 from dfc.models.hit import ProteinHit, PseudoGene
 
-header = ["# locus_id", "locus_tag", "location", "classification", "internal_stop", "insertion", "deletion",
+header = ["# locus_id", "locus_tag", "location", "classification", "internal_stop", "indel",
           "ref_id", "description", "query_cov", "ref_cov", "identity"]
 
 def summarize_pseudo(genome, output_file):
@@ -28,11 +28,13 @@ def summarize_pseudo(genome, output_file):
             strand = "+" if feature.location.strand == 1 else "-"
             internal_stop = [f"{x[0]+1}..{x[1]}({x[2]})".format(x[0] + 1, x[1], x[2]) for x in pseudogene.stop_codon]
             internal_stop = ",".join(internal_stop)
-            insertion = ",".join(map(str, pseudogene.insertion))
-            deletion = ",".join(map(str, pseudogene.deletion))
+            # As of 1.2.16, insertion and deletion are integrated as indel
+            indel = ",".join(map(str, pseudogene.indel))
+            # insertion = ",".join(map(str, pseudogene.insertion))
+            # deletion = ",".join(map(str, pseudogene.deletion))
             loc_string = f"{feature.seq_id}:{feature.location.start+1}..{feature.location.end}({strand})"
             classification = []
-            if insertion or deletion:
+            if indel:
                 classification.append("frameshift")
             if internal_stop:
                 classification.append("internal_stop_codon")
@@ -40,7 +42,7 @@ def summarize_pseudo(genome, output_file):
                 classification.append("partial")
             if classification:
                 classification = ",".join(classification)
-                ret = [feature.id, locus_tag, loc_string, classification, internal_stop, insertion, deletion, p_hit.id, p_hit.description, round(p_hit.q_cov, 1), round(p_hit.s_cov, 1), round(p_hit.identity, 1)]
+                ret = [feature.id, locus_tag, loc_string, classification, internal_stop, indel, p_hit.id, p_hit.description, round(p_hit.q_cov, 1), round(p_hit.s_cov, 1), round(p_hit.identity, 1)]
                 ret = list(map(str, ret))
                 # print("\t".join(map(str, ret)))
                 output_buffer.append(ret)

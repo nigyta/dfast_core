@@ -188,7 +188,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
         # print("[debug] alignment_start:", alignment.start, "alignment_length:", alignment.aligned_length,
         #       "total_length", alignment.total_length)
 
-        D = {"insertion": set(), "deletion": set(), "stop_codon": set(), "transl_except": None}
+        D = {"indel": set(), "stop_codon": set(), "transl_except": None}
         if (alignment.start > query.cds_start - self.min_extension) and (
                         alignment.start + alignment.aligned_length < query.cds_end + self.min_extension):
             return D  # check if aligned region spans the extended regions.
@@ -198,12 +198,12 @@ class PseudoGeneDetection(BaseAnnotationComponent):
             if char == "-":
                 pass
             elif char == "/":
-                # deletion
-                D["deletion"].add(_to_abs(pos, query))
+                # Deletion of a nucleotide, As of 1.2.16, deletion and indel are integrated as indel
+                D["indel"].add(_to_abs(pos, query))
                 # print("/ deletion", "at", pos)
             elif char == "\\":
-                # insertion
-                D["insertion"].add(_to_abs(pos, query))
+                # Insertion of a nucleotide, As of 1.2.16, deletion and indel are integrated as indel
+                D["indel"].add(_to_abs(pos, query))
                 # print("\\ insertion", "at", pos)
                 pos += 1
             elif char == "*":
@@ -226,7 +226,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 pos += 3
 
         # Ignore transl_except when insertion/deletion/stop_cond was found in the same alignment
-        if D["transl_except"] and (D["deletion"] or D["insertion"] or D["stop_codon"]):
+        if D["transl_except"] and (D["indel"] or D["stop_codon"]):
             abs_start, abs_end, strand, aa, stop_codon_location = D["transl_except"]
             self.logger.warning("Ignore transl_except candidate for {0} found in {1} [{2}..{3}({4})] because of insertion/deletion/stop_codon found in the same alingment.".format(
                         aa, alignment.id, abs_start + 1, abs_end, strand))
@@ -244,7 +244,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 if not (query_alignment.id, ref_alignment.id) in self.candidates:
                     continue
                 tmp_dict = all_results.setdefault(
-                    query_alignment.id, {"ref_id": ref_alignment.id, "insertion": set(), "deletion": set(), "stop_codon": set(), "transl_except": None})
+                    query_alignment.id, {"ref_id": ref_alignment.id, "indel": set(), "stop_codon": set(), "transl_except": None})
                 D = self.scan_alignment(query_alignment, ref_alignment)
 
                 query = self.query_sequences[query_alignment.id]
@@ -259,8 +259,7 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 debug_out += "QRY: " + query_alignment.alignment + "\n"
 
                 tmp_dict["stop_codon"] = tmp_dict["stop_codon"].union(D["stop_codon"])
-                tmp_dict["insertion"] = tmp_dict["insertion"].union(D["insertion"])
-                tmp_dict["deletion"] = tmp_dict["deletion"].union(D["deletion"])
+                tmp_dict["indel"] = tmp_dict["indel"].union(D["indel"])
 
                 note = ""
                 if D["transl_except"]:
@@ -271,10 +270,13 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                 if D["stop_codon"]:
                     note = "Stop codon at " + ", ".join(
                         ["[{0}:{1}]({2})".format(x[0]+1, x[1], x[2]) for x in list(D["stop_codon"])]) + "."
-                if D["insertion"]:
-                    note = "Frameshift due to the insertion at around " + ", ".join(map(str, D["insertion"])) + "."
-                if D["deletion"]:
-                    note = "Frameshift due to the deletion at around " + ", ".join(map(str, D["deletion"])) + "."
+                if D["indel"]:
+                    note = "Frameshift due to insertion/deletion at around " + ", ".join(map(str, D["indel"])) + "."
+                # As of 1.2.16, insertion and deletion are integrated as indel.
+                # if D["insertion"]:
+                #     note = "Frameshift due to the insertion at around " + ", ".join(map(str, D["insertion"])) + "."
+                # if D["deletion"]:
+                #     note = "Frameshift due to the deletion at around " + ", ".join(map(str, D["deletion"])) + "."
                 if note:
                     self.logger.debug("QRY:{0} [{1}:{2}]({3}) {4}".format(query_alignment.id,
                                                     location.start + 1, location.end, strand, note))
@@ -286,11 +288,11 @@ class PseudoGeneDetection(BaseAnnotationComponent):
         pseudo_count = 0
         for feature_id, result in all_results.items():
             feature = self.genome.features[feature_id]
-            pseudo_gene = PseudoGene(result["ref_id"], result["stop_codon"], result["insertion"], result["deletion"])
+            pseudo_gene = PseudoGene(result["ref_id"], result["stop_codon"], result["indel"])
             feature.secondary_hits.append(pseudo_gene)
             if len(result["stop_codon"]) > 0:
                 pseudo_count += 1
-            if len(result["insertion"]) > 0 or len(result["deletion"]) > 0:
+            if len(result["indel"]) > 0:
                 fs_count += 1
  
         self.logger.info("{} CDS features were marked as possible pseudo due to internal stop codons.".format(pseudo_count))
