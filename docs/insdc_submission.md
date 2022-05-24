@@ -62,7 +62,7 @@ bio\_material,  collected\_by, collection\_date, country, culture\_collection,
 ecotype, identified\_by, isolation\_source, host, note,
 serotype, serovar, sub\_species, sub\_strain, type\_material, variety
 
-  See also [Source Modifier List](https://www.ncbi.nlm.nih.gov/Sequin/modifiers.html) at the NCBI web site.
+  ~~See also [Source Modifier List](https://www.ncbi.nlm.nih.gov/Sequin/modifiers.html) at the NCBI web site.~~
 
 
 
@@ -103,24 +103,33 @@ which will be required to submit the genome through [DDBJ Mass Submission System
 
 #### Metadata
 By default, the COMMON entry section of an annotation file is left blank, so that users can fill with the information later. Alternatively, if you provide a text file describing metadata to `metadata_file` in the config, DFAST can generate a fully qualified DDBJ submission file including metadata.
-Alternatively, you can do it with the `--metadata_file` option.
-* `metadata_file`
- A metadata file is a tab-separated text file with a key and a value in each line. It is recommended to use a sample metadata file (`$DFAST_APP_ROOT/example/sample.metadata.txt`) as a template.  
- See also `$DFAST_APP_ROOT/example/description.metadata.txt` for more information.
+Alternatively, you can do it with the `--metadata_file` option.  
+
+* __metadata_file__  
+ A tab-separated text file with a key and a value in each line. It is recommended to use a sample metadata file ([`$DFAST_APP_ROOT/example/sample.metadata.txt`](/example/sample.metadata.txt)) as a template.  
+ See also [`$DFAST_APP_ROOT/example/description.metadata.txt`](/example/description.metadata.txt) for more information.
 
 #### Example    
-
-The below is an example of a command to generate compliant submission files for a complete genome consisting of one chromosome and 2 plasmids.  
+1. Minimal example  
+This shows a minimal example to create DDBJ data submission files for a __draft genome__.  
+All the metadata are specified in 
 Execute this in `$DFAST_APP_ROOT`.
+```
+dfast --genome example/test.genome.fna --metadata example/sample.metadata.draft.txt --locus_tag_prefix LOOC260
+```
+
+2. More complicated example
+The below is an example of a command to generate compliant submission files for a __complete genome consisting of one chromosome and 2 plasmids__. Sequence name, topology, and type for each sequence should be specified using the `--seq_names`, `--seq_topologies`, `--seq_types` options.   
 ```
 dfast -g example/sample.lactobacillus.fna --complete t --organism "Lactobacillus hokkaidonensis" \
 --strain LOOC260 --seq_names "Chromosome,pXXXX,pYYYY" --seq_topologies c,c,l --seq_types c,p,p \
---additional_modifiers "culture_collection=JCM:18461; isolation_source=silage; note=You can add a comment; note=You can add another comment; collection_date=2017-06-26" --metadata_file example/sample.metadata.txt \
+--additional_modifiers "culture_collection=JCM:18461; isolation_source=silage; note=You can add a comment; note=You can add another comment; collection_date=2017-06-26" --metadata_file example/sample.metadata.complete.txt \
 --locus_tag_prefix LH260 --step 10 --use_separate_tags t --out LHLOOC
 ```
-
+Instead of using `--organism`, `--strain`, `--additional_modifiers` options, they can be specified in the metadata file as shown in the example for a draft genome.
 
 ## GenBank submission
+__GenBank submission is no longer supported. Use [NCBI PGAP](https://github.com/ncbi/pgap).__    
 1. Register the genome project with the BioProject and the BioSample databases.
 2. Create a submission template file [here](https://submit.ncbi.nlm.nih.gov/genbank/template/submission/).
 3. Run DFAST to create two input files for the tbl2asn program, a feature table file (.tbl) and a sequence file (.fsa).

@@ -132,6 +132,8 @@ class Metadata(object):
                 self.fields[name] = field
 
         for key, value in metadata_dict.items():
+            if key == "coverage":
+                key = "genome_coverage"  # compatibility for older version. To be removed in the future
             field = self.fields.get(key)
             if field:
                 if field.feature not in ["COMMENT"]:
@@ -267,7 +269,14 @@ class Metadata(object):
                 else:
                     checkNext = False
 
+    def render_ex_source(self):
 
+        RET = []
+        for field in self.fields.values():
+            if field.feature == "source" and field.entry == "EX_SOURCE":
+                if field.value or field.mss_required:
+                    RET += field.render()
+        return RET
 
 if __name__ == '__main__':
     # metadataFlle = "/Users/ytanizaw/project/labrep_dev/jobs/53eeb0b5-edc5-427d-99c2-b213d6c187a0/result/metadata.txt"

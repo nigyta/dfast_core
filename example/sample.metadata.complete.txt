@@ -31,14 +31,3 @@ comment	These metadata are examples for the DDBJ submission using MSS (Mass Subm
 assembly_method	HGAP protocol 3
 sequencing_technology	MiSeq; PacBio RSII
 genome_coverage	120x
-organism	Lactobacillus hokkaidonensi
-strain	LOOC260
-# additional source modifiers	
-source_note	Lorem ipsum dolor sit amet, ...
-culture_collection	JCM:XXXXXX
-collection_date	2016-06-26
-source_country	Japan:Shizuoka
-collected_by	
-sub_species	
-host	
-isolation_source	silage

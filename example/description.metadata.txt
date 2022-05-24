@@ -31,4 +31,13 @@ hold_date	The date until which the submitted data are kept confidential.	2018101
 comment	Additional comments for submission. Use a semicolon to start a new line.	These metadata are examples for the DDBJ submission using MSS (Mass Submission System).; 2nd comment line	
 assembly_method	Structure comment for Assembly Method. E.g. the names of genome assemblers	HGAP protocol 3	
 sequencing_technology	Structure comment for Sequencing technology.	MiSeq; PacBio RSII	
-coverage	Genome coverage value	120x	
+genome_coverage	Genome coverage value	120x	
+# additional source modifiers
+source_note	note added in the source feature	Lorem ipsum dolor sit amet, ...	
+culture_collection	Strain identifier/no in culture collection	JCM:5344	
+collection_date	The date on which the specimen was collected. (recommended to specify)	2022-06-26	
+source_country	Location where the sample was isolated (ecommended to specify)	Japan:Shizuoka	
+collected_by	name of persons or institute who collected the specimen		
+sub_species	name of sub-species of organism		
+host	natural (as opposed to laboratory) host to the organism from which sequenced molecule was obtained		
+isolation_source	describes the physical, environmental and/or local geographical source of the biological sample from which the sequence was derived		

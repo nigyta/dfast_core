@@ -45,5 +45,22 @@ comment	Comment	line	COMMENT	COMMON	array	FALSE	[^`<>\\]*
 #---------- ST_COMMENT ----------								
 tagset_id	Tag set ID	tagset_id	ST_COMMENT	COMMON	string	TRUE	Genome\-Assembly\-Data	Genome-Assembly-Data
 assembly_method	Assembly Method	Assembly Method	ST_COMMENT	COMMON	string	TRUE	[A-Za-z0-9 ,_;:\[\]\(\)\-\.]+	
-coverage	Genome Coverage	Genome Coverage	ST_COMMENT	COMMON	string	TRUE	\d+[Xx]	
+genome_coverage	Genome Coverage	Genome Coverage	ST_COMMENT	COMMON	string	TRUE	\d+[Xx]	
 sequencing_technology	Sequencing Technology	Sequencing Technology	ST_COMMENT	COMMON	string	TRUE	[A-Za-z0-9 ,_;:\[\]\(\)\-\.]+	
+#															
+#---------- source ----------															
+organism	organism	organism	source	COMMON/ENTRY	string	TRUE	[A-Za-z0-9_, \[\]\(\)\-\.]+							
+strain	strain	strain	source	COMMON/ENTRY	string	TRUE	[A-Za-z0-9 ,_\[\]\(\)\-\.]+							
+mol_type	mol_type	mol_type	source	COMMON/ENTRY	string	TRUE	(genomic DNA)|(genomic RNA)|(mRNA)|(tRNA)|(rRNA)|(other RNA)|(other DNA)|(transcribed RNA)|(viral cRNA)|(unassigned DNA)|(unassigned RNA)		private					
+ff_definition	ff_definition	ff_definition	source	COMMON/ENTRY	string	FALSE	[A-Za-z0-9 @:,_\[\]\(\)\-\.]+							
+#
+#---------- source extended ----------															
+source_note	note	note	source	EX_SOURCE	array	FALSE	.*							
+culture_collection	Culture Collection	culture_collection	source	EX_SOURCE	string	FALSE	[A-Za-z0-9 :,_\[\]\(\)\-\.]+							
+cultureCollection	Culture Collection (synonym for culture_collection)	culture_collection	source	EX_SOURCE	string	FALSE	[A-Za-z0-9 :,_\[\]\(\)\-\.]+							
+collection_date	collection_date	collection_date	source	EX_SOURCE	string	FALSE	.*							
+source_country	country	country	source	EX_SOURCE	string	FALSE	F.*							
+collected_by	collected_by	collected_by	source	EX_SOURCE	string	FALSE	.*							
+sub_species	sub_species	sub_species	source	EX_SOURCE	string	FALSE	.*							
+host	host	host	source	EX_SOURCE	string	FALSE	.*							
+isolation_source	isolation_source	isolation_source	source	EX_SOURCE	string	FALSE	.*							

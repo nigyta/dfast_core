@@ -107,7 +107,7 @@ def feature_to_table(feature, rec_length):
     return ret
 
 
-def source_feature_to_table(feature, record, seq_rank, rec_length):
+def source_feature_to_table(feature, record, seq_rank, rec_length, metadata):
     ret = []
     # location_string = get_location_string(feature.location)
     location_string = _insdc_location_string(feature.location, rec_length)
@@ -125,7 +125,7 @@ def source_feature_to_table(feature, record, seq_rank, rec_length):
         ret.append(["", "", "", "submitter_seqid", "@@[entry]@@"])
         # ret.append(["", "", "", "note", seq_rank + ": @@[entry]@@"])
     ret.append(create_ff_definiton(seq_rank, strain))
-
+    ret += metadata.render_ex_source()
     ret[0][1] = feature.type
     ret[0][2] = location_string
     if topology == "circular":
@@ -176,7 +176,7 @@ def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, ver
         for feature in record.features:
             feature.assign_hit(verbosity=verbosity)
             if feature.type == "source":
-                entry_buffer += source_feature_to_table(feature, record, seq_rank, rec_length)
+                entry_buffer += source_feature_to_table(feature, record, seq_rank, rec_length, metadata)
                 # entry_buffer.append(create_ff_definiton(genome, seq_rank))
             else:
                 entry_buffer += feature_to_table(feature, rec_length)
