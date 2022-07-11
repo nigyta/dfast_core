@@ -25,7 +25,7 @@ RUN cd /tmp  && \
 	rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
 	cd /work
 
-
+ENV INCREMENT_THIS_TO_BUMP 1
 # Install dfast_core
 RUN cd / && \
     git clone https://github.com/nigyta/dfast_core && \

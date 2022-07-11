@@ -52,6 +52,7 @@ class Pipeline():
         self.sa.execute()  # execute structural annotation
         self.fu.execute()  # feature adjustment: sort, remove_partial, (merge)
         self.fa.execute()  # functional annotation
+        self.fu.execute_remove_partial()  # feature adjustment remove partial
         self.ltg.execute()  # assigning locus_tags
         self.genome.add_source_features()  # set source feature
 

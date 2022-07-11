@@ -34,6 +34,8 @@ class LocusTagGenerator(object):
         digit = 1 if len(self.genome.features) == 0 else int(math.log10(len(self.genome.features) * self.step)) + 1
         for feature in self.genome.features.values():
             type_ = feature.type
+            if type_ == "misc_feature":
+                type_ = "CDS"   # temporarily treated as CDS
             if type_ in self.symbols:
                 counts[type_] += 1
                 count += 1
