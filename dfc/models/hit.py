@@ -50,13 +50,16 @@ class ProteinHit(Hit):
         return ret
 
     def assign(self, feature, verbosity=2):
-        feature.qualifiers["product"] = [self.description]
+        if feature.type == "CDS":
+            # ignored for misc_feature
+            feature.qualifiers["product"] = [self.description]
+            if self.gene:
+                feature.qualifiers["gene"] = [self.gene]
+            if self.ec_number:
+                feature.qualifiers["EC_number"] = [x.strip() for x in self.ec_number.split(",")]
+            feature.qualifiers.setdefault("inference", []).append(self.get_inference())
+
         # print("DEBUG setting product", self.description)
-        if self.gene:
-            feature.qualifiers["gene"] = [self.gene]
-        if self.ec_number:
-            feature.qualifiers["EC_number"] = [x.strip() for x in self.ec_number.split(",")]
-        feature.qualifiers.setdefault("inference", []).append(self.get_inference())
         # todo modify note qualifier into appropriate one
         feature.qualifiers.setdefault("note", []).extend(self.notes)
         if verbosity >= 2:

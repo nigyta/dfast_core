@@ -59,7 +59,7 @@ class FeatureUtil(object):
             seq_record.features = [feature for feature in seq_record.features if feature.id not in removed]
             for feature_id in removed:
                 feature = self.genome.features[feature_id]
-                self.logger.debug("Removing overlapping feature: {} in {}".format(feature.id, feature.seq_id))
+                self.logger.debug("Removing overlapping feature: {} at {}:{}".format(feature.id, feature.seq_id, str(feature.location)))
             return len(removed)
 
         count_removed = 0
@@ -69,19 +69,26 @@ class FeatureUtil(object):
         self.logger.info("Removed {} overlapping features.".format(count_removed))
 
     def remove_partial_features(self):
-        exempted_features = ["CRISPR"]
+        exempted_features = ["CRISPR", "misc_feature"]
         removed = []
 
         for feature in self.genome.features.values():
-            # if hasattr(feature, "location"):
-            #     print(feature, feature.id)
-            #     continue
+            seq = self.genome.seq_records[feature.seq_id].seq
+            if feature.location.start < 10 or feature.location.end > len(seq) - 10:
+                # print(type(seq))
+                # print(feature)
+                # print(feature.annotations)
+                # print(self.genome.seq_records)
+                self.fix_partial_CDS(feature)
+                # print(feature)
+                # print(feature.annotations)
             if feature.type in exempted_features:
                 continue
             start = feature.location.start
             end = feature.location.end
             if isinstance(start, BeforePosition) or isinstance(end, AfterPosition):
-                self.logger.debug("Removing partial feature: {} in {}".format(feature.id, feature.seq_id))
+                self.logger.debug("Removing partial feature: {} at {}:{}".format(feature.id, feature.seq_id, str(feature.location)))
+                # temporary disabled for dev
                 removed.append(feature.id)
         for seq_record in self.genome.seq_records.values():
             seq_record.features = [feature for feature in seq_record.features if feature.id not in removed]
@@ -171,8 +178,8 @@ class FeatureUtil(object):
         self.logger.info("Merged CDS features. {} CDSs in total.".format(cnt))
 
     def execute(self):
-        if self.enable_remove_partial:
-            self.remove_partial_features()
+        # if self.enable_remove_partial:
+        #     self.remove_partial_features()
 
         if self.enable_remove_overlapping:
             self.resolve_overlap()
@@ -180,6 +187,72 @@ class FeatureUtil(object):
         if self.enable_merge_cds:
             self.merge_cds()
 
+    def execute_remove_partial(self):
+        if self.enable_remove_partial:
+            self.remove_partial_features()
+
+
+    def fix_partial_CDS(self, feature, min_length=500):
+        """
+        fix pseudo-partial CDS predicted at the end of the contig, but is likely to be intact.
+        The one that meet the following conditions will be retained
+            Starts at the coordinate 1 (+ strand) or at the end of contig (- strand)
+            5'-end is missing and 3'-end is intact (+ strand) or the opposited case (- strand) 
+            length is multiple of 3 and > min_length
+            the CDS has significant protein hit.
+
+        partial_flag 10, strand +, len>=500
+        partial_flag 01, strand -, len>=500
+
+        if the first 3 nuleotides are in [ATG, GTG, TTG], the CDS is fixed as intact,
+        otherwise, it is annotated as misc_feature
+        """
+        def _fix_partial(feature, seq):
+            self.logger.warning("Fixed partial CDS predicted at %s:%s", feature.seq_id, str(feature.location))
+            if feature.strand == 1:
+                feature.location = FeatureLocation(ExactPosition(0), feature.location.end, feature.strand)
+            else:
+                feature.location = FeatureLocation(feature.location.start, ExactPosition(len(seq)), feature.strand)
+            feature.annotations["partial_flag"] = "00"
+            if "partial" in feature.annotations:
+                del feature.annotations["partial"]
+
+        def _to_misc_feature(feature, protein_hit):
+            if not feature.type == "CDS":
+                return  # Do nothing for features other than CDS
+            self.logger.warning("Partial CDS predicted at %s:%s will be annotated as misc_feature", feature.seq_id, str(feature.location))
+            feature.type = "misc_feature"
+            note = f"partial CDS similar to {protein_hit.id}:{protein_hit.description}"
+            feature.qualifiers.setdefault("note", []).append(note)
+            for key in ["product", "translation", "transl_table", "codon_start"]:
+                if key in feature.qualifiers:
+                    del feature.qualifiers[key]
+
+        def _get_hit_description(feature):
+            if feature.primary_hit:
+                return feature.primary_hit
+            elif feature.secondary_hits:
+                return feature.secondary_hits[0]
+            else:
+                return None
+
+        acceptable_codons = ["ATG", "GTG", "TTG"]
+        seq = self.genome.seq_records[feature.seq_id].seq
+        protein_hit = _get_hit_description(feature)
+        if int(feature.location.start) == 0 and feature.strand == 1 and feature.annotations.get("partial_flag", "00") == "10" and len(feature) >= min_length:
+            # case: fix left partial CDS (<1..##) to intact CDS
+            first3 =  str(seq[:3]).upper()
+            if first3 in acceptable_codons and len(feature) % 3 == 0 and protein_hit:
+                _fix_partial(feature, seq)
+            elif protein_hit and protein_hit.description != "hypothetical protein":
+                _to_misc_feature(feature, protein_hit)
+        elif int(feature.location.end) == len(seq) and feature.strand == -1 and feature.annotations.get("partial_flag", "00") == "01" and len(feature) >= min_length:
+            # case: fix right partial CDS (##..>##)　to intact CDS
+            first3 =  str(seq[-3:].reverse_complement()).upper()
+            if first3 in acceptable_codons and len(feature) % 3 == 0 and protein_hit:
+                _fix_partial(feature, seq)
+            elif protein_hit and protein_hit.description != "hypothetical protein":
+                _to_misc_feature(feature, protein_hit)
 
 if __name__ == '__main__':
     pass
