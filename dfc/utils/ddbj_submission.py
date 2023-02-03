@@ -3,6 +3,7 @@
 
 import sys
 import os
+import json
 from logging import getLogger
 from copy import deepcopy
 from Bio import SeqIO
@@ -65,7 +66,14 @@ class DDBJsubmission(object):
             fasta_file = os.path.join(self.output_dir, prefix + ".fasta").replace(" ", "_").replace("(", "").replace(")", "")
             self.logger.info("Writing a DDBJ annotation file to {}".format(ann_file))
             self.logger.info("Writing a DDBJ sequence file to {}".format(fasta_file))
-            create_ddbj_submission_file(self.genome, self.metadata, ann_file, fasta_file, self.verbosity)
+
+            # read json file for st_comments_annotation
+            st_comments_json_file = os.path.join(self.genome.workDir, "st_comments_annotation.json")
+            if os.path.exists(st_comments_json_file):
+                st_comments_annotation = json.load(open(st_comments_json_file))
+            else:
+                st_comments_annotation = {}
+            create_ddbj_submission_file(self.genome, self.metadata, ann_file, fasta_file, self.verbosity, st_comments_annotation)
         else:
             self.logger.warning("'Generate DDBJ Submission file' is disabled. Skip processing")
 
@@ -164,11 +172,11 @@ def get_seq_rank(genome):
         else:
             return "contig"
 
-def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, verbosity=2):
+def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, verbosity=2, st_comments_annotation=None):
     R = deepcopy(list(genome.seq_records.values()))
     seq_rank = get_seq_rank(genome)  # complete, scaffold, or contig
     metadata = Metadata(dict_metadata)
-    ann_buffer = metadata.render_common_entry(dfast_version=dfast_version, complete=genome.complete)
+    ann_buffer = metadata.render_common_entry(dfast_version=dfast_version, complete=genome.complete, st_comments_annotation=st_comments_annotation)
     fasta_buffer = ""
     for record in R:
         rec_length = len(record)

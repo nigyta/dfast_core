@@ -198,7 +198,7 @@ class Metadata(object):
             errors["status"] = "fail"
         return errors
 
-    def render_common_entry(self, dfast_version=None, complete=False):
+    def render_common_entry(self, dfast_version=None, complete=False, st_comments_annotation=None):
 
         def render_category():
             if complete:
@@ -238,6 +238,13 @@ class Metadata(object):
                 renderFeature(outputData, "COMMENT:" + str(i + 1))
         addDfastComment(outputData)
         renderFeature(outputData, "ST_COMMENT")
+        # render ST_COMMENT for annotation
+        if st_comments_annotation:
+            outputData.append(["", "ST_COMMENT", "", "tagset_id", "Genome-Annotation-Data"])
+            for key, value in st_comments_annotation.items():
+                outputData.append(["", "", "", key, str(value)])
+
+
         renderFeature(outputData, "DATE")
 
         outputData[0][0] = "COMMON"

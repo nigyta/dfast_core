@@ -26,7 +26,7 @@ class CRT(StructuralAnnotationTool):
     """
 
     version = None
-    TYPE = "CRISPR (later will be replaced by repeat_region)"
+    TYPE = "CRISPR" # later will be replaced by repeat_region
     NAME = "CRT"
     VERSION_CHECK_CMD = ""
     VERSION_PATTERN = ""

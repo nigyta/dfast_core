@@ -17,6 +17,8 @@ from dfc.utils.genbank_submission import GenBankSubmission
 from dfc.utils.genome_stat import GenomeStat
 from dfc import dfast_version
 from dfc.utils.summarize_pseudo import summarize_pseudo
+from dfc.utils.st_comments import make_json_for_st_comments
+
 
 class Pipeline():
     def __init__(self, config, logger):
@@ -59,6 +61,7 @@ class Pipeline():
         # writing result files.
         write_results(self.genome, self.config)
         GenomeStat.execute(self.genome)
+        make_json_for_st_comments(dfast_version, self.config, self.sa.tools, self.genome.features)
         self.ddbj.create_submission_file()
         self.genbank.create_submission_file()
         summarize_pseudo(self.genome, os.path.join(self.config.WORK_DIR, "pseudogene_summary.tsv"))
