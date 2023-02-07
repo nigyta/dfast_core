@@ -159,7 +159,7 @@ class JavaWrapper(Tool):
                               "Please check if Java is installed in your system.\n" +
                               "Depending on your system, Java requires additional options to run, such as '-Xmx512m'. " +
                               "You can set them to java_options in the config file or the environmental variable _JAVA_OPTIONS.")
-            exit()
+            exit(1)
 
     def getCommand(self):
         return ["java", self.java_options]

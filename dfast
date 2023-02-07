@@ -123,7 +123,7 @@ logger.setLevel(DEBUG)
 
 if args.help:
     parser.print_help()
-    exit(1)
+    exit()
 
 app_root = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 

@@ -112,7 +112,7 @@ class BaseAnnotationComponent(object):
         if p.returncode != 0 and err:
             self.logger.error("Process aborted due to an error in {self.__class__.__name__}.".format(self=self))
             self.logger.error(err.decode("utf8"))
-            exit()
+            exit(1)
         return out, err
 
     def createCommands(self):
