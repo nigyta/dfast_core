@@ -101,7 +101,7 @@ DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast
 ```
 conda install -c bioconda -c conda-forge dfast
 ```
-We recommend specifying the latest version. See available versions from [here](tags).
+We recommend specifying the latest version. See available versions from [here](https://github.com/nigyta/dfast_core/tags).
 ```
 conda install -c bioconda -c conda-forge dfast=1.X.XX
 ```
