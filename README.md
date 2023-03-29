@@ -6,6 +6,7 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 #### Contents
 * [Overview](#overview)
 * [Installation](#installation)
+* [Installation via conda](#installation-via-conda)
 * [How to run](#howto)
 * [Default workflow](#workflow)
 * [Options](#options)
@@ -20,52 +21,55 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Cookbook](docs/cookbook.md)
 ## <a id="overview"></a>Overview
 * **Easy install**  
-DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.
+DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.  
+Bioconda package is also available.
+
 * **Flexible and customizable**  
 You can customize the pipeline as you like by specifying parameters, gene prediction tools, and reference databases in the configuraition file.
 Each of annotation processes is defined as a Python module with common interfaces,
 which facilitates future development and incorporation of new tools.
+
 * **Fast and rich annotation**  
 DFAST can annotate a typical-sized bacterial genome within several minutes. In addition to the conventional homology search, it features unique functions such as orthologous gene assignment between reference genomes, pseudo/frameshifted gene prediction, and conserved domain search.
 * **INSDC submission**  
-As its name suggested, DFAST is intended to support rapid genome submission to the INSDC, especially through DDBJ. DFAST generates submission files for DDBJ Mass Submission System (MSS) as well as .tbl and .fsa file for GenBank tbl2asn.
+As its name suggested, DFAST is intended to support rapid genome submission to the INSDC through DDBJ. DFAST generates submission files for DDBJ Mass Submission System (MSS).
 
 ## <a id="installation"></a>Installation
-If you use Anaconda/Miniconda, see [here](#condainstallation) to install via conda.
+If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `conda`.
+
 ### Prerequisites
-* **Python (3.4- or 2.7)**  
-  DFAST is developed in Python 3.6 and runs both on Python 3.4 or later and Python 2.7.
+* **Python (3.7-)**  
+  DFAST runs both on Python 3.7 or later. Python 2 is no longer supported.  
 * **BioPython package**  
   You can install this with the Python package management tool `pip`:  
   ```
   (sudo) pip install biopython
-  ``` 
+  ```
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.
-* **'futures' and 'six' packages (required only on Python 2.7)**  
-DFAST uses the `concurrent.futures` module for multiprocessing and the `six` module for compatibility with Python 2 and 3. To run on Python 2.7, you need to install them:
-  ```
-  (sudo) pip install futures six
-  ```
+
 * **Perl and Java**  
 Some of the external programs called from DFAST depend on Perl or Java. Basically, they work with the pre-installed versions on your system.  
-For **RedHat/CentOS/Fedora**, the Time::Piece module should be installed:
+For **RedHat/CentOS/Fedora**, the Time::Piece module might be required:
   ```
   sudo yum install perl-Time-Piece
   ```
 
 ### Source code
 Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigyta/dfast_core).
-* **Download the distribution**  
-Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta/dfast_core/releases), then unarchive it.
-  ```
-  wget https://github.com/nigyta/dfast_core/archive/x.x.x.tar.gz  
-  tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
-  cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
-  ```
-* **Via git command**  
+
+* **Via git command** (recommended)  
   ```
   git clone https://github.com/nigyta/dfast_core.git
   cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
+  ```
+
+
+* **Download the distribution**  
+Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta/dfast_core/releases), then unarchive it.
+```
+  wget https://github.com/nigyta/dfast_core/archive/x.x.x.tar.gz  
+  tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
+  cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 
 For your convenience, create links to DFAST executables in a directory specified by the `PATH` environment variable. For example,
@@ -75,7 +79,7 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
 ```
 
 ### Reference databases
-  After downloading/cloning the source code, prepare reference databases using the bundled utility script.  
+  After downloading the source code, prepare reference databases using the bundled utility script.  
   By default, database files will be generated into the directory under $DFAST_APP_ROOT/db/. You can also change the location of the directory by specifying either `--dbroot` option or `DFAST_DB_ROOT` environmental variable.
 1. **Default protein database**
     ```
@@ -92,13 +96,23 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     dfast_file_downloader.py -h
     ```
 
-## <a id="condainstallation"></a>Installation via conda
+## Installation via conda
 DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast/README.html). Install with:
 ```
-conda install -c bioconda dfast
+conda install -c bioconda -c conda-forge dfast
 ```
-After installing DFAST, you need to prepare reference databases following the procedure above. DFAST executables are added to the `PATH` environmental variable.  
-DFAST software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)
+We recommend specifying the latest version. See available versions from [here](tags).
+```
+conda install -c bioconda -c conda-forge dfast=1.X.XX
+```
+If this does not work, please try to install DFAST into the fresh conda environment.
+
+DFAST executables are added to the `PATH` environmental variable, and the software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)  
+
+After installing DFAST, download the reference databases:
+```
+dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR
+```
 ## <a id="howto"></a>How to run
 1. **Help**  
     ```
@@ -121,6 +135,7 @@ DFAST software package is installed in the `opt` directory under the Anaconda/Mi
     dfast --genome path/to/your_genome.fna
     ```
     This invokes the DFAST pipeline with the default workflow defined in $DFAST_APP_ROOT/dfc/default_config.py. DFAST accepts a FASTA-formatted genome sequence file as a query.  
+
 4. **Advanced usage**  
     By providing command line options, you can override the default settings described in the configuration file.
     ```
