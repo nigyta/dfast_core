@@ -5,6 +5,8 @@ from collections import OrderedDict
 
 import os
 import math
+import binascii
+import gzip
 from datetime import datetime
 from logging import getLogger
 import pickle
@@ -68,15 +70,28 @@ class Genome(object):
         self.add_source_information()
 
     def prepare_genome(self, config):
+
+        def _is_gzipped_fasta(fasta_path):
+            # Check if the query fasta is gzipped. The first 2-bytes of gz must be b"1f8b"
+            with open(fasta_path, 'rb') as test_f:
+                return binascii.hexlify(test_f.read(2)) == b'1f8b'
+
         query_genome_fasta = config.GENOME_FASTA
         use_original_name = config.GENOME_CONFIG.get("use_original_name", False)
         sort_sequence = config.GENOME_CONFIG.get("sort_sequence", True)
         minimum_length = config.GENOME_CONFIG.get("minimum_length", 0)
+
+        if _is_gzipped_fasta(query_genome_fasta):
+            logger.info("Fasta file is gzipped. [%s]", query_genome_fasta)
+            fh = gzip.open(query_genome_fasta,'rt')
+        else:
+            fh = open(query_genome_fasta)
+        
         # Compatible with both pre- and post Biopython 1.78:
         if generic_dna:
-            R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta", generic_dna)]
+            R = [r for r in SeqIO.parse(fh, "fasta", generic_dna)]
         else:
-            R = [r for r in SeqIO.parse(open(query_genome_fasta), "fasta")]
+            R = [r for r in SeqIO.parse(fh, "fasta")]
 
         # trim leading/trailing Ns
         for r in R:
