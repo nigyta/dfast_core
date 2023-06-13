@@ -326,9 +326,14 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                     other_idx = my_idx + 1
                 else:
                     self.logger.warning("Stop codon was found outside of the CDS, Skip processing."
-                      + "CDS:{0} Location:{1}, Stop codon:{2}".format(feature_id, feature.location, stop_codon_location))
+                      + " CDS:{0} Location:{1}, Stop codon:{2}".format(feature_id, feature.location, stop_codon_location))
                     return None
-            return feature_list[min(my_idx, other_idx)], feature_list[max(my_idx, other_idx)]
+            left_id, right_id = min(my_idx, other_idx), max(my_idx, other_idx)
+            if right_id >= len(feature_list) or left_id <= 0:
+                self.logger.warning("Pseudogene candidate was found at the end of contig. Removed from the candidate list."
+                      + " CDS:{0} Location:{1}:{2}, Stop codon:{3}".format(feature_id, feature.seq_id, feature.location, stop_codon_location))
+                return None   # Debug: 20230613, avoid error when the right index is out of range.
+            return feature_list[left_id], feature_list[right_id]
 
         def _concatenate_features(left_id, right_id):
             '''
