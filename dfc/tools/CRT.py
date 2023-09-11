@@ -32,9 +32,10 @@ class CRT(StructuralAnnotationTool):
     VERSION_PATTERN = ""
     SHELL = True
 
-    INTERVAL = 100
+    INTERVAL = 200
     # CRT does not accept a draft genome consisting of multi-fasta.
-    # Sequences are concatenated with interval of 100 Ns before runnning CRT.
+    # Sequences are concatenated with interval of 200 Ns before runnning CRT.
+    # 20230613: Interval was changed from 100 to 200 as CRT finds spacer sequences containing 100Ns 
 
     def __init__(self, options=None, workDir="OUT"):
         """
@@ -96,10 +97,10 @@ class CRT(StructuralAnnotationTool):
 
             extracted = [x for x in self.seq_info if x.start - self.__class__.INTERVAL <= start and end <= x.end + self.__class__.INTERVAL]
             # extracted = [x for x in self.seq_info if x.start <= start and end <= x.end]
-            # if len(extracted) != 1:
-            #     print(extracted)
-            #     print(self.seq_info)
-            #     print(start, end)
+            if len(extracted) != 1:
+                print(extracted)
+                # print(self.seq_info)
+                print(start, end)
             assert len(extracted) == 1
             crt_seq = extracted[0]
             seq_id = crt_seq.id

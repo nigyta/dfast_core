@@ -1,3 +1,13 @@
+Ver 1.2.19 (20230515) ---------------------------------------
+Accepts a gzip-compressed FASTA file as input.
+
+20230404 ---------------------------------------
+
+The reference protein data have been updated. The DFAST default reference database now consists of mainly from RefSeq WP proteins.
+The latest version is "20230404".
+You can update it with the following command.
+dfast_file_downloader.py --protein dfast
+
 
 Ver 1.2.0 (20190124) ---------------------------------------
  

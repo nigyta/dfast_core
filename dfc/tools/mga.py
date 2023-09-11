@@ -45,7 +45,7 @@ class MGA(StructuralAnnotationTool):
             self.logger.info("{self.__class__.NAME} initialized. (Version {self.__class__.version})".format(self=self))
         else:
             self.logger.error("{self.__class__.NAME} not found in PATH. Aborted...".format(self=self))
-            exit()
+            exit(1)
 
     def getCommand(self):
         """mga -s testDir/INPUT/genome.fna"""

@@ -66,3 +66,16 @@ When internal stop codons or frameshifts are found, they are also annotated in t
 `Q890K8` is an accession number of the reference sequence, and the following is its
 description and, in parenthesis, the organism name from which it is derived.  
 The accession numbers with 'WP_' come from the NCBI RefSeq database, and there are some from UniProt. This entry comes from UniProtKB [[Q890KB](https://www.uniprot.org/uniprot/Q890K8)].
+
+
+## 7. How to change the location of the reference data.  
+You can specify it with a `--dbroot` option. This may be helpful when running DFAST within a Docker container.  
+
+Download the reference data:  
+```
+dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR --dbroot /dfast_db
+```
+Invoke DFAST:
+```
+dfast --genome /data/your_genome.fa --out /data/your_result --dbroot /dfast_db
+```

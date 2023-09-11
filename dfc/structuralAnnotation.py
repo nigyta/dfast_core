@@ -60,7 +60,7 @@ class StructuralAnnotation(object):
                 self.logger.error(
                     "{0} is not registered in {1}. \nProcess aborted due to an error.".format(tool_config["tool_name"],
                                                                                               __name__))
-                exit()
+                exit(1)
 
     def execute(self):
         """

@@ -16,7 +16,7 @@ targets = list("RYKMSWBDHVX-")
 file_name = sys.argv[1]
 if not os.path.exists(file_name):
     sys.stderr.write("File not found: " + file_name + "\n")
-    exit()
+    exit(1)
 
 for line in open(file_name):
     if line.startswith(">"):

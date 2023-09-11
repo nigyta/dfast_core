@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(description='DFAST: DDBJ Fast Annotation and Su
                                  )
 
 group_basic = parser.add_argument_group("Basic options")
-group_basic.add_argument("-g", "--genome", help="Genomic FASTA file", metavar="PATH")
+group_basic.add_argument("-g", "--genome", help="Genomic FASTA file for input. Can be gzipped.", metavar="PATH")
 group_basic.add_argument("-o", "--out", help="Output directory (default:OUT)", type=str, metavar="PATH")
 group_basic.add_argument("-c", "--config", help="Configuration file (default config will be used if not specified)", type=str, metavar="PATH")
 group_basic.add_argument("--organism", help="Organism name", metavar="STR", default="")
@@ -123,7 +123,7 @@ logger.setLevel(DEBUG)
 
 if args.help:
     parser.print_help()
-    exit(1)
+    exit()
 
 app_root = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 

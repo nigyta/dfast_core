@@ -6,11 +6,13 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 #### Contents
 * [Overview](#overview)
 * [Installation](#installation)
+* [Installation via conda](#installation-via-conda)
 * [How to run](#howto)
 * [Default workflow](#workflow)
 * [Options](#options)
 * [Software distribution](#distribution)
 * [Trouble shoot](#trouble_shoot)
+* [How to run within a Docker container](#howtorundocker)
 * [Citation](#citation)
 * [FAQ](docs/FAQ.md)
 
@@ -20,52 +22,55 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Cookbook](docs/cookbook.md)
 ## <a id="overview"></a>Overview
 * **Easy install**  
-DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.
+DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.  
+Bioconda package is also available.
+
 * **Flexible and customizable**  
 You can customize the pipeline as you like by specifying parameters, gene prediction tools, and reference databases in the configuraition file.
 Each of annotation processes is defined as a Python module with common interfaces,
 which facilitates future development and incorporation of new tools.
+
 * **Fast and rich annotation**  
 DFAST can annotate a typical-sized bacterial genome within several minutes. In addition to the conventional homology search, it features unique functions such as orthologous gene assignment between reference genomes, pseudo/frameshifted gene prediction, and conserved domain search.
 * **INSDC submission**  
-As its name suggested, DFAST is intended to support rapid genome submission to the INSDC, especially through DDBJ. DFAST generates submission files for DDBJ Mass Submission System (MSS) as well as .tbl and .fsa file for GenBank tbl2asn.
+As its name suggested, DFAST is intended to support rapid genome submission to the INSDC through DDBJ. DFAST generates submission files for DDBJ Mass Submission System (MSS).
 
 ## <a id="installation"></a>Installation
-If you use Anaconda/Miniconda, see [here](#condainstallation) to install via conda.
+If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `conda`.
+
 ### Prerequisites
-* **Python (3.4- or 2.7)**  
-  DFAST is developed in Python 3.6 and runs both on Python 3.4 or later and Python 2.7.
+* **Python (3.7-)**  
+  DFAST runs both on Python 3.7 or later. Python 2 is no longer supported.  
 * **BioPython package**  
   You can install this with the Python package management tool `pip`:  
   ```
   (sudo) pip install biopython
-  ``` 
+  ```
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.
-* **'futures' and 'six' packages (required only on Python 2.7)**  
-DFAST uses the `concurrent.futures` module for multiprocessing and the `six` module for compatibility with Python 2 and 3. To run on Python 2.7, you need to install them:
-  ```
-  (sudo) pip install futures six
-  ```
+
 * **Perl and Java**  
 Some of the external programs called from DFAST depend on Perl or Java. Basically, they work with the pre-installed versions on your system.  
-For **RedHat/CentOS/Fedora**, the Time::Piece module should be installed:
+For **RedHat/CentOS/Fedora**, the Time::Piece module might be required:
   ```
   sudo yum install perl-Time-Piece
   ```
 
 ### Source code
 Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigyta/dfast_core).
+
+* **Via git command** (recommended)  
+  ```
+  git clone https://github.com/nigyta/dfast_core.git
+  cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
+  ```
+
+
 * **Download the distribution**  
 Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta/dfast_core/releases), then unarchive it.
   ```
   wget https://github.com/nigyta/dfast_core/archive/x.x.x.tar.gz  
   tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
   cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
-  ```
-* **Via git command**  
-  ```
-  git clone https://github.com/nigyta/dfast_core.git
-  cd dfast_core    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
 
 For your convenience, create links to DFAST executables in a directory specified by the `PATH` environment variable. For example,
@@ -75,7 +80,7 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
 ```
 
 ### Reference databases
-  After downloading/cloning the source code, prepare reference databases using the bundled utility script.  
+  After downloading the source code, prepare reference databases using the bundled utility script.  
   By default, database files will be generated into the directory under $DFAST_APP_ROOT/db/. You can also change the location of the directory by specifying either `--dbroot` option or `DFAST_DB_ROOT` environmental variable.
 1. **Default protein database**
     ```
@@ -92,13 +97,24 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     dfast_file_downloader.py -h
     ```
 
-## <a id="condainstallation"></a>Installation via conda
+## Installation via conda
 DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast/README.html). Install with:
 ```
-conda install -c bioconda dfast
+conda install -c bioconda -c conda-forge dfast
 ```
-After installing DFAST, you need to prepare reference databases following the procedure above. DFAST executables are added to the `PATH` environmental variable.  
-DFAST software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)
+We recommend specifying the latest version. See available versions from [here](https://github.com/nigyta/dfast_core/tags).
+```
+conda install -c bioconda -c conda-forge dfast=1.X.XX
+```
+If this does not work, please try to install DFAST into the fresh conda environment.
+
+DFAST executables are added to the `PATH` environmental variable, and the software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)  
+
+After installing DFAST, download the reference databases:
+```
+dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR
+```
+
 ## <a id="howto"></a>How to run
 1. **Help**  
     ```
@@ -118,13 +134,14 @@ DFAST software package is installed in the `opt` directory under the Anaconda/Mi
 
 3.  **Basic usage**  
     ```
-    dfast --genome path/to/your_genome.fna
+    dfast --genome path/to/your_genome.fna(.gz)
     ```
     This invokes the DFAST pipeline with the default workflow defined in $DFAST_APP_ROOT/dfc/default_config.py. DFAST accepts a FASTA-formatted genome sequence file as a query.  
+
 4. **Advanced usage**  
     By providing command line options, you can override the default settings described in the configuration file.
     ```
-    dfast --genome your_genome.fna --organism "Escherichia coli" --strain "str. xxx" \
+    dfast --genome your_genome.fna(.gz) --organism "Escherichia coli" --strain "str. xxx" \
     --locus_tag_prefix ECXXX --minimum_length 200 --references EC_ref_genome.gbk \
     --aligner blastp --out OUT_ECXXX
     ```
@@ -133,13 +150,14 @@ DFAST software package is installed in the `opt` directory under the Anaconda/Mi
      `--aligner blastp` will let DFAST use BLASTP for protein alignments instead of default GHOSTX.
 
      These optional values can be specified in a configuration file, saving you from providing them as command line options. See the following step. 
+
 5. **More advanced usage: Creating your own workflow**  
 An easy way to do this is to copy and edit the default configuration file, which is located in $DFAST_APP_ROOT/dfc/default_config.py.
 The configuration file is a self-explanatory Python script, in which the workflow is defined using basic Python objects like lists and dictionaries.
 
     You can call your original configuration file with the `--config` option.
     ```
-    dfast --genome your_genome.fna --config your_config.py
+    dfast --genome your_genome.fna(.gz) --config your_config.py
     ```
 
 ## <a id="workflow"></a>Default workflow
@@ -172,59 +190,44 @@ By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be use
 
 ## <a id="options"></a>Options
 
-```  
-usage: dfast -g your_genome.fna [options]
-
-DFAST: DDBJ Fast Annotation and Submission Tool version 1.2.14.
-
+```
+Basic usage:
+  usage: dfast -g your_genome.fna [options]
+  
 Basic options:
   -g PATH, --genome PATH
-                        Genomic FASTA file
+                        Genomic FASTA file for input. Can be gzipped.
   -o PATH, --out PATH   Output directory (default:OUT)
   -c PATH, --config PATH
-                        Configuration file (default config will be used if not
-                        specified)
+                        Configuration file (default config will be used if not specified)
   --organism STR        Organism name
   --strain STR          Strain name
 
 Genome settings:
-  --complete BOOL       Treat the query as a complete genome. Not required
-                        unless you need INSDC submission files.
-                        [t|f(=default)]
+  --complete BOOL       Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f(=default)]
   --use_original_name BOOL
-                        Use original sequence names in a query FASTA file
-                        [t|f(=default)]
+                        Use original sequence names in a query FASTA file [t|f(=default)]
   --sort_sequence BOOL  Sort sequences by length [t(=default)|f]
   --minimum_length INT  Minimum sequence length (default:200)
-  --fix_origin          Rotate/flip the chromosome so that the dnaA gene comes
-                        first. (ONLY FOR A FINISHED GENOME)
-  --offset INT          Offset from the start codon of the dnaA gene. (for
-                        --fix_origin option, default=0)
+  --fix_origin          Rotate/flip the chromosome so that the dnaA gene comes first. (ONLY FOR A FINISHED GENOME)
+  --offset INT          Offset from the start codon of the dnaA gene. (for --fix_origin option, default=0)
 
 Locus_tag settings:
   --locus_tag_prefix STR
                         Locus tag prefix (defaut:LOCUS)
   --step INT            Increment step of locus tag (default:10)
   --use_separate_tags BOOL
-                        Use separate tags according to feature types
-                        [t(=default)|f]
+                        Use separate tags according to feature types [t(=default)|f]
 
 Workflow options:
-  --threshold STR       Thresholds for default database search (format:
-                        "pident,q_cov,s_cov,e_value", default: "0,75,75,1e-6")
-  --database PATH       Additional reference database to be searched against
-                        prior to the default database. (format:
-                        db_path[,db_name[,pident,q_cov,s_cov,e_value]])
-  --references PATH     Reference file(s) for OrthoSearch. Use semicolons for
-                        multiple files, e.g. 'genome1.faa;genome2.gbk'
+  --threshold STR       Thresholds for default database search (format: "pident,q_cov,s_cov,e_value", default: "0,75,75,1e-6")
+  --database PATH       Additional reference database to be searched against prior to the default database. (format: db_path[,db_name[,pident,q_cov,s_cov,e_value]])
+  --references PATH     Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp|diamond]
   --use_prodigal        Use Prodigal to predict CDS instead of MGA
-  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA.
-                        [auto|bact|arch]
-  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn.
-                        [bact|arch]
-  --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap.
-                        [bact|arch]
+  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
+  --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
+  --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
   --no_func_anno        Disable all functional annotation steps
   --no_hmm              Disable HMMscan
@@ -234,40 +237,31 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
-  --gff GFF             [Preliminary implementation] Read GFF to import
-                        structural annotation. Ignores --use_original_name,
-                        --sort_sequence, --fix_origin.
+  --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
-  These values are only used to create INSDC submission files and do not
-  affect the annotation result. See documents for more detail.
+  These values are only used to create INSDC submission files and do not affect the annotation result. See documents for more detail.
 
   --seq_names STR       Sequence names for each sequence (for complete genome)
-  --seq_types STR       Sequence types for each sequence (chromosome/plasmid,
-                        for complete genome)
-  --seq_topologies STR  Sequence topologies for each sequence
-                        (linear/circular, for complete genome)
+  --seq_types STR       Sequence types for each sequence (chromosome/plasmid, for complete genome)
+  --seq_topologies STR  Sequence topologies for each sequence (linear/circular, for complete genome)
   --additional_modifiers STR
                         Additional modifiers for source features
-  --metadata_file PATH  Path to a metadata file (optional for DDBJ submission
-                        file)
-  --center_name STR     Genome center name (optional for GenBank submission
-                        file)
+  --metadata_file PATH  Path to a metadata file (optional for DDBJ submission file)
+  --center_name STR     Genome center name (optional for GenBank submission file)
 
 Run options:
   --cpu INT             Number of CPUs to use
   --use_locustag_as_gene_id
-                        Use locustag as gene ID for FASTA and GFF. (Useful
-                        when providing DFAST results to other tools such as
-                        Roary)
+                        Use locustag as gene ID for FASTA and GFF. (Useful when providing DFAST results to other tools such as Roary)
   --dbroot PATH         DB root directory (default:APP_ROOT/db
   --force               Force overwriting output
-  --debug               Run in debug mode (Extra logging and retaining
-                        temporary files)
+  --debug               Run in debug mode (Extra logging and retaining temporary files)
   --show_config         Show pipeline configuration and exit
   --version             Show program version
   -h, --help            Show this help message
 ```
+
 ## <a id="distribution"></a>Software distribution
 DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](docs/LICENSE)).
 
@@ -292,7 +286,20 @@ If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.s
 In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
 * libidn-11 on ArchLinux  
-According to the user's report, DFAST fails on ArchLinux due to `libidn-11` required for BLASTP. You may need to install `libidn-133-compat` from the AUR repository.
+According to the report from users, DFAST fails on ArchLinux due to `libidn-11` required for BLASTP. You may need to install `libidn-133-compat` from the AUR repository.
+
+## <a id="howtorundocker"></a>How to run DFAST within a Docker container.
+The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags).  
+Use `--dbroot` to specity the location of the reference data.
+Download the reference data:
+```
+docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR --dbroot /dfast_db
+```
+
+Invoke DFAST:
+```
+docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_core:latest dfast --genome /data/your_genome.fa --out /data/your_result --dbroot /dfast_db
+```
 
 ## <a id="citation"></a>Citation
 * on-line version of DFAST  
