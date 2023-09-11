@@ -222,6 +222,20 @@ class Config:
             },
         },
         {
+            "component_name": "NuclSearch",
+            "enabled": True,
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 75,
+                "scov_cutoff": 75,
+                "aligner": "blastn",
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "",
+                "db_name": "",
+            },
+        },
+        {
             # By default, this is disabled. 
             # If you want to add your original databases to be searched prior to default DB,
             # set 'enabled' to True and specify 'database', which you can do with '--database' option.
