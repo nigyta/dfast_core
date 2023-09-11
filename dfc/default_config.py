@@ -359,3 +359,16 @@ class Config:
         },
 
     ]
+
+    CONTIG_ANNOTATION = [
+        {
+            # Plasmidfinder to infer sequences derived from plasmid
+            "tool_name": "Plasmidfinder",
+            "target": "source",
+            "enabled": True,
+            "options": {
+                "db_path": "@@DB_ROOT@@/plasmidfinder_db",
+                "cmd_options": "",
+            },
+        },    
+    ]

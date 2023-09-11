@@ -9,6 +9,7 @@ from dfc.utils.path_util import create_output_directory
 from dfc.functionalAnnotation import FunctionalAnnotation
 from dfc.genome import Genome
 from dfc.structuralAnnotation import StructuralAnnotation
+from dfc.contigAnnotation import ContigAnnotation
 from dfc.utils.feature_util import FeatureUtil
 from dfc.utils.locus_tag_generator import LocusTagGenerator
 from dfc.utils.format_converter import write_results
@@ -44,6 +45,7 @@ class Pipeline():
         self.ltg = LocusTagGenerator(self.genome, config)
         self.fu = FeatureUtil(self.genome, config)
         self.sa = StructuralAnnotation(self.genome, config)
+        self.ca = ContigAnnotation(self.genome, config)
         self.fa = FunctionalAnnotation(self.genome, config)
         self.ddbj = DDBJsubmission(self.genome, config)
         self.genbank = GenBankSubmission(self.genome, config)
@@ -52,9 +54,10 @@ class Pipeline():
         self.sa.execute()  # execute structural annotation
         self.fu.execute()  # feature adjustment: sort, remove_partial, (merge)
         self.fa.execute()  # functional annotation
+        source_notes = self.ca.execute()  # contig annotation
         self.fu.execute_remove_partial()  # feature adjustment remove partial
         self.ltg.execute()  # assigning locus_tags
-        self.genome.add_source_features()  # set source feature
+        self.genome.add_source_features(source_notes)  # set source feature
 
         # writing result files.
         write_results(self.genome, self.config)
@@ -77,4 +80,5 @@ class Pipeline():
     def cleanup(self):
         self.sa.cleanup()
         self.fa.cleanup()
+        self.ca.cleanup()
         shutil.rmtree(os.path.join(self.config.WORK_DIR, "input"))

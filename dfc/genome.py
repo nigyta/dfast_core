@@ -234,7 +234,7 @@ class Genome(object):
             for feature in record.features:
                 self.features[feature.id] = feature
 
-    def add_source_features(self):
+    def add_source_features(self, source_notes):
 
         for record in self.seq_records.values():
             location = FeatureLocation(0, len(record), strand=1)
@@ -251,6 +251,11 @@ class Genome(object):
             for key, values in self.additional_modifiers.items():
                 for value in values:
                     qualifiers.setdefault(key, []).append(value)
+            # add notes from contig annotation result (e.g. result of plasmidfinder)
+            if record.id in source_notes:
+                note_qualifier = qualifiers.setdefault("note", [])
+                note_qualifier += source_notes[record.id]
+
             source_feature.qualifiers = qualifiers
             if len(record.features) > 0 and record.features[0].type == "source":
                 record.features[0] = source_feature
