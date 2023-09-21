@@ -16,7 +16,7 @@ parser.add_argument("-d", "--dir", help="Output directory name of DFAST results.
 def parseFeature(feature):
     locus_tag = feature.qualifiers.get("locus_tag", [""])[0]
     strand = "-" if feature.location.strand == -1 else "+"
-    location = f"{feature.location.start}..{feature.location.end}({strand})"
+    location = f"{feature.location.start + 1}..{feature.location.end}({strand})"
     product = feature.qualifiers.get("product", [""])[0]
     if feature.type == "repeat_region":  # for CRISPR
         product = feature.qualifiers.get("rpt_family", [""])[0]
