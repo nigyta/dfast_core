@@ -18,7 +18,7 @@ class NuclSearch(BaseAnnotationComponent):
         self.scov_cutoff = options.get("scov_cutoff", 70)
         self.pident_cutoff = options.get("pident_cutoff", 90)
 
-        self.database = "/Users/tanizawa/projects/dfast_NIID/nucleotide_fasta_protein_homolog_model.fasta"  # options.get("database", "")
+        self.database = "/dfast_core/db/amr/nucleotide_fasta_protein_homolog_model.fasta"  # options.get("database", "")
         # fir debugging
         self.db_name = options.get("db_name", "")
         aligner_name = "blastn"  # options.get("aligner")
