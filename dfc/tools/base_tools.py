@@ -189,6 +189,9 @@ class ContigAnnotationTool(Tool):
         cmd = self.getCommand()
         self.executeCommand(cmd, shell=self.__class__.SHELL)
 
+    def getResult(self):
+        """Override this method"""
+        raise NotImplementedError
 
 if __name__ == '__main__':
     logger = getLogger(__name__)
