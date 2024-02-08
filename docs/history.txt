@@ -1,3 +1,7 @@
+Ver 1.2.21 (20240208) ---------------------------------------
+Adjusted to changes in the SeqFeature specifications of Biopython.
+
+
 Ver 1.2.19 (20230515) ---------------------------------------
 Accepts a gzip-compressed FASTA file as input.
 
