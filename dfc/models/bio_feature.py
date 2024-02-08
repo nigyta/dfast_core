@@ -6,12 +6,10 @@ from Bio.SeqFeature import SeqFeature
 
 
 class ExtendedFeature(SeqFeature):
-    def __init__(self, location=None, type='', location_operator='', strand=None, id='<unknown id>', qualifiers=None,
-                 sub_features=None, ref=None, ref_db=None, primary_hit=None, seq_id=None, secondary_hits=None,
-                 annotations=None):
+    def __init__(self, location=None, type='', id='<unknown id>', qualifiers=None, sub_features=None, 
+                 primary_hit=None, seq_id=None, secondary_hits=None, annotations=None):
 
-        super(ExtendedFeature, self).__init__(location, type, location_operator, strand, id, qualifiers,
-                                              sub_features, ref, ref_db)
+        super(ExtendedFeature, self).__init__(location=location, type=type, id=id, qualifiers=qualifiers, sub_features=sub_features)
         self.seq_id = seq_id
         self.primary_hit = primary_hit
         if not secondary_hits:
