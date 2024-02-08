@@ -70,12 +70,15 @@ class ContigAnnotation(object):
         Collect Results from each tool
         """
         dict_source_notes = {}
+        dict_contig_annotation_report = {}
         for tool in self.tools:
-            result = tool.getResult()   # Dict: key=sequence_id, value=List of Note
+            result, dict_report = tool.getResult()   # Dict: key=sequence_id, value=List of Note
             for seq_id, list_note in result.items():
                 tmp_note_list = dict_source_notes.setdefault(seq_id, [])
                 tmp_note_list += list_note
-        return dict_source_notes
+            for seq_id, report in dict_report.items():
+                dict_contig_annotation_report.setdefault(seq_id, []).extend(report)
+        return dict_source_notes, dict_contig_annotation_report
 
     def cleanup(self):
         shutil.rmtree(self.child_dir)

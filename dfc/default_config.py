@@ -233,6 +233,7 @@ class Config:
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "",
                 "db_name": "",
+                "db_type": "auto",  # Must be either of auto/card/vfdb
             },
         },
         {
@@ -288,7 +289,7 @@ class Config:
                 "pident_cutoff": 0,
                 "aligner": "blastp",  # must be blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
-                "dbtype": "auto",  # Must be either of auto/ncbi/uniprot/plain
+                "db_type": "auto",  # Must be either of auto/ncbi/uniprot/plain
                 "database": "",
                 "db_name": "",
             },

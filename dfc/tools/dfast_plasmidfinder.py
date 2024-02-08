@@ -55,6 +55,7 @@ class Plasmidfinder(ContigAnnotationTool):
     def getResult(self):
         """to be implemented"""
         D = {}  # result
+        report = {}  # for AMR report
         data = json.load(open(self.result_file))
         pf_results = data.get("plasmidfinder", {})
         for organism, results in pf_results.get("results", {}).items():
@@ -81,6 +82,7 @@ class Plasmidfinder(ContigAnnotationTool):
                         list_note.append(f"PlasmidFinder: {plasmid_type}")
                         list_note.append(description)
                         list_note.append(hit_info)
+                        report.setdefault(contig_name, []).append(f"PlasmidFinder: {plasmid_type}, Description: {description}, HitInfo: {hit_info}")
         # print(D)
-        return D
+        return D, report
 

@@ -1,4 +1,4 @@
-FROM python:3.8.2
+FROM python:3.9
 
 # 環境変数の設定
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -11,7 +11,7 @@ RUN mkdir /work && chmod 777 /work
 # Install dependency
 RUN pip install biopython && \
     apt-get update && \
-    apt install -y default-jre zip prodigal infernal && \
+    apt install -y default-jre zip prodigal infernal ncbi-blast+ && \
     ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
     apt-get clean && rm -rf /var/lib/apt/lists/* 

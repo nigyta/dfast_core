@@ -26,8 +26,8 @@ class BlastSearch(BaseAnnotationComponent):
         assert aligner_name == "blastp"
         self.blastdbcmd = Blastdbcmd()
         # check_db_file(self.database, aligner_name)
-        self.dbtype = options.get("dbtype")
-        self.parser = fasta_parsers[self.dbtype]
+        self.db_type = options.get("db_type") or options.get("dbtype")   # for compatibility, both db_type and dbtype are acceptable
+        self.parser = fasta_parsers[self.db_type]
         self.references = {}
         """
         todo: check if db file exists.
@@ -106,7 +106,7 @@ class BlastSearch(BaseAnnotationComponent):
         self.executeCommands(shell=True)
 
         if os.path.exists(output_fasta) and os.path.getsize(output_fasta) > 0:
-            self.references = Protein.read_from_fasta(output_fasta, parser_type=self.dbtype)
+            self.references = Protein.read_from_fasta(output_fasta, parser_type=self.db_type)
             self.logger.debug("{} sequences were added to the reference.".format(len(self.references)))
         else:
             self.logger.warning("Fasta file for hit proteins does not exist or is empty. blastdbcmd might have failed.")

@@ -18,6 +18,7 @@ from dfc.utils.genbank_submission import GenBankSubmission
 from dfc.utils.genome_stat import GenomeStat
 from dfc import dfast_version
 from dfc.utils.summarize_pseudo import summarize_pseudo
+from dfc.utils.summarize_amr import summarize_amr
 
 class Pipeline():
     def __init__(self, config, logger):
@@ -54,7 +55,7 @@ class Pipeline():
         self.sa.execute()  # execute structural annotation
         self.fu.execute()  # feature adjustment: sort, remove_partial, (merge)
         self.fa.execute()  # functional annotation
-        source_notes = self.ca.execute()  # contig annotation
+        source_notes, dict_contig_annotation_report = self.ca.execute()  # contig annotation
         self.fu.execute_remove_partial()  # feature adjustment remove partial
         self.ltg.execute()  # assigning locus_tags
         self.genome.add_source_features(source_notes)  # set source feature
@@ -65,10 +66,10 @@ class Pipeline():
         self.ddbj.create_submission_file()
         self.genbank.create_submission_file()
         summarize_pseudo(self.genome, os.path.join(self.config.WORK_DIR, "pseudogene_summary.tsv"))
-        
+        summarize_amr(self.genome, self.config.WORK_DIR, dict_contig_annotation_report, os.path.join(self.config.WORK_DIR, "amr_summary.tsv"))
         if self.config.DEBUG:
             self.genome.to_pickle(os.path.join(self.config.WORK_DIR, "genome.pickle"))
-        
+
         end_time = datetime.now()
         running_time = end_time - self.start_time
         running_time = running_time.total_seconds()

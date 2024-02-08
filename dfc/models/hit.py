@@ -270,5 +270,83 @@ class MBGDHit(Hit):
         return "similar to AA sequence:MBGD:{0}_{1}:{2}".format(self.mbgd_version, self.mbgd_tabid, self.clst_id)
 
 
+class NuclHit(Hit):
+    """
+    Implemented for AMR prediction using NuclSearch
+    """
+
+    def __init__(self, id_, model, db_name, e_value, score, identity, q_cov,
+                 s_cov, flag, notes=None):
+        self.id = id_
+        self.model = model
+        self.db_name = db_name
+        self.score = score
+        self.e_value = float(e_value)
+        self.identity = float(identity)
+        self.q_cov = q_cov
+        self.s_cov = s_cov
+        self.flag = flag
+        if not notes:
+            notes = []
+        self.notes = notes
+
+    def __str__(self):
+        gene_id = self.id
+        if self.db_name:
+            gene_id = self.db_name + ":" + gene_id
+
+        ret = "{gene_id} [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(gene_id=gene_id, self=self)
+
+        # if self.organism:
+        #     ret = "{gene_id} {self.description} ({self.organism}) [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(gene_id=gene_id, self=self)
+        # else:
+        #     ret = "{gene_id} {self.description} [pid:{self.identity:.1f}%, q_cov:{self.q_cov:.1f}%, s_cov:{self.s_cov:.1f}%, Eval:{self.e_value:.1e}]".format(gene_id=gene_id, self=self)
+
+        if self.flag:
+            ret = ret[:-1] + ", " + self.flag + "]"
+        return ret
+
+    def assign(self, feature, verbosity=2):
+        if feature.type == "CDS":
+            # ignored for misc_feature
+            # feature.qualifiers["product"] = [self.description]
+            # if self.gene:
+            #     feature.qualifiers["gene"] = [self.gene]
+            # feature.qualifiers.setdefault("inference", []).append(self.get_inference())
+            self.model.set_info_to_feature(feature)
+        # print("DEBUG setting product", self.description)
+        # todo modify note qualifier into appropriate one
+        feature.qualifiers.setdefault("note", []).extend(self.notes)
+        if verbosity >= 2:
+            feature.qualifiers.setdefault("note", []).append(str(self))
+
+    def assign_as_note(self, feature, verbosity=2):
+        if not self.flag:
+            self.flag = "alternative hit"
+        if verbosity >= 2:
+            feature.qualifiers.setdefault("note", []).append(str(self))
+
+    def get_inference(self):
+        if self.source_db:
+            return "similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
+            # return "DESCRIPTION:similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
+        else:
+            return "similar to AA sequence:{0}".format(self.id)
+            # return "DESCRIPTION:similar to AA sequence:{0}".format(self.id)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "model": self.model.to_dict(),
+            "db_name": self.db_name,
+            "score": self.score,
+            "e_value": self.e_value,
+            "identity": self.identity,
+            "q_cov": self.q_cov,
+            "s_cov": self.s_cov,
+            "flag": self.flag,
+            "notes": self.notes
+        }
+
 if __name__ == '__main__':
     pass
