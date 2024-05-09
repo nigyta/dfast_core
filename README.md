@@ -301,6 +301,11 @@ Invoke DFAST:
 docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_core:latest dfast --genome /data/your_genome.fa --out /data/your_result --dbroot /dfast_db
 ```
 
+## Experimental
+### Annotation for antibiotic registance genes and virulence fators 
+- [CARD](https://card.mcmaster.ca) and [VFDB](http://www.mgc.ac.cn/VFs/) are used for ARG and VFG detection.
+
+
 ## <a id="citation"></a>Citation
 * on-line version of DFAST  
     DFAST and DAGA: web-based integrated genome annotation tools and resources  

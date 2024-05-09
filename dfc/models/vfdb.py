@@ -26,6 +26,9 @@ class VFDB(NucRefBase):
     def __str__(self):
         return "<VFDB:{self.vfg} ({self.vf_name}) {self.product}".format(self=self)
 
+    def info(self):
+        return f"{self.vf_name} in VF_ID:{self.vf_id} ({self.organism})"
+
     def set_info_to_feature(self, feature):
         feature.qualifiers["product"] = [self.product]
         if self.gene_symbol:
@@ -34,7 +37,7 @@ class VFDB(NucRefBase):
         #     feature.qualifiers["gene"] = [self.gene]
         # if self.gene_synonym:
         #     feature.qualifiers["gene_synonym"] = [self.gene_synonym]
-        note = f"similar to {self.vf_name} in VFDH:{self.vf_id} ({self.organism})"
+        note = f"similar to {self.info()}"
         feature.qualifiers.setdefault("note", []).append(note)
 
     def to_tabular(self):         

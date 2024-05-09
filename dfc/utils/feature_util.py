@@ -3,7 +3,7 @@
 
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition, BeforePosition, AfterPosition
 from logging import getLogger
-from dfc.models.hit import ProteinHit
+from dfc.models.hit import ProteinHit, Hit, NuclHit, HmmHit, CddHit
 
 class FeatureUtil(object):
 
@@ -196,10 +196,10 @@ class FeatureUtil(object):
         """
         fix pseudo-partial CDS predicted at the end of the contig, but is likely to be intact.
         The one that meet the following conditions will be retained
-            Starts at the coordinate 1 (+ strand) or at the end of contig (- strand)
-            5'-end is missing and 3'-end is intact (+ strand) or the opposited case (- strand) 
-            length is multiple of 3 and > min_length
-            the CDS has significant protein hit.
+            - Starts at the coordinate 1 (+ strand) or at the end of contig (- strand)
+            - 5'-end is missing and 3'-end is intact (+ strand) or the opposited case (- strand) 
+            - length is multiple of 3 and > min_length
+            - the CDS has significant protein hit or nucl hit.
 
         partial_flag 10, strand +, len>=500
         partial_flag 01, strand -, len>=500
@@ -217,18 +217,23 @@ class FeatureUtil(object):
             if "partial" in feature.annotations:
                 del feature.annotations["partial"]
 
-        def _to_misc_feature(feature, protein_hit):
+        def _to_misc_feature(feature, hit):
             if not feature.type == "CDS":
                 return  # Do nothing for features other than CDS
             self.logger.warning("Partial CDS predicted at %s:%s will be annotated as misc_feature", feature.seq_id, str(feature.location))
             feature.type = "misc_feature"
-            note = f"partial CDS similar to {protein_hit.id}:{protein_hit.description}"
+            if isinstance(hit, ProteinHit):
+                note = f"partial CDS similar to {hit.id}:{hit.description}"
+            elif isinstance(hit, NuclHit):
+                note = "partial CDS, " + hit.model.info()
+            else:
+                note = "partial CDS"
             feature.qualifiers.setdefault("note", []).append(note)
             for key in ["product", "translation", "transl_table", "codon_start"]:
                 if key in feature.qualifiers:
                     del feature.qualifiers[key]
 
-        def _get_protein_hit(feature):
+        def _get_hit(feature):
             if feature.primary_hit:
                 return feature.primary_hit
             elif feature.secondary_hits and isinstance(feature.secondary_hits[0], ProteinHit):
@@ -236,23 +241,31 @@ class FeatureUtil(object):
             else:
                 return None
 
+        self.logger.debug("Fixing partial CDS: %s", feature.id)
         acceptable_codons = ["ATG", "GTG", "TTG"]
         seq = self.genome.seq_records[feature.seq_id].seq
-        protein_hit = _get_protein_hit(feature)
+        hit = _get_hit(feature)
+        # self.logger.debug("Protein hit: %s", hit)
         if int(feature.location.start) == 0 and feature.strand == 1 and feature.annotations.get("partial_flag", "00") == "10" and len(feature) >= min_length:
             # case: fix left partial CDS (<1..##) to intact CDS
             first3 =  str(seq[:3]).upper()
-            if first3 in acceptable_codons and len(feature) % 3 == 0 and protein_hit:
+            if first3 in acceptable_codons and len(feature) % 3 == 0 and hit:
                 _fix_partial(feature, seq)
-            elif protein_hit and protein_hit.description != "hypothetical protein":
-                _to_misc_feature(feature, protein_hit)
+            elif isinstance(hit, ProteinHit) and hit.description != "hypothetical protein":
+                _to_misc_feature(feature, hit)
+            elif isinstance(hit, NuclHit):
+                _to_misc_feature(feature, hit)
         elif int(feature.location.end) == len(seq) and feature.strand == -1 and feature.annotations.get("partial_flag", "00") == "01" and len(feature) >= min_length:
             # case: fix right partial CDS (##..>##)　to intact CDS
             first3 =  str(seq[-3:].reverse_complement()).upper()
-            if first3 in acceptable_codons and len(feature) % 3 == 0 and protein_hit:
+            if first3 in acceptable_codons and len(feature) % 3 == 0 and hit:
                 _fix_partial(feature, seq)
-            elif protein_hit and protein_hit.description != "hypothetical protein":
-                _to_misc_feature(feature, protein_hit)
+            elif isinstance(hit, ProteinHit) and hit.description != "hypothetical protein":
+                _to_misc_feature(feature, hit)
+            elif isinstance(hit, NuclHit):
+                _to_misc_feature(feature, hit)
+        elif isinstance(hit, NuclHit):
+                _to_misc_feature(feature, hit)
 
 if __name__ == '__main__':
     pass

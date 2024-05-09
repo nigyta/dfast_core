@@ -222,17 +222,53 @@ class Config:
             },
         },
         {
+            # preliminary implementation
             "component_name": "NuclSearch",
-            "enabled": True,
+            "enabled": False,  # Not implemented. Never set this to True
             "options": {
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
-                "qcov_cutoff": 75,
-                "scov_cutoff": 75,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
                 "aligner": "blastn",
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
-                "database": "",
-                "db_name": "",
+                "database": "/work/db/PLASMID_DB",
+                "db_name": "PLASMID_DB",
+                "db_type": "PLASMID_DB",  # Must be either of auto/card/vfdb
+            },
+        },
+        {
+            # preliminary implementation
+            "component_name": "NuclSearch",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
+                "aligner": "blastn",
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "@@DB_ROOT@@/card/CARD",
+                "db_name": "CARD",
+                "db_type": "auto",  # Must be either of auto/card/vfdb
+            },
+        },
+        {
+            # preliminary implementation
+            "component_name": "NuclSearch",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
+                "aligner": "blastn",
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "@@DB_ROOT@@/vfdb/VFDB",
+                "db_name": "VFDB",
                 "db_type": "auto",  # Must be either of auto/card/vfdb
             },
         },

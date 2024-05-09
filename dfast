@@ -13,7 +13,7 @@ from dfc.utils.config_util import load_config, show_config, set_references, set_
     disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan, disable_rrna_prediction, \
     disable_trna_prediction, disable_cds_prediction, disable_crispr_prediction, set_genetic_code, set_gff, \
     set_threshold, set_values_from_metadata, enable_mga, enable_genemarks2, enable_rnammer, \
-    enable_metagenome_mode, disable_func_annotation
+    enable_metagenome_mode, disable_func_annotation, enable_amr
 from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
@@ -82,6 +82,7 @@ group_workflow.add_argument("--no_trna", help="Disable tRNA prediction", action=
 group_workflow.add_argument("--no_crispr", help="Disable CRISPR prediction", action="store_true")
 # Preliminary implementation for GFF parsing
 group_workflow.add_argument("--metagenome", help="Set options of MGA/Prodigal for metagenome contigs", action="store_true")
+group_workflow.add_argument("--amr", help="[Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs", action="store_true")
 group_workflow.add_argument("--gff", help="[Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.")
 
 
@@ -242,6 +243,9 @@ if args.no_func_anno:
 
 if args.metagenome:
     enable_metagenome_mode(config)
+
+if args.amr:
+    enable_amr(config)
 
 if args.no_hmm:  # --no_hmm
     disable_hmm_scan(config)

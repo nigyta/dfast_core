@@ -301,12 +301,26 @@ if args.assembly:
             gunzip_file(retrieved_file, output_genbank_file)
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
 
+if args.assembly_fasta:
+    # print(args.assembly_fasta)
+    out_dir = args.out or "."
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    logger.info("Trying to fetch FASTA file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
+    for accession in args.assembly_fasta:
+        logger.info("Downloading a FASTA file for {}...".format(accession))
+        retrieved_file = retrieve_assembly_fasta(accession, out_dir)
+        if retrieved_file:
+            output_genbank_file = retrieved_file.replace(".fna.gz", ".fna")
+            gunzip_file(retrieved_file, output_genbank_file)
+            logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
+
 if args.plasmidfinder:
     db_root = get_db_root(args)
     out_dir = db_root  # Reference data will be downloaded to DB_ROOT/plasmidfinder_db
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    logger.info("Ttyring to fetch FASTA file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
+    logger.info("Trying to retrieve PlasmidFinder reference data. Files will be written into '{}'".format(out_dir))
     retrieve_plasmidfinder_reference(out_dir)
 
 

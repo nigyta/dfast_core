@@ -8,12 +8,15 @@ from ..utils.ref_util import fasta_parsers, get_source_db
 
 class NucRefBase():
 
+    def info(self):
+        raise NotImplementedError
+
     def set_info_to_feature(self, feature):
         """
         to be implemented in the subclass
         set product, gene, etc. to feature obj
         """
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def write_tsv_file(dict_ref, out_tsv_file):
@@ -42,6 +45,7 @@ class NucRefBase():
                 f.write(ref.to_prot_fasta())
 
 class NucRef(NucRefBase):
+    # for PlasmidDB
     def __init__(self, protein_id, gene, product, gene_synonym, prot_seq, nucl_seq, note, accession, plasmid_name):
         self.protein_id = protein_id
         self.gene = gene
@@ -56,13 +60,16 @@ class NucRef(NucRefBase):
     def __str__(self):
         return "<NucRef:{self.protein_id} {self.product}>".format(self=self)
 
+    def info(self):
+        return f"{self.gene} in Plasmid:{self.plasmid_name}"
+
     def set_info_to_feature(self, feature):
         feature.qualifiers["product"] = [self.product]
         if self.gene:
             feature.qualifiers["gene"] = [self.gene]
         if self.gene_synonym:
             feature.qualifiers["gene_synonym"] = [self.gene_synonym]
-        note = f"similar to {self.gene} in Plasmid:{self.plasmid_name}"
+        note = f"similar to {self.info()}"
         feature.qualifiers.setdefault("note", []).append(note)
 
     def to_tabular(self):         
@@ -111,7 +118,7 @@ class NucRef(NucRefBase):
         note = f"similar to {self.gene} in Plasmid:{self.plasmid_name}"
         if self.note:
             note += f", Note: {self.note}"
-        return {"accession": f"PLADMID_DB:{self.protein_id}",
+        return {"accession": f"PLASMID_DB:{self.protein_id}",
                 "gene": gene,
                 "product": self.product,
                 "note": note
@@ -130,7 +137,7 @@ class PLASMID_DB(NucRef):
         note = f"similar to {self.gene} in Plasmid:{self.plasmid_name}"
         if self.note:
             note += f", Note: {self.note}"
-        return {"accession": f"PLADMID_DB:{self.protein_id}",
+        return {"accession": f"PLASMID_DB:{self.protein_id}",
                 "gene": gene,
                 "product": self.product,
                 "note": note

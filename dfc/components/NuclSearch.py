@@ -30,9 +30,9 @@ class NuclSearch(BaseAnnotationComponent):
         self.scov_cutoff = options.get("scov_cutoff", 90)
         self.pident_cutoff = options.get("pident_cutoff", 90)
 
-        self.database = options.get("database", "")  #"/dfast_core/db/amr/nucleotide_fasta_protein_homolog_model.fasta"  # options.get("database", "")
-        # fir debugging
+        self.database = options.get("database", "")  
         self.db_name = options.get("db_name", "")
+        self.get_db_version()
         self.ref_model = models[self.db_name]
         aligner_name = "blastn"  # options.get("aligner")
         assert aligner_name == "blastn"
@@ -46,6 +46,15 @@ class NuclSearch(BaseAnnotationComponent):
         """
         todo: check if db file exists.
         """
+
+    def get_db_version(self):
+        versoin_file = self.database + ".version"
+        if os.path.exists(versoin_file):
+            db_version = open(versoin_file).read().strip()
+            self.logger.info(f"Database version: {self.db_name} {db_version}")
+        else:
+            db_version = "UNDETERMINED"
+            self.logger.warning(f"Database version could not be found: {self.db_name} {db_version}")
 
     def createCommands(self):
         for i, query in self.query_files.items():

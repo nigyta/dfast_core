@@ -2,6 +2,7 @@
 # coding: UTF8
 
 from logging import getLogger
+import json
 from Bio import SeqIO
 from ..utils.ref_util import fasta_parsers, get_source_db
 from .nucref import NucRefBase
@@ -24,13 +25,16 @@ class CARD(NucRefBase):
     def __str__(self):
         return "<CARD:{self.aro_accession} {self.gene_family}>".format(self=self)
 
+    def info(self):
+        return f"{self.ARO_name} in CARD:{self.aro_accession}"
+
     def set_info_to_feature(self, feature):
         feature.qualifiers["product"] = [self.gene_family]
         # if self.gene:
         #     feature.qualifiers["gene"] = [self.gene]
         # if self.gene_synonym:
         #     feature.qualifiers["gene_synonym"] = [self.gene_synonym]
-        note = f"similar to {self.ARO_name} in CARD:{self.aro_accession}"
+        note = f"similar to {self.info()}"
         feature.qualifiers.setdefault("note", []).append(note)
 
 

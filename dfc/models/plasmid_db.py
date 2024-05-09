@@ -20,7 +20,7 @@ class PLASMID_DB(NucRef):
         note = f"similar to {self.gene} in Plasmid:{self.plasmid_name}"
         if self.note:
             note += f", Note: {self.note}"
-        return {"accession": f"PLADMID_DB:{self.protein_id}",
+        return {"accession": f"PLASMID_DB:{self.protein_id}",
                 "gene": gene,
                 "product": self.product,
                 "note": note
