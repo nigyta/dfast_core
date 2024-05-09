@@ -1,0 +1,63 @@
+
+カスタムrep databaseを作っている
+
+MOBtyper rep database    塩基配列でrepを見ている　直近の論文では3年前 2600件
+PlasmidFinder rep database
+
+
+Dali から Foldseek へ
+BLASTP clustered_nr DBを使う
+
+
+JGI　IMG でDB作っている
+	メタゲノムからもプラスミド抜いてくる
+
+
+
+https://pubmed.ncbi.nlm.nih.gov/33660784/
+Nucleic Acids Res. 2021 Apr 6;49(6):3394-3408. doi: 10.1093/nar/gkab113.
+Defining a novel domain that provides an essential contribution to site-specific interaction of Rep protein with DNA
+Katarzyna Wegrzyn 1, Elzbieta Zabrocka 1, Katarzyna Bury 1, Bartlomiej Tomiczek 1, Milosz Wieczor 2, Jacek Czub 2, Urszula Uciechowska 1, María Moreno-Del Alamo 3, Urszula Walkow 1, Igor Grochowina 1, Rafal Dutkiewicz 1, Janusz M Bujnicki 4 5, Rafael Giraldo 3, Igor Konieczny 1
+
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8034659/
+Supplementary Materials
+gkab113_supplemental_files.zip (3.3M)
+
+gkab113_supplemental_files/Supplementary Data_3.02.21.pdf
+Figure S1. Phylogenetic relations between Origin Binding Proteins (OBPs) based on their conserved WH domain. 
+Figure S2. Phylogenetic relations within the Rep superfamily, based on the full-length proteins.
+
+ーーーー
+
+Review 
+https://pubmed.ncbi.nlm.nih.gov/28365184/
+Plasmid. 2017 May:91:61-67. doi: 10.1016/j.plasmid.2017.03.006.
+Annotation of plasmid genes
+Christopher M Thomas 1, Nicholas R Thomson 2, Ana M Cerdeño-Tárraga 2, Celeste J Brown 3, Eva M Top 3, Laura S Frost 4
+
+Table 1
+Plasmid core functions: generic names plus names of paralogs in examples of different well-studied plasmids.
+Suggested names
+
+
+
+pharokka
+https://github.com/gbouras13/pharokka
+Fast Phage Annotation Tool
+, CARD and VFDB databases
+
+
+
+
+
+singularity exec /usr/local/biotools/i/igv-reports:1.9.0--pyh7cba7a3_0 create_report \
+  /home/ytanizaw/marchantia/assembly_hifi/annotation/transfer_annotation/Tak1_v2_polish.liftoff.gff_polished \
+  --fasta /home/ytanizaw/marchantia/assembly_hifi/v1genome/Tak-1_hifi_v2.nextpolish.fa \
+  --sequence 1 --begin 4 --end 5 \
+  --output tak1_test.html
+
+  -region chr5:470000-500000 \
+
+
+
+

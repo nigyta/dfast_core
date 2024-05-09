@@ -14,7 +14,7 @@ from .components.PseudoGeneDetection import PseudoGeneDetection
 from .components.BlastSearch import BlastSearch
 from .components.MBGDsearch import MBGDsearch
 from .components.DnaAfinder import DnaAfinder
-
+from .components.NuclSearch import NuclSearch
 
 COMPONENTS = {
     "BASE": BaseAnnotationComponent,
@@ -26,6 +26,7 @@ COMPONENTS = {
     "BlastSearch": BlastSearch,
     "MBGDsearch": MBGDsearch,
     "DnaAfinder": DnaAfinder,
+    "NuclSearch": NuclSearch,
 }
 
 

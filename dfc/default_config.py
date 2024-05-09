@@ -222,6 +222,57 @@ class Config:
             },
         },
         {
+            # preliminary implementation
+            "component_name": "NuclSearch",
+            "enabled": False,  # Not implemented. Never set this to True
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
+                "aligner": "blastn",
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "/work/db/PLASMID_DB",
+                "db_name": "PLASMID_DB",
+                "db_type": "PLASMID_DB",  # Must be either of auto/card/vfdb
+            },
+        },
+        {
+            # preliminary implementation
+            "component_name": "NuclSearch",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
+                "aligner": "blastn",
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "@@DB_ROOT@@/card/CARD",
+                "db_name": "CARD",
+                "db_type": "auto",  # Must be either of auto/card/vfdb
+            },
+        },
+        {
+            # preliminary implementation
+            "component_name": "NuclSearch",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
+                "aligner": "blastn",
+                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
+                "database": "@@DB_ROOT@@/vfdb/VFDB",
+                "db_name": "VFDB",
+                "db_type": "auto",  # Must be either of auto/card/vfdb
+            },
+        },
+        {
             # By default, this is disabled. 
             # If you want to add your original databases to be searched prior to default DB,
             # set 'enabled' to True and specify 'database', which you can do with '--database' option.
@@ -274,7 +325,7 @@ class Config:
                 "pident_cutoff": 0,
                 "aligner": "blastp",  # must be blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
-                "dbtype": "auto",  # Must be either of auto/ncbi/uniprot/plain
+                "db_type": "auto",  # Must be either of auto/ncbi/uniprot/plain
                 "database": "",
                 "db_name": "",
             },
@@ -344,4 +395,17 @@ class Config:
             },
         },
 
+    ]
+
+    CONTIG_ANNOTATION = [
+        {
+            # Plasmidfinder to infer sequences derived from plasmid
+            "tool_name": "Plasmidfinder",
+            "target": "source",
+            "enabled": True,
+            "options": {
+                "db_path": "@@DB_ROOT@@/plasmidfinder_db",
+                "cmd_options": "",
+            },
+        },    
     ]

@@ -8,6 +8,7 @@ import gzip
 from logging import getLogger, StreamHandler, INFO
 from ftplib import FTP
 import tarfile
+import shutil
 
 version = sys.version_info.major
 if version == 3:
@@ -86,16 +87,18 @@ parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
+parser.add_argument("--plasmidfinder", action="store_true",
+                         help="Reference data for PlasmidFinder")
 parser.add_argument("--no_indexing", action="store_true",
                          help="Do not perform database indexing")
 group_out = parser.add_mutually_exclusive_group()
 group_out.add_argument("-o", "--out", help="Output directory (default: current directory.\nFor --assembly, --assembly_fasta. Not allowed with argument --dbroot)", type=str, metavar="PATH")
-group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm. Not allowed with argument --out)", type=str, metavar="PATH")
+group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder. Not allowed with argument --out)", type=str, metavar="PATH")
 
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta]):
+if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]):
     parser.print_help()
     exit()
 
@@ -185,6 +188,25 @@ def retrieve_assembly_fasta(accession, out_dir="."):
     ftp.quit()
     return output_file
 
+def retrieve_plasmidfinder_reference(out_dir="."):
+    import subprocess
+    plasmid_db_dir = os.path.join(out_dir, "plasmidfinder_db")
+    if os.path.exists(plasmid_db_dir):
+        logger.info(f'Will delete existing directory: "{plasmid_db_dir}"')
+        shutil.rmtree(plasmid_db_dir)
+    cmd = f"cd {out_dir} && git clone https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git && "
+    cmd += f"cd plasmidfinder_db && python3 INSTALL.py"
+    logger.info(f'Running command: "{cmd}"')
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, shell=True)
+    out, err = p.communicate()
+    if p.returncode != 0 and err:
+        logger.error("Failed to download PlasmidFinder reference!")
+        logger.error(f"command: {cmd}")
+        logger.error(err.decode("utf8"))
+        exit(1)
+
+
 def gunzip_file(input_file, output_file, cleanup=True):
     with open(output_file, "w") as fw:
         with gzip.open(input_file, 'r') as fr:
@@ -200,6 +222,9 @@ def extract_tar_file(input_file, output_dir, cleanup=True):
         os.remove(input_file)
 
 def get_db_root(args):
+    """
+    Priority of DB_ROOT: command argument (--dbroot), env variable DFAST_DB_ROOT, default
+    """
     db_root_env = os.getenv('DFAST_DB_ROOT')
 
     if args.dbroot:
@@ -267,7 +292,7 @@ if args.assembly:
     out_dir = args.out or "."
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    logger.info("Ttyring to fetch flat file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
+    logger.info("Trying to fetch flat file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
     for accession in args.assembly:
         logger.info("Downloading a flat file for {}...".format(accession))
         retrieved_file = retrieve_assembly(accession, out_dir)
@@ -281,14 +306,24 @@ if args.assembly_fasta:
     out_dir = args.out or "."
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    logger.info("Ttyring to fetch FASTA file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
+    logger.info("Trying to fetch FASTA file(s) from Assembly DB. Files will be written into '{}'".format(out_dir))
     for accession in args.assembly_fasta:
-        logger.info("Downloading a flat file for {}...".format(accession))
+        logger.info("Downloading a FASTA file for {}...".format(accession))
         retrieved_file = retrieve_assembly_fasta(accession, out_dir)
         if retrieved_file:
             output_genbank_file = retrieved_file.replace(".fna.gz", ".fna")
             gunzip_file(retrieved_file, output_genbank_file)
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
+
+if args.plasmidfinder:
+    db_root = get_db_root(args)
+    out_dir = db_root  # Reference data will be downloaded to DB_ROOT/plasmidfinder_db
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    logger.info("Trying to retrieve PlasmidFinder reference data. Files will be written into '{}'".format(out_dir))
+    retrieve_plasmidfinder_reference(out_dir)
+
+
 # test GCF_000091005.1 GCA_000008865.1
     # accession = sys.argv[1]
     # retrieved_file = retrieve_assembly(accession)

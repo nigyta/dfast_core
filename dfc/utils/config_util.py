@@ -306,3 +306,16 @@ def set_values_from_metadata(config):
     if project_type == "gnm":
         complete = True    
     config.GENOME_CONFIG["complete"] = complete
+
+
+def enable_amr(config):
+    logger.info("AMR/VFG annotation and Plasmid identification enabled.")
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        if setting.get("component_name", "") == "NuclSearch":
+            db_name = setting.get("options", {}).get("db_name", "")
+            if db_name in ["CARD", "VFDB"]:
+                setting["enabled"] = True
+
+    for setting in config.CONTIG_ANNOTATION:
+        if setting.get("tool_name", "") == "Plasmidfinder":
+            setting["enabled"] = True

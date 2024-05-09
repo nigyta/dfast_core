@@ -164,6 +164,35 @@ class JavaWrapper(Tool):
     def getCommand(self):
         return ["java", self.java_options]
 
+
+class ContigAnnotationTool(Tool):
+    NAME = "ContigAnnotationTool"  # Should be overridden in child classes.
+    TYPE = ""  # Must be one of the features. e.g. CDS, tRNA, rRNA
+    VERSION_CHECK_CMD = ["echo",
+                         "version 1.0.0"]  # Command to get the tool version. Should be overridden in child classes.
+    VERSION_PATTERN = r"version (.+)"  # Regex pattern that matches the tool version. Should be overridden in child classes.
+    SHELL = False
+
+    def __init__(self, options=None, workDir="OUT"):
+        super(ContigAnnotationTool, self).__init__(options)
+        self.workDir = workDir
+        self.genomeFasta = os.path.join(self.workDir, "input", "genome.fna")
+
+        self.outputFile = os.path.join(self.workDir, "contig_annotation", "{0}.txt".format(self.__class__.__name__))
+        self.logFile = os.path.join(self.workDir, "contig_annotation", "{0}.log".format(self.__class__.__name__))
+
+    def getCommand(self):
+        """Override this method"""
+        raise NotImplementedError
+
+    def run(self):
+        cmd = self.getCommand()
+        self.executeCommand(cmd, shell=self.__class__.SHELL)
+
+    def getResult(self):
+        """Override this method"""
+        raise NotImplementedError
+
 if __name__ == '__main__':
     logger = getLogger(__name__)
 

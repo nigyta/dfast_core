@@ -11,12 +11,14 @@ from ..tools.ghostz import Ghostz
 from ..tools.ghostx import Ghostx
 from ..tools.blastp import Blastp
 from ..tools.diamond import Diamond
+from ..tools.blastn import Blastn
 
 ALIGNERS = {
     "ghostz": Ghostz,
     "ghostx": Ghostx,
     "blastp": Blastp,
-    "diamond": Diamond
+    "diamond": Diamond,
+    "blastn": Blastn
  }
 
 class BaseAnnotationComponent(object):
@@ -76,9 +78,12 @@ class BaseAnnotationComponent(object):
                 ID = feature.id
                 if type_ == "protein":
                     sequence = feature.qualifiers.get("translation", [""])[0]
+                elif type_ == "nucleotide":  # get CDS
+                    seq = self.genome.seq_records[feature.seq_id].seq
+                    sequence = str(feature.extract(seq))
                 else:
-                    self.logger.error("Currently query type must be protein only.")
-                    raise NotImplementedError
+                    self.logger.error("Query type must be protein or nuclaotide.")
+                    raise AssertionError
 
                 fasta_buffer += ">{0}\n{1}\n".format(ID, sequence)
                 self.query_sequences[ID] = sequence
