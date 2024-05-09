@@ -1,5 +1,5 @@
 Ver 1.3.0 (20240509) ---------------------------------------
-Preliminary implementation AMR/VFG annotation.
+Preliminary implementation for AMR/VFG annotation.
 Use '--amr' to enable this function.
 
 
