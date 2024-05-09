@@ -301,10 +301,18 @@ Invoke DFAST:
 docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_core:latest dfast --genome /data/your_genome.fa --out /data/your_result --dbroot /dfast_db
 ```
 
-## Experimental
+## Experimental work
 ### Annotation for antibiotic registance genes and virulence fators 
-- [CARD](https://card.mcmaster.ca) and [VFDB](http://www.mgc.ac.cn/VFs/) are used for ARG and VFG detection.
-
+__Usage__
+1. Prepare [CARD](https://card.mcmaster.ca) and [VFDB](http://www.mgc.ac.cn/VFs/) reference data.
+```
+scripts/reference_util_for_nucl.py --card --vfdb
+```
+2. Run
+Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
+```
+dfast -g example/pOXA-48.fa --amr
+```
 
 ## <a id="citation"></a>Citation
 * on-line version of DFAST  

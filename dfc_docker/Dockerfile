@@ -25,13 +25,7 @@ RUN cd /tmp  && \
 	rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
 	cd /work
 
-ENV INCREMENT_THIS_TO_BUMP 1
-# Install dfast_core
-RUN cd / && \
-    git clone https://github.com/nigyta/dfast_core && \
-    ln -s /dfast_core/dfast /usr/local/bin/ && \
-    ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
-    ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/
+
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
@@ -40,3 +34,12 @@ RUN cd / && \
 WORKDIR /work
 
 CMD /bin/bash
+
+ENV INCREMENT_THIS_TO_BUMP 1
+# Install dfast_core
+RUN cd / && \
+    git clone https://github.com/nigyta/dfast_core && \
+    ln -s /dfast_core/dfast /usr/local/bin/ && \
+    ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
+    ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/ && \
+    ln -s /dfast_core/scripts/reference_util_for_nucl.py /usr/local/bin/

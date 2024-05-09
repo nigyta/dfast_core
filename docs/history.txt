@@ -1,3 +1,9 @@
+Ver 1.3.0 (20240509) ---------------------------------------
+Preliminary implementation AMR/VFG annotation.
+Use '--amr' to enable this function.
+
+
+
 Ver 1.2.21 (20240208) ---------------------------------------
 Adjusted to changes in the SeqFeature specifications of Biopython.
 
