@@ -402,7 +402,7 @@ class Config:
             # Plasmidfinder to infer sequences derived from plasmid
             "tool_name": "Plasmidfinder",
             "target": "source",
-            "enabled": True,
+            "enabled": False,
             "options": {
                 "db_path": "@@DB_ROOT@@/plasmidfinder_db",
                 "cmd_options": "",

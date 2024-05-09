@@ -49,10 +49,11 @@ WORKDIR /work
 
 CMD /bin/bash
 
-ENV INCREMENT_THIS_TO_BUMP 1
+ENV INCREMENT_THIS_TO_BUMP 2
 # Install dfast_core
 RUN cd / && \
     git clone https://github.com/nigyta/dfast_core && \
     ln -s /dfast_core/dfast /usr/local/bin/ && \
     ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
-    ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/
+    ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/ && \
+    ln -s /dfast_core/scripts/reference_util_for_nucl.py /usr/local/bin/
