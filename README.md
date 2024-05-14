@@ -304,10 +304,14 @@ docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_
 ## Experimental work
 ### Annotation for antibiotic registance genes and virulence fators 
 __Usage__
-1. Prepare [CARD](https://card.mcmaster.ca) and [VFDB](http://www.mgc.ac.cn/VFs/) reference data.
+1. Prepare [CARD](https://card.mcmaster.ca), [VFDB](http://www.mgc.ac.cn/VFs/), and [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/) reference data.
 ```
-scripts/reference_util_for_nucl.py --card --vfdb
+scripts/dfast_file_downloader.py --plasmidfinder
+scripts/reference_util_for_nucl.py --card --card_version 3.2.9 --vfdb --vfdb_update_date 2024-05-10
 ```
+Since VFDB provides only the latest version, the value specified with `--vfdb_update_date` is used only as a timestamp for the reference data.  
+See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.
+
 2. Run
 Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
 ```

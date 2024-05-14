@@ -8,14 +8,13 @@ import argparse
 
 from logging import getLogger, DEBUG, INFO, StreamHandler
 
-CARD_VERSION = os.environ.get("CARD_VERSION", "3.2.9")
-VFDB_VERSION = os.environ.get("VFDB_VERSION", "2024-05-03")
 
 app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 logger = getLogger("")
 logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
+CARD_DEFAULT_VERSION = "3.2.9"  # Updated at 2024-02-13
 
 # srcPath = os.path.join(os.path.dirname(__file__), "..", "dfc")
 sys.path.append(app_root)
@@ -30,6 +29,7 @@ from dfc.models.vfdb import VFDB
 # from dfc.tools.hmmer import Hmmer_hmmpress
 # from dfc.models.protein import Protein
 # from dfc.utils.reffile_util import fasta2dfast, dfast2fasta, genbank2dfast, prepare_database, prepare_database_dmnd, run_hmmpress
+
 
 
 
@@ -57,7 +57,9 @@ parser = argparse.ArgumentParser(description="Reference Utility for Nucleotide d
 
 # group_basic = parser.add_argument_group("Basic options")
 parser.add_argument("--card", action="store_true", help="Prepare reference data for CARD")
+parser.add_argument("--card_version", type=str, help="CARD version number. See https://card.mcmaster.ca/download  e.g. 3.2.9")
 parser.add_argument("--vfdb", action="store_true", help="Prepare reference data for VFDB")
+parser.add_argument("--vfdb_update_date", type=str, help="VFDB update date. See http://www.mgc.ac.cn/VFs/download.htm e.g. 2024-05-03")
 # parser.add_argument("--plasmid", action="store_true", help="Prepare reference data for PlasmidDB")
 parser.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder. Not allowed with argument --out)", type=str, metavar="PATH")
 
@@ -65,8 +67,11 @@ args = parser.parse_args()
 
 if not any([args.card, args.vfdb]):
     parser.print_help()
-    sys.stderr.write(f"\n'--card' or '--vfdb' must be specified.\n\n")
+    sys.stderr.write(f"\nSpecify '--card' and/or '--vfdb'.\n\n")
     exit()
+
+
+
 
 set_binaries_path(app_root)
 
@@ -91,12 +96,12 @@ def make_nucl_blast_db(fasta_file_name, db_name):
 def write_version_file(db_name, version):
     # db_name should be the same as the -db option of BLAST
     version_file = db_name + ".version"
-    logger.info(f"Writing the version file to {version_file} ({version})")
+    logger.info(f"Writing the version file to {version_file} [{version}]")
     with open(version_file, "w") as f:
         f.write(version)
 
 
-def card2ref(card_json_file, db_name):
+def card2ref(card_json_file, db_name, CARD_VERSION):
     D = CARD.parse_card_json_file(card_json_file)
     nucl_fasta_file_name = db_name + ".nucl.fasta"
     prot_fasta_file_name = db_name + ".prot.fasta"
@@ -108,7 +113,7 @@ def card2ref(card_json_file, db_name):
     make_nucl_blast_db(nucl_fasta_file_name, db_name)
     write_version_file(db_name, CARD_VERSION)
 
-def vfdb2ref(vfdb_nucl_fasta_file, vfdb_prot_fasta_file, db_name):
+def vfdb2ref(vfdb_nucl_fasta_file, vfdb_prot_fasta_file, db_name, VFDB_VERSION):
     D = VFDB.parse_vfdb_fasta_files(vfdb_nucl_fasta_file, vfdb_prot_fasta_file)
     nucl_fasta_file_name = db_name + ".nucl.fasta"
     prot_fasta_file_name = db_name + ".prot.fasta"
@@ -135,6 +140,15 @@ def get_db_root(args):
     return db_root
 
 if args.card:
+
+    if not args.card_version:
+        logger.warning(f"CARD version is not specified. Will use the default version. [{CARD_DEFAULT_VERSION}]")
+        CARD_VERSION = CARD_DEFAULT_VERSION
+    else:
+        CARD_VERSION = args.card_version
+    logger.info(f"CARD_VERSION is set to '{CARD_VERSION}'")
+
+
     # Retrieve and convert CARD reference data
     db_root = get_db_root(args)
     tmp_dir = os.path.join(db_root, "card_temp")
@@ -160,16 +174,29 @@ if args.card:
         logger.info(f'Will delete existing directory: "{out_dir}"')
         shutil.rmtree(out_dir)
     os.makedirs(out_dir, exist_ok=True)
-    card2ref(card_json_file, db_name)
+    card2ref(card_json_file, db_name, CARD_VERSION)
     shutil.rmtree(tmp_dir)
 
 
+
+
+
 if args.vfdb:
+    if not args.vfdb_update_date:
+        logger.warning(f"VFDB update date is not specified. Will use today's date as timestamp.")
+        import datetime
+        now = datetime.datetime.now()
+        VFDB_VERSION = now.strftime("%Y-%m-%d") + "(data retrieved)"
+        logger.info(f"VFDB update date is set to '{VFDB_VERSION}'")
+    else:
+        VFDB_VERSION = args.vfdb_update_date
+        logger.info(f"VFDB update date is specified. Will use '{VFDB_VERSION}' as timestamp.")
+
     # Retrieve and convert VFDB reference data
     db_root = get_db_root(args)
     tmp_dir = os.path.join(db_root, "vfdb_temp")
     out_dir = os.path.join(db_root, "vfdb")
-    logger.info(f"Preparing reference data for VFDB in {out_dir} [ver. {VFDB_VERSION}]")
+    logger.info(f"Preparing reference data for VFDB in {out_dir}")
     logger.info(f"Created temporary working directory: {tmp_dir}")
 
     if os.path.exists(tmp_dir):
@@ -189,8 +216,8 @@ if args.vfdb:
     logger.info(f'Running command: "{cmd}"')
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, shell=True)
-
     out, err = p.communicate()
+
     vfdb_nucl_fasta_file = os.path.join(tmp_dir, "VFDB_setB_nt.fas")
     vfdb_prot_fasta_file = os.path.join(tmp_dir, "VFDB_setB_pro.fas")
     db_name = os.path.join(out_dir, "VFDB")
@@ -198,7 +225,9 @@ if args.vfdb:
         logger.info(f'Will delete existing directory: "{out_dir}"')
         shutil.rmtree(out_dir)
     os.makedirs(out_dir, exist_ok=True)
-    vfdb2ref(vfdb_nucl_fasta_file, vfdb_prot_fasta_file, db_name)
+    vfdb2ref(vfdb_nucl_fasta_file, vfdb_prot_fasta_file, db_name, VFDB_VERSION)
+    shutil.rmtree(tmp_dir)
+
 
 if __name__ == '__main__':
     pass

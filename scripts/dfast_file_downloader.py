@@ -9,6 +9,7 @@ from logging import getLogger, StreamHandler, INFO
 from ftplib import FTP
 import tarfile
 import shutil
+import subprocess
 
 version = sys.version_info.major
 if version == 3:
@@ -189,7 +190,6 @@ def retrieve_assembly_fasta(accession, out_dir="."):
     return output_file
 
 def retrieve_plasmidfinder_reference(out_dir="."):
-    import subprocess
     plasmid_db_dir = os.path.join(out_dir, "plasmidfinder_db")
     if os.path.exists(plasmid_db_dir):
         logger.info(f'Will delete existing directory: "{plasmid_db_dir}"')
