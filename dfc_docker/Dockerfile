@@ -17,25 +17,39 @@ RUN pip install biopython && \
     apt-get clean && rm -rf /var/lib/apt/lists/* 
 
 RUN cd /tmp  && \
-	curl -LO https://github.com/UCSC-LoweLab/tRNAscan-SE/archive/v2.0.6.tar.gz && \
-	tar xfz v2.0.6.tar.gz && \
-	cd tRNAscan-SE-2.0.6 && \
-	./configure && make && make install && \
+    curl -LO https://github.com/UCSC-LoweLab/tRNAscan-SE/archive/v2.0.6.tar.gz && \
+    tar xfz v2.0.6.tar.gz && \
+    cd tRNAscan-SE-2.0.6 && \
+    ./configure && make && make install && \
     cd .. && \
-	rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
-	cd /work
+    rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
+    cd /work
 
 
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
 
+# PlasmidFinder and related programs
+RUN cd / && \
+    git clone https://bitbucket.org/genomicepidemiology/plasmidfinder.git && \
+    cd /plasmidfinder && \
+    cp /plasmidfinder/plasmidfinder.py /usr/local/bin/ && \
+    cd / && rm -r /plasmidfinder
+
+RUN cd / && \
+    git clone --branch 1.0.1 --depth 1 https://bitbucket.org/genomicepidemiology/kma.git && \
+    cd kma && make && \
+    mv kma* /usr/local/bin/ && \
+    cd / && rm -r /kma
+
+RUN pip install tabulate cgecore
 
 WORKDIR /work
 
 CMD /bin/bash
 
-ENV INCREMENT_THIS_TO_BUMP 1
+ENV INCREMENT_THIS_TO_BUMP 5
 # Install dfast_core
 RUN cd / && \
     git clone https://github.com/nigyta/dfast_core && \
