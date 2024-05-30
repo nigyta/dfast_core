@@ -145,7 +145,7 @@ dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR
     --locus_tag_prefix ECXXX --minimum_length 200 --references EC_ref_genome.gbk \
     --aligner blastp --out OUT_ECXXX
     ```
-    'locus tag prefix' is required if you want your genome to be submitted to the INSDC (use `--locus_tag_prefix` option). DFAST generates DDBJ and GenBank submission files. For more information, please refer to [INSDC submission](docs/insdc_submission.md).
+    'locus tag prefix' is required if you want your genome to be submitted to the INSDC (use `--locus_tag_prefix` option). DFAST generates DDBJ submission files. For more information, please refer to [INSDC submission](docs/insdc_submission.md).
      If you set `--references` option, OrthoSearch (orthologous gene assignment) is enabled, which conducts all-against-all protein alignments between given reference genomes to infer orthologous genes.  
      `--aligner blastp` will let DFAST use BLASTP for protein alignments instead of default GHOSTX.
 
@@ -186,7 +186,7 @@ By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be use
 * Sequence and annotation data in GFF3 and GenBank format
 * Sequence data in FASTA format
 * Statistics for genome sequences and annotated features
-* DDBJ and GenBank submission files
+* DDBJ submission files
 
 ## <a id="options"></a>Options
 
@@ -237,6 +237,7 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
+  --amr                 [Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
@@ -248,7 +249,6 @@ Genome source modifiers and metadata [advanced]:
   --additional_modifiers STR
                         Additional modifiers for source features
   --metadata_file PATH  Path to a metadata file (optional for DDBJ submission file)
-  --center_name STR     Genome center name (optional for GenBank submission file)
 
 Run options:
   --cpu INT             Number of CPUs to use

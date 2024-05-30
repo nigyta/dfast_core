@@ -93,7 +93,7 @@ group_source.add_argument("--seq_types", help="Sequence types for each sequence 
 group_source.add_argument("--seq_topologies", help="Sequence topologies for each sequence (linear/circular, for complete genome)", metavar="STR")
 group_source.add_argument("--additional_modifiers", help="Additional modifiers for source features", metavar="STR")
 group_source.add_argument("--metadata_file", help="Path to a metadata file (optional for DDBJ submission file)", metavar="PATH")
-group_source.add_argument("--center_name", help="Genome center name (optional for GenBank submission file)", metavar="STR")
+# group_source.add_argument("--center_name", help="Genome center name (optional for GenBank submission file)", metavar="STR")  # deprecated
 
 
 group_run = parser.add_argument_group('Run options')
@@ -274,8 +274,9 @@ if args.seq_topologies:  # --seq_topologies
 if args.additional_modifiers:  # --additional_modifiers
     config.GENOME_SOURCE_INFORMATION["additional_modifiers"] = args.additional_modifiers
 
-if args.center_name:  # --center_name
-    config.GENBANK_SUBMISSION["center_name"] = args.center_name
+# deprecated as of 2024.May
+# if args.center_name:  # --center_name
+#     config.GENBANK_SUBMISSION["center_name"] = args.center_name
 
 if args.use_locustag_as_gene_id:
     config.OUTPUT_RESULT["use_locustag_as_gene_id"] = True

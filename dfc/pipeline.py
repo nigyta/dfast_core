@@ -14,7 +14,7 @@ from dfc.utils.feature_util import FeatureUtil
 from dfc.utils.locus_tag_generator import LocusTagGenerator
 from dfc.utils.format_converter import write_results
 from dfc.utils.ddbj_submission import DDBJsubmission
-from dfc.utils.genbank_submission import GenBankSubmission
+# from dfc.utils.genbank_submission import GenBankSubmission  # deprecated as of 2024.May
 from dfc.utils.genome_stat import GenomeStat
 from dfc import dfast_version
 from dfc.utils.summarize_pseudo import summarize_pseudo
@@ -49,7 +49,7 @@ class Pipeline():
         self.ca = ContigAnnotation(self.genome, config)
         self.fa = FunctionalAnnotation(self.genome, config)
         self.ddbj = DDBJsubmission(self.genome, config)
-        self.genbank = GenBankSubmission(self.genome, config)
+        # self.genbank = GenBankSubmission(self.genome, config) # deprecated as of 2024.May
 
     def execute(self):
         self.sa.execute()  # execute structural annotation
@@ -64,9 +64,10 @@ class Pipeline():
         write_results(self.genome, self.config)
         GenomeStat.execute(self.genome)
         self.ddbj.create_submission_file()
-        self.genbank.create_submission_file()
+        # self.genbank.create_submission_file() # deprecated as of 2024.May
         summarize_pseudo(self.genome, os.path.join(self.config.WORK_DIR, "pseudogene_summary.tsv"))
         summarize_amr(self.genome, self.config.WORK_DIR, dict_contig_annotation_report, os.path.join(self.config.WORK_DIR, "amr_summary.tsv"))
+
         if self.config.DEBUG:
             self.genome.to_pickle(os.path.join(self.config.WORK_DIR, "genome.pickle"))
 
