@@ -134,6 +134,8 @@ class Metadata(object):
         for key, value in metadata_dict.items():
             if key == "coverage":
                 key = "genome_coverage"  # compatibility for older version. To be removed in the future
+            if key == "source_country":
+                key = "geo_loc_name"  # compatibility for deprecation of "country" in the source feature
             field = self.fields.get(key)
             if field:
                 if field.feature not in ["COMMENT"]:

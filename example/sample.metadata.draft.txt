@@ -37,7 +37,7 @@ strain	LOOC260
 source_note	Lorem ipsum dolor sit amet, ...
 culture_collection	JCM:XXXXXX
 collection_date	2016-06-26
-source_country	Japan:Shizuoka
+geo_loc_name	Japan:Shizuoka
 collected_by	
 sub_species	
 host	

@@ -31,3 +31,4 @@ comment	These metadata are examples for the DDBJ submission using MSS (Mass Subm
 assembly_method	HGAP protocol 3
 sequencing_technology	MiSeq; PacBio RSII
 genome_coverage	120x
+geo_loc_name	Japan:Shizuoka

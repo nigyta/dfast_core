@@ -59,7 +59,8 @@ source_note	note	note	source	EX_SOURCE	array	FALSE	.*
 culture_collection	Culture Collection	culture_collection	source	EX_SOURCE	string	FALSE	[A-Za-z0-9 :,_\[\]\(\)\-\.]+							
 cultureCollection	Culture Collection (synonym for culture_collection)	culture_collection	source	EX_SOURCE	string	FALSE	[A-Za-z0-9 :,_\[\]\(\)\-\.]+							
 collection_date	collection_date	collection_date	source	EX_SOURCE	string	FALSE	.*							
-source_country	country	country	source	EX_SOURCE	string	FALSE	F.*							
+#source_country	country	country	source	EX_SOURCE	string	FALSE	F.*							
+geo_loc_name	geo_loc_name	geo_loc_name	source	EX_SOURCE	string	FALSE	FALSE	.*							
 collected_by	collected_by	collected_by	source	EX_SOURCE	string	FALSE	.*							
 sub_species	sub_species	sub_species	source	EX_SOURCE	string	FALSE	.*							
 host	host	host	source	EX_SOURCE	string	FALSE	.*							
