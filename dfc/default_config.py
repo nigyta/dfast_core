@@ -355,6 +355,7 @@ class Config:
                 "evalue_cutoff": 1e-6,
                 "database": "@@DB_ROOT@@/hmm/TIGRFAMs_15.0_HMM.LIB",
                 "db_name": "TIGR",
+                "cmd_options": ""
             },
         },
         {
@@ -364,9 +365,10 @@ class Config:
             "options": {
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": False,
-                "evalue_cutoff": 1e-6,
+                #"evalue_cutoff": 1e-6,
                 "db_name": "",  # eg 'Pfam',
-                "database": ""  # eg '@@DB_ROOT@@/hmm/Pfam-A.hmm'
+                "database": "",  # eg '@@DB_ROOT@@/hmm/Pfam-A.hmm'
+                "cmd_options": "--cut_ga" # default search parameter used by Pfam database
             },
         },
         {
