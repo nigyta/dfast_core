@@ -223,7 +223,7 @@ class Metadata(object):
 
         def addDfastComment(outputData):
             if not dfast_version is None:
-                outputData.append(["", "COMMENT", "", "line", "Annotated by DFAST v.{} (https://dfast.nig.ac.jp)".format(dfast_version)])
+                outputData.append(["", "COMMENT", "", "line", "Annotated by DFAST v.{} (https://dfast.ddbj.nig.ac.jp)".format(dfast_version)])
 
         outputData = []
 
