@@ -1,3 +1,7 @@
+Ver 1.3.1 (20240824) ---------------------------------------
+Minor fix for DDBJ submission. ff_definition has been changed.
+
+
 Ver 1.3.1 (20240530) ---------------------------------------
 The "country" qualifier in the DDBJ submission file has been changed to "geo_loc_name" to be compliant to the INSDC requirements (https://www.ddbj.nig.ac.jp/news/en/2024-05-09-e.html)
 

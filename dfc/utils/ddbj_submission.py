@@ -124,7 +124,9 @@ def source_feature_to_table(feature, record, seq_rank, rec_length, metadata):
     if seq_rank in ["contig", "scaffold"]:
         ret.append(["", "", "", "submitter_seqid", "@@[entry]@@"])
         # ret.append(["", "", "", "note", seq_rank + ": @@[entry]@@"])
-    ret.append(create_ff_definiton(seq_rank, strain))
+    print(record.annotations)
+    plasmid = record.annotations.get("plasmid")
+    ret.append(create_ff_definiton(seq_rank, plasmid))
     ret += metadata.render_ex_source()
     ret[0][1] = feature.type
     ret[0][2] = location_string
@@ -133,10 +135,13 @@ def source_feature_to_table(feature, record, seq_rank, rec_length, metadata):
     return ret
 
 
-def create_ff_definiton(seq_rank, strain):
+def create_ff_definiton(seq_rank, plasmid):
     assert seq_rank in ["complete", "scaffold", "contig"]
     if seq_rank == "complete":
-        ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome: @@[entry]@@"
+        if plasmid:
+            ff_definition = "@@[organism]@@ @@[strain]@@ plasmid @@[plasmid]@@ DNA, complete sequence"
+        else:
+            ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome"
         # if strain:
         #     ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome: @@[entry]@@"
         # else:
