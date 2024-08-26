@@ -114,17 +114,13 @@ def source_feature_to_table(feature, record, seq_rank, rec_length, metadata):
     for key in feature.qualifiers:
         ret += qualifier_to_table(feature.qualifiers, key)
     topology = record.annotations.get("topology", "linear")
-    # plasmid = record.annotations.get("plasmid", None)
     # organism = record.annotations.get("strain", "")
     strain = record.annotations.get("strain", "")
     # if strain:
     #     ret.append(["", "", "", "strain", strain])
-    # if plasmid:
-    #     ret.append(["", "", "", "plasmid", plasmid])
     if seq_rank in ["contig", "scaffold"]:
         ret.append(["", "", "", "submitter_seqid", "@@[entry]@@"])
-        # ret.append(["", "", "", "note", seq_rank + ": @@[entry]@@"])
-    print(record.annotations)
+    # print(record.annotations)
     plasmid = record.annotations.get("plasmid")
     ret.append(create_ff_definiton(seq_rank, plasmid))
     ret += metadata.render_ex_source()
