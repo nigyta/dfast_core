@@ -16,10 +16,16 @@ class Hmmer_hmmscan(Tool):
         if options is None:
             options = {}
         self.evalue_cutoff = options.get("evalue_cutoff", 1e-5)
+        self.cmd_options = options.get("cmd_options", "")
 
     def get_command(self, query_file, db_name, result_file):
-        return ["hmmscan", "--noali", "--notextw", "--cpu", "1", "-E", str(self.evalue_cutoff), "--tblout", result_file,
-                db_name, query_file]
+        if self.cmd_options != "":
+            cmd = ["hmmscan", self.cmd_options, "--noali", "--notextw", "--cpu", "1", "--tblout", result_file,
+                    db_name, query_file]
+        else:
+            cmd = ["hmmscan", "--noali", "--notextw", "--cpu", "1", "-E", str(self.evalue_cutoff), "--tblout", result_file,
+                    db_name, query_file]
+        return cmd
 
 
 class Hmmer_hmmpress(Tool):
