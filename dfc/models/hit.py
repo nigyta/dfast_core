@@ -57,7 +57,9 @@ class ProteinHit(Hit):
                 feature.qualifiers["gene"] = [self.gene]
             if self.ec_number:
                 feature.qualifiers["EC_number"] = [x.strip() for x in self.ec_number.split(",")]
-            feature.qualifiers.setdefault("inference", []).append(self.get_inference())
+            inference = self.get_inference()
+            if inference:
+                feature.qualifiers.setdefault("inference", []).append(inference)
 
         # print("DEBUG setting product", self.description)
         # todo modify note qualifier into appropriate one
@@ -74,10 +76,10 @@ class ProteinHit(Hit):
     def get_inference(self):
         if self.source_db:
             return "similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
-            # return "DESCRIPTION:similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
         else:
-            return "similar to AA sequence:{0}".format(self.id)
-            # return "DESCRIPTION:similar to AA sequence:{0}".format(self.id)
+            # When source_db is not available, inference is not described.
+            return None
+            #     return "similar to AA sequence:{0}".format(self.id)
 
 
 class HmmHit(Hit):
@@ -262,7 +264,9 @@ class MBGDHit(Hit):
 
     def assign_as_note(self, feature, verbosity=2):
         if verbosity >= 2:
-            feature.qualifiers.setdefault("inference", []).append(self.get_inference())
+            inference = self.get_inference()
+            if inference:
+                feature.qualifiers.setdefault("inference", []).append(self.get_inference())
             feature.qualifiers.setdefault("note", []).append(str(self))
 
     def get_inference(self):
@@ -328,11 +332,9 @@ class NuclHit(Hit):
 
     def get_inference(self):
         if self.source_db:
-            return "similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
-            # return "DESCRIPTION:similar to AA sequence:{0}:{1}".format(self.source_db, self.id)
+            return "similar to DNA sequence:{0}:{1}".format(self.source_db, self.id)
         else:
-            return "similar to AA sequence:{0}".format(self.id)
-            # return "DESCRIPTION:similar to AA sequence:{0}".format(self.id)
+            return None
 
     def to_dict(self):
         return {
