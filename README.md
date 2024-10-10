@@ -66,9 +66,9 @@ Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigy
 
 
 * **Download the distribution**  
-Download the DFAST distribution from [GitHub Releases](https://github.com/nigyta/dfast_core/releases), then unarchive it.
+Download the latest DFAST distribution from [GitHub Tags](https://github.com/nigyta/dfast_core/tags), then unarchive it.
   ```
-  wget https://github.com/nigyta/dfast_core/archive/x.x.x.tar.gz  
+  wget https://github.com/nigyta/dfast_core/archive/refs/tags/x.x.2.tar.gz  
   tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
   cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
@@ -302,7 +302,8 @@ docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_
 ```
 
 ## Experimental work
-### Annotation for antibiotic registance genes and virulence fators 
+### Annotation for antibiotic registance genes and virulence fators  
+`blastn` and `PlasmidFinder` are required. Please install it by yourself.  
 __Usage__
 1. Prepare [CARD](https://card.mcmaster.ca), [VFDB](http://www.mgc.ac.cn/VFs/), and [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/) reference data.
 ```
