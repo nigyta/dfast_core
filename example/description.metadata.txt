@@ -8,9 +8,6 @@ consrtm	Submitters' consortium name. You may leave this blank if not necessary. 
 contact	contact person's name. Must be one of submitters.	Masanori Tohno	
 email	contact person's email address	dfast@nig.ac.jp	
 url	URL for the institute, laboratory, or consortium that the contact person belongs to. (optional)	https://dfast.nig.ac.jp/	
-phone	contact person's phone number	81-55-981-6853	
-phext	contact person's phone extension number (optional)		
-fax	contact person's fax number	81-55-981-6853	
 institute	An institute name that the contact person belongs to	National Institute of Genetics	
 department	(optional)	Genome Informatics Labotatory	
 country		Japan	

@@ -14,9 +14,6 @@ consrtm	Consortium	consrtm	SUBMITTER	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.
 contact	Contact Person	contact	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9 ',\.\-]*	
 email	Email	email	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9_@,\.\-]*	
 url	URL	url	SUBMITTER	COMMON	string	FALSE	[^ `\\<>]*	
-phone	Phone	phone	SUBMITTER	COMMON	string	TRUE	[\d\-]{0,16}	
-phext	Phone ext.	phext	SUBMITTER	COMMON	string	FALSE	[\d\-]{0,16}	
-fax	Fax	fax	SUBMITTER	COMMON	string	TRUE	[\d\-]{0,16}	
 institute	Institute	institute	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
 department	Department	department	SUBMITTER	COMMON	string	FALSE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
 country	Country	country	SUBMITTER	COMMON	string	TRUE	[A-Za-z0-9',@#:_ \(\)\.\-]*	
