@@ -47,6 +47,7 @@ db_urls = {
     "cyanobase": host_dfast + "/dfc/distribution/cyanobase_aa.ref.gz",
     "ecoli": host_dfast + "/dfc/distribution/DFAST-ECOLI.ref.gz",
     "lab": host_dfast + "/dfc/distribution/DFAST-LAB.ref.gz",
+    "pylori": host_dfast + "/dfc/distribution/DFAST-Hpylori.ref.gz",
 }
 
 hmm_urls = {
