@@ -137,7 +137,13 @@ def retrieve_cdd_ftp(db_name, out_dir="."):
     return output_file
 
 def retrieve_cdd(db_name, out_dir="."):
-    target_url = cdd_url.replace("DBNAME", db_name)
+    if db_name != "Cog":
+        logger.warning("Currently, only 'cog' is supported for CDD database.")
+        exit(1)
+
+    # target_url = cdd_url.replace("DBNAME", db_name)
+    target_url = "https://ddbj.nig.ac.jp/public/software/dfast/cog.tar.gz"
+    logger.warning("Cog reference data will be downloaded from https://ddbj.nig.ac.jp/public/software/dfast/cog.tar.gz")
     target_file = os.path.basename(target_url)
     output_file = os.path.join(out_dir, target_file)
     request.urlretrieve(target_url, output_file)
