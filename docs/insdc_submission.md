@@ -123,7 +123,7 @@ The below is an example of a command to generate compliant submission files for 
 ```
 dfast -g example/sample.lactobacillus.fna --complete t --organism "Lactobacillus hokkaidonensis" \
 --strain LOOC260 --seq_names "Chromosome,pXXXX,pYYYY" --seq_topologies c,c,l --seq_types c,p,p \
---additional_modifiers "culture_collection=JCM:18461; isolation_source=silage; note=You can add a comment; note=You can add another comment; collection_date=2017-06-26" --metadata_file example/sample.metadata.complete.txt \
+--additional_modifiers "culture_collection=JCM:18461; isolation_source=silage; note=You can add a comment; note=You can add another comment" --metadata_file example/sample.metadata.complete.txt \
 --locus_tag_prefix LH260 --step 10 --use_separate_tags t --out LHLOOC
 ```
 Instead of using `--organism`, `--strain`, `--additional_modifiers` options, they can be specified in the metadata file as shown in the example for a draft genome.

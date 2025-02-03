@@ -66,6 +66,15 @@ class DDBJsubmission(object):
             self.logger.info("Writing a DDBJ annotation file to {}".format(ann_file))
             self.logger.info("Writing a DDBJ sequence file to {}".format(fasta_file))
             create_ddbj_submission_file(self.genome, self.metadata, ann_file, fasta_file, self.verbosity)
+
+            # experimental implementation to generate dfast_results.json
+            from sys import version_info
+            if version_info >= (3, 8):            
+                from dfc.utils.ann2json_for_dfast import ann2json_for_dfast
+                json_out_dir = os.path.dirname(self.output_dir)
+                json_file = os.path.join(json_out_dir, "dfast_results.json")
+                self.logger.info("Writing a DFAST results file to {} (experimantal feature)".format(json_file))
+                ann2json_for_dfast(ann_file, fasta_file, json_file)
         else:
             self.logger.warning("'Generate DDBJ Submission file' is disabled. Skip processing")
 

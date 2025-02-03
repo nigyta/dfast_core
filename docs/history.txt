@@ -1,3 +1,9 @@
+Ver 1.3.5 (20250203) ---------------------------------------
+Minor fix. dfast_results.json will be generated in the result file, which contains information required for DDBJ submission (experimental implementation)
+
+Ver 1.3.4 (20241220) ---------------------------------------
+Minor fix. phone and fax are no longer required in DDBJ submission file, so they have been removed.
+
 Ver 1.3.3 (20241007) ---------------------------------------
 Minor fix. Inference will not be described when cyanobase_aa is used as the reference database.
 
