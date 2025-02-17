@@ -6,6 +6,7 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 ## Important Notice 2025 Feb
 The reference data for DFAST is normally available from our web service (https://dfast.ddbj.nig.ac.jp). However, due to a system replacement on our institute’s supercomputer, the web service will be unavailable from mid-February to early March 2025. During this period, the `dfast_file_downloader.py` script will not work. Instead, please manually download the data (`dfast_core_db.tar.gz`) from https://dfast.annotation.jp and follow the instructions in the README file available at the site.
 
+---
 
 #### Contents
 * [Overview](#overview)
