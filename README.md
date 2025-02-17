@@ -3,6 +3,10 @@ DFAST is a flexible and customizable pipeline for prokaryotic genome annotation 
 The stand-alone version of DFAST is also refered to as DFAST-core to differentiate it from its on-line version.  
 For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 
+## Important Notice 2025 Feb
+The reference data for DFAST is normally available from our web service (https://dfast.ddbj.nig.ac.jp). However, due to a system replacement on our institute’s supercomputer, the web service will be unavailable from mid-February to early March 2025. During this period, the `dfast_file_downloader.py` script will not work. Instead, please manually download the data (`dfast_core_db.tar.gz`) from https://dfast.annotation.jp and follow the instructions in the README file available at the site.
+
+
 #### Contents
 * [Overview](#overview)
 * [Installation](#installation)
@@ -20,7 +24,10 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Workflow details](docs/workflow.md)
 * [INSDC submission](docs/insdc_submission.md)
 * [Cookbook](docs/cookbook.md)
+
+
 ## <a id="overview"></a>Overview
+
 * **Easy install**  
 DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.  
 Bioconda package is also available.
@@ -96,6 +103,8 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     ```
     dfast_file_downloader.py -h
     ```
+
+The `dfast_file_downloader.py` script downloads the reference data from our web service (https://dfast.ddbj.nig.ac.jp). If file downloads fail due to server maintenance or other issues, please manually obtain the reference data from the website below.
 
 ## Installation via conda
 DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast/README.html). Install with:
