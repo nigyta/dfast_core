@@ -105,7 +105,7 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     dfast_file_downloader.py -h
     ```
 
-The `dfast_file_downloader.py` script downloads the reference data from our web service (https://dfast.ddbj.nig.ac.jp). If file downloads fail due to server maintenance or other issues, please manually obtain the reference data from the website below.
+The `dfast_file_downloader.py` script downloads the reference data from our web service (https://dfast.ddbj.nig.ac.jp). If file downloads fail due to server maintenance or other issues, please manually obtain the reference data from [this site](https://dfast.annotation.jp).
 
 ## Installation via conda
 DFAST is also available from [Bioconda](https://bioconda.github.io/recipes/dfast/README.html). Install with:
