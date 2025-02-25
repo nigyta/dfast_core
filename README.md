@@ -49,12 +49,13 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
 ### Prerequisites
 * **Python (3.7-)**  
   DFAST runs both on Python 3.7 or later. Python 2 is no longer supported.  
+  Python>=3.10 is recommended.
 * **BioPython package**  
   You can install this with the Python package management tool `pip`:  
   ```
   (sudo) pip install biopython
   ```
-  If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.
+  If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.  
 
 * **Perl and Java**  
 Some of the external programs called from DFAST depend on Perl or Java. Basically, they work with the pre-installed versions on your system.  
@@ -328,6 +329,13 @@ Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnota
 ```
 dfast -g example/pOXA-48.fa --amr
 ```
+
+### DFAST Record JSON  
+DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
+```
+pip install "git+https://github.com/ddbj/dr_tools.git"
+```
+
 
 ## <a id="citation"></a>Citation
 * on-line version of DFAST  

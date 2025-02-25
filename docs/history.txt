@@ -1,3 +1,6 @@
+Ver 1.3.6 (20250225) ---------------------------------------
+Minor fix. dfast_results.json has been renamed as dfast_record, which is generated using the DR_tools module. (Python>=3.10, experimental implementation)
+
 Ver 1.3.5 (20250203) ---------------------------------------
 Minor fix. dfast_results.json will be generated in the result file, which contains information required for DDBJ submission (experimental implementation)
 

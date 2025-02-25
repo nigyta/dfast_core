@@ -69,12 +69,16 @@ class DDBJsubmission(object):
 
             # experimental implementation to generate dfast_results.json
             from sys import version_info
-            if version_info >= (3, 8):            
-                from dfc.utils.ann2json_for_dfast import ann2json_for_dfast
-                json_out_dir = os.path.dirname(self.output_dir)
-                json_file = os.path.join(json_out_dir, "dfast_results.json")
-                self.logger.info("Writing a DFAST results file to {} (experimantal feature)".format(json_file))
-                ann2json_for_dfast(ann_file, fasta_file, json_file)
+            if version_info >= (3, 10):            
+                try:
+                    from dr_tools import drt_ann2json
+                    json_out_dir = os.path.dirname(self.output_dir)
+                    json_file = os.path.join(json_out_dir, "dfast_record.json")
+                    drt_ann2json(ann_file, fasta_file, json_file, division="VRL")
+                    self.logger.info(f"Converted MSS file into JSON. {ann_file} --> {json_file} [Experimental]")
+
+                except ImportError:
+                    self.logger.warning("[Experimental] DFAST Record JSON will not be generated. Please install dr_tools and use Python>=3.10.")
         else:
             self.logger.warning("'Generate DDBJ Submission file' is disabled. Skip processing")
 

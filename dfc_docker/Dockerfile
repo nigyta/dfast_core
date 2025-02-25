@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.10
 
 # 環境変数の設定
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -25,7 +25,10 @@ RUN cd /tmp  && \
     rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
     cd /work
 
-
+# For compatibility (required for older version of BLAST binaries)
+RUN wget http://mirrors.kernel.org/ubuntu/pool/main/libi/libidn/libidn11_1.33-2.2ubuntu2_amd64.deb && \
+    apt install ./libidn11_1.33-2.2ubuntu2_amd64.deb && \
+    rm libidn11_1.33-2.2ubuntu2_amd64.deb
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
@@ -49,7 +52,7 @@ WORKDIR /work
 
 CMD /bin/bash
 
-ENV INCREMENT_THIS_TO_BUMP 5
+ENV INCREMENT_THIS_TO_BUMP 2
 # Install dfast_core
 RUN cd / && \
     git clone https://github.com/nigyta/dfast_core && \
@@ -57,3 +60,6 @@ RUN cd / && \
     ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
     ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/ && \
     ln -s /dfast_core/scripts/reference_util_for_nucl.py /usr/local/bin/
+
+# Install DFAST Record tools
+RUN pip install "git+https://github.com/ddbj/dr_tools.git"
