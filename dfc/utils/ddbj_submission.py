@@ -74,7 +74,7 @@ class DDBJsubmission(object):
                     from dr_tools import drt_ann2json
                     json_out_dir = os.path.dirname(self.output_dir)
                     json_file = os.path.join(json_out_dir, "dfast_record.json")
-                    drt_ann2json(ann_file, fasta_file, json_file, division="VRL")
+                    drt_ann2json(ann_file, fasta_file, json_file, division="BCT", record_version="v2")
                     self.logger.info(f"Converted MSS file into JSON. {ann_file} --> {json_file} [Experimental]")
 
                 except ImportError:

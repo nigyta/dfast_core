@@ -52,7 +52,7 @@ WORKDIR /work
 
 CMD /bin/bash
 
-ENV INCREMENT_THIS_TO_BUMP 2
+ENV INCREMENT_THIS_TO_BUMP 4
 # Install dfast_core
 RUN cd / && \
     git clone https://github.com/nigyta/dfast_core && \
