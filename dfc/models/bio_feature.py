@@ -19,6 +19,16 @@ class ExtendedFeature(SeqFeature):
         if annotations is None:
             annotations = {}
         self.annotations = annotations
+    
+    @property
+    def strand(self):
+        """
+        Alias to self.location.strand.
+        This fixes AttributeError in DFAST utility scripts when using Biopython 1.82+.
+        """
+        if self.location is not None:
+            return self.location.strand
+        return None
 
     def assign_hit(self, verbosity=2):
         if self.type == "CRISPR":
