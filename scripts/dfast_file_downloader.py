@@ -91,6 +91,8 @@ parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--plasmidfinder", action="store_true",
                          help="Reference data for PlasmidFinder")
+parser.add_argument("--mge", action="store_true",
+                         help="Reference data for MobileElementFinder (MGEdb)")
 parser.add_argument("--no_indexing", action="store_true",
                          help="Do not perform database indexing")
 group_out = parser.add_mutually_exclusive_group()
@@ -100,7 +102,7 @@ group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_R
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]):
+if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder, args.mge]):
     parser.print_help()
     exit()
 
@@ -196,22 +198,190 @@ def retrieve_assembly_fasta(accession, out_dir="."):
     ftp.quit()
     return output_file
 
+plasmidfinder_extra_databases = [
+    {
+        "url": "https://ndownloader.figshare.com/files/58979998",
+        "filename": "repP_database_v2.fsa",
+        "db_prefix": "repP_database_v2",
+        "name": "repP",
+        "description": "repP plasmid replicons",
+    },
+    {
+        "url": "https://ndownloader.figshare.com/files/58980199",
+        "filename": "AcinetobacterPlasmidTyping_v3.fsa",
+        "db_prefix": "AcinetobacterPlasmidTyping_v3",
+        "name": "Acinetobacter",
+        "description": "Acinetobacter plasmid typing",
+    },
+]
+
+
 def retrieve_plasmidfinder_reference(out_dir="."):
     plasmid_db_dir = os.path.join(out_dir, "plasmidfinder_db")
     if os.path.exists(plasmid_db_dir):
         logger.info(f'Will delete existing directory: "{plasmid_db_dir}"')
         shutil.rmtree(plasmid_db_dir)
-    cmd = f"cd {out_dir} && git clone https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git && "
-    cmd += f"cd plasmidfinder_db && python3 INSTALL.py"
-    logger.info(f'Running command: "{cmd}"')
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+
+    # Clone the database repository
+    clone_cmd = f"cd {out_dir} && git clone https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git"
+    logger.info(f'Cloning PlasmidFinder database: "{clone_cmd}"')
+    p = subprocess.Popen(clone_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, shell=True)
     out, err = p.communicate()
     if p.returncode != 0 and err:
-        logger.error("Failed to download PlasmidFinder reference!")
-        logger.error(f"command: {cmd}")
+        logger.error("Failed to clone PlasmidFinder database!")
         logger.error(err.decode("utf8"))
         exit(1)
+
+    # Download extra databases
+    _download_plasmidfinder_extra_databases(plasmid_db_dir)
+
+    # Try KMA indexing via INSTALL.py, fall back to BLAST indexing
+    if shutil.which("kma"):
+        install_cmd = f"cd {plasmid_db_dir} && python3 INSTALL.py"
+        logger.info(f'KMA found. Running INSTALL.py for KMA indexing: "{install_cmd}"')
+        p = subprocess.Popen(install_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell=True)
+        out, err = p.communicate()
+        if p.returncode != 0 and err:
+            logger.warning("KMA indexing failed. Falling back to BLAST indexing.")
+            _index_plasmidfinder_with_blast(plasmid_db_dir)
+    else:
+        logger.info("KMA not found. Using BLAST indexing for PlasmidFinder database.")
+        _index_plasmidfinder_with_blast(plasmid_db_dir)
+
+
+def _download_plasmidfinder_extra_databases(plasmid_db_dir):
+    config_file = os.path.join(plasmid_db_dir, "config")
+    for db in plasmidfinder_extra_databases:
+        output_file = os.path.join(plasmid_db_dir, db["filename"])
+        logger.info(f'\tDownloading extra database: {db["filename"]} from {db["url"]}')
+        try:
+            request.urlretrieve(db["url"], output_file)
+        except Exception as e:
+            logger.warning(f'\tFailed to download {db["filename"]}: {e}. Skipping.')
+            continue
+        if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+            logger.info(f'\tDownloaded {db["filename"]} ({os.path.getsize(output_file)} bytes)')
+            # Append to config file
+            entry = f'{db["db_prefix"]}\t{db["name"]}\t{db["description"]}\n'
+            with open(config_file, "a") as f:
+                f.write(entry)
+        else:
+            logger.warning(f'\tDownloaded file is empty: {db["filename"]}. Skipping.')
+
+
+def _index_plasmidfinder_with_blast(plasmid_db_dir):
+    if not shutil.which("makeblastdb"):
+        logger.error("Neither KMA nor makeblastdb found. Cannot index PlasmidFinder database.")
+        exit(1)
+    fsa_files = [f for f in os.listdir(plasmid_db_dir) if f.endswith(".fsa")]
+    if not fsa_files:
+        logger.error(f"No .fsa files found in {plasmid_db_dir}")
+        exit(1)
+    for fsa in fsa_files:
+        db_name = fsa.replace(".fsa", "")
+        fsa_path = os.path.join(plasmid_db_dir, fsa)
+        db_path = os.path.join(plasmid_db_dir, db_name)
+        cmd = ["makeblastdb", "-dbtype", "nucl", "-in", fsa_path,
+               "-out", db_path, "-hash_index", "-parse_seqids"]
+        logger.info(f"\tIndexing {fsa} with makeblastdb")
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if p.returncode != 0:
+            logger.error(f"Failed to index {fsa}")
+            logger.error(err.decode("utf8"))
+            exit(1)
+    logger.info("PlasmidFinder BLAST indexing completed.")
+
+
+def retrieve_mge_reference(out_dir="."):
+    mge_db_dir = os.path.join(out_dir, "mge_db")
+    if os.path.exists(mge_db_dir):
+        logger.info(f'Will delete existing directory: "{mge_db_dir}"')
+        shutil.rmtree(mge_db_dir)
+    os.makedirs(mge_db_dir)
+
+    # Clone the MGEdb repository
+    tmp_clone_dir = os.path.join(out_dir, "mgedb_temp")
+    if os.path.exists(tmp_clone_dir):
+        shutil.rmtree(tmp_clone_dir)
+    clone_cmd = f"git clone https://bitbucket.org/mhkj/mgedb.git --branch develop --depth 1 {tmp_clone_dir}"
+    logger.info(f'Cloning MGEdb repository: "{clone_cmd}"')
+    p = subprocess.Popen(clone_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, shell=True)
+    out, err = p.communicate()
+    if p.returncode != 0 and err:
+        logger.error("Failed to clone MGEdb repository!")
+        logger.error(err.decode("utf8"))
+        exit(1)
+
+    # Copy metadata JSON if available
+    src_data_dir = os.path.join(tmp_clone_dir, "mgedb", "data")
+    for json_file in ["mge_records.json", "mge_nomenclature.json"]:
+        src = os.path.join(src_data_dir, json_file)
+        if os.path.exists(src):
+            shutil.copy2(src, mge_db_dir)
+
+    # Convert FASTA to DFAST reference format
+    src_fna = os.path.join(src_data_dir, "sequences.d", "mge_records.fna")
+    if not os.path.exists(src_fna):
+        logger.error(f"MGEdb sequence file not found: {src_fna}")
+        exit(1)
+    _prepare_mge_reference(src_fna, mge_db_dir)
+
+    # Clean up cloned repository
+    shutil.rmtree(tmp_clone_dir, ignore_errors=True)
+
+
+def _prepare_mge_reference(src_fna, mge_db_dir):
+    """Parse MGEdb FASTA and create .nucl.fasta, .nucl.ref, and BLAST index."""
+    from Bio import SeqIO
+
+    db_name = os.path.join(mge_db_dir, "MGE")
+    nucl_fasta_file = db_name + ".nucl.fasta"
+    ref_tsv_file = db_name + ".nucl.ref"
+
+    logger.info(f"\tParsing MGEdb FASTA: {src_fna}")
+    count = 0
+    with open(nucl_fasta_file, "w") as f_fasta, open(ref_tsv_file, "w") as f_ref:
+        for record in SeqIO.parse(src_fna, "fasta"):
+            header = record.description
+            parts = header.split("|")
+            name = parts[0] if len(parts) >= 1 else header
+            allele = parts[1] if len(parts) >= 2 else ""
+            accession = parts[2] if len(parts) >= 3 else ""
+            nucl_seq = str(record.seq).upper()
+            mge_id = header
+
+            f_fasta.write(f">{mge_id}\n{nucl_seq}\n")
+            f_ref.write("\t".join([mge_id, name, allele, accession, nucl_seq, ""]) + "\n")
+            count += 1
+    logger.info(f"\tProcessed {count} MGE sequences.")
+
+    # Write version file
+    version_file = db_name + ".version"
+    with open(version_file, "w") as f:
+        f.write("MGEdb-develop")
+    logger.info(f"\tWrote version file: {version_file}")
+
+    # BLAST index
+    _index_mge_with_blast(nucl_fasta_file, db_name)
+
+
+def _index_mge_with_blast(fasta_file, db_name):
+    if not shutil.which("makeblastdb"):
+        logger.error("makeblastdb not found. Cannot index MGEdb database.")
+        exit(1)
+    cmd = ["makeblastdb", "-dbtype", "nucl", "-in", fasta_file, "-out", db_name]
+    logger.info(f"\tIndexing MGEdb with makeblastdb")
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if p.returncode != 0:
+        logger.error("Failed to index MGEdb")
+        logger.error(err.decode("utf8"))
+        exit(1)
+    logger.info("MGEdb BLAST indexing completed.")
 
 
 def gunzip_file(input_file, output_file, cleanup=True):
@@ -329,6 +499,14 @@ if args.plasmidfinder:
         os.makedirs(out_dir)
     logger.info("Trying to retrieve PlasmidFinder reference data. Files will be written into '{}'".format(out_dir))
     retrieve_plasmidfinder_reference(out_dir)
+
+if args.mge:
+    db_root = get_db_root(args)
+    out_dir = db_root  # Reference data will be downloaded to DB_ROOT/mge_db
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    logger.info("Trying to retrieve MGEdb reference data. Files will be written into '{}'".format(out_dir))
+    retrieve_mge_reference(out_dir)
 
 
 # test GCF_000091005.1 GCA_000008865.1

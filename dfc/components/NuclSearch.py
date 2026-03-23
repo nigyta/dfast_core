@@ -11,13 +11,15 @@ from ..tools.blastdbcmd import Blastdbcmd
 from ..models.nucref import PLASMID_DB  # , NucRef, NucRefBase
 from ..models.card import CARD
 from ..models.vfdb import VFDB
+from ..models.mge import MGE
 # from ..models.plasmid_db import PLASMID_DB
 
 
 models = {
     "PLASMID_DB": PLASMID_DB,
     "CARD": CARD,
-    "VFDB": VFDB
+    "VFDB": VFDB,
+    "MGE": MGE,
 }
 
 class NuclSearch(BaseAnnotationComponent):

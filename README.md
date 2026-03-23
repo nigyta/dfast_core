@@ -99,6 +99,10 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     dfast_file_downloader.py --cdd Cog --hmm TIGR
     ```
     DFAST default workflow requires COG database for RPS-BLAST and TIGRFAM database for hmmerscan.
+3. **PlasmidFinder and MGEdb databases (optional, for --amr)**
+    ```
+    dfast_file_downloader.py --plasmidfinder --mge
+    ```
 * **See help for more information.**
     ```
     dfast_file_downloader.py -h
@@ -246,7 +250,7 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
-  --amr                 [Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs
+  --amr                 Enable AMR/VFG/MGE annotation and identification of plasmid-derived contigs (requires CARD, VFDB, MGEdb, and PlasmidFinder databases)
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
@@ -302,7 +306,7 @@ The Docker container image is available from [Dockerhub:nigyta/dtast_core](https
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```
-docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR --dbroot /dfast_db
+docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR --plasmidfinder --mge --dbroot /dfast_db
 ```
 
 Invoke DFAST:
@@ -310,23 +314,55 @@ Invoke DFAST:
 docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_core:latest dfast --genome /data/your_genome.fa --out /data/your_result --dbroot /dfast_db
 ```
 
-## Experimental work
-### Annotation for antibiotic registance genes and virulence fators  
-`blastn` and `PlasmidFinder` are required. Please install it by yourself.  
-__Usage__
-1. Prepare [CARD](https://card.mcmaster.ca), [VFDB](http://www.mgc.ac.cn/VFs/), and [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/) reference data.
-```
-scripts/dfast_file_downloader.py --plasmidfinder
-scripts/reference_util_for_nucl.py --card --card_version 3.2.9 --vfdb --vfdb_update_date 2024-05-10
-```
-Since VFDB provides only the latest version, the value specified with `--vfdb_update_date` is used only as a timestamp for the reference data.  
-See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.
+## AMR, Virulence, Plasmid, and Mobile Genetic Element Annotation
+DFAST supports detection of antimicrobial resistance (AMR) genes, virulence factors, plasmid replicons, and mobile genetic elements using the `--amr` option.
 
-2. Run
-Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
+### Prerequisites
+* `blastn` must be available in `PATH` (bundled binaries are included for Linux/Mac)
+* [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder) (v3.0+) must be installed
+  ```
+  pip install plasmidfinder
+  ```
+
+### Database setup
+1. **CARD and VFDB** (AMR genes and virulence factors)
+    ```
+    scripts/reference_util_for_nucl.py --card --card_version 3.2.9 --vfdb --vfdb_update_date 2024-05-10
+    ```
+    See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.
+
+2. **PlasmidFinder** (plasmid replicon typing)
+    ```
+    scripts/dfast_file_downloader.py --plasmidfinder
+    ```
+    This clones the PlasmidFinder database and downloads two additional databases:
+    * **repP_database_v2** — repP plasmid replicons
+    * **AcinetobacterPlasmidTyping_v3** — Acinetobacter plasmid typing
+
+    BLAST indexing is performed automatically. If KMA is available, KMA indexing via `INSTALL.py` is used instead.
+
+3. **MGEdb** (mobile genetic elements: insertion sequences, transposons, ICEs)
+    ```
+    scripts/dfast_file_downloader.py --mge
+    ```
+    This clones the [MGEdb](https://bitbucket.org/mhkj/mgedb) repository (4,452 sequences), creates DFAST-compatible reference files, and indexes with BLAST.
+
+### Running
+Invoke DFAST with `--amr` to enable all databases:
 ```
-dfast -g example/pOXA-48.fa --amr
+dfast -g your_genome.fna --amr
 ```
+
+The `--amr` option enables the following searches:
+
+| Database | Type | Description |
+|---|---|---|
+| [CARD](https://card.mcmaster.ca) | NuclSearch | Antimicrobial resistance genes |
+| [VFDB](http://www.mgc.ac.cn/VFs/) | NuclSearch | Virulence factor genes |
+| [MGEdb](https://bitbucket.org/mhkj/mgedb) | NuclSearch | Mobile genetic elements (IS, Tn, ICE, MITE, etc.) |
+| [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder) | ContigAnnotation | Plasmid replicon identification (11 databases) |
+
+Results appear in the standard output files (`genome.gbk`, `genome.gff`) and in `amr_summary.tsv`.
 
 ### DFAST Record JSON  
 DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 

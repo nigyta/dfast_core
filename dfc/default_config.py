@@ -273,6 +273,23 @@ class Config:
             },
         },
         {
+            # MobileElementFinder database (MGEdb) for mobile genetic element detection
+            "component_name": "NuclSearch",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": False,
+                "evalue_cutoff": 1e-6,
+                "qcov_cutoff": 90,
+                "scov_cutoff": 90,
+                "pident_cutoff": 90,
+                "aligner": "blastn",
+                "aligner_options": {},
+                "database": "@@DB_ROOT@@/mge_db/MGE",
+                "db_name": "MGE",
+                "db_type": "auto",
+            },
+        },
+        {
             # By default, this is disabled. 
             # If you want to add your original databases to be searched prior to default DB,
             # set 'enabled' to True and specify 'database', which you can do with '--database' option.
