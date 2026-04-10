@@ -109,9 +109,10 @@ def feature_to_table(feature, rec_length):
             continue  # translation is not required for MSS
         if key == "EC_number":
             continue
-        if key == "transl_except":
-            value = feature.qualifiers[key][0]
-            feature.qualifiers[key][0] = value.replace("complement(", "").replace("),", ",")
+        # transl_except can accept features on compelemt strand, so the following code is no longer needed. 
+        # if key == "transl_except":
+        #     value = feature.qualifiers[key][0]
+        #     feature.qualifiers[key][0] = value.replace("complement(", "").replace("),", ",")
         ret += qualifier_to_table(feature.qualifiers, key)
     if not ret:
         ret.append(["", "", "", "", ""])  # add emtpty line
