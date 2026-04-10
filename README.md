@@ -217,7 +217,7 @@ Genome settings:
   --use_original_name BOOL
                         Use original sequence names in a query FASTA file [t|f(=default)]
   --sort_sequence BOOL  Sort sequences by length [t(=default)|f]
-  --minimum_length INT  Minimum sequence length (default:200)
+  --minimum_length INT  Minimum sequence length (default:1000)
   --fix_origin          Rotate/flip the chromosome so that the dnaA gene comes first. (ONLY FOR A FINISHED GENOME)
   --offset INT          Offset from the start codon of the dnaA gene. (for --fix_origin option, default=0)
 

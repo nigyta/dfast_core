@@ -1,3 +1,8 @@
+Ver 1.3.9 (20260410) ---------------------------------------
+Minimum contig length has been changed to 1000bp from 200bp (in accordance with INSDC minimum requirements).
+Fixed output in MSS format for transl_except on the complement strand.
+
+
 Ver 1.3.6 (20250225) ---------------------------------------
 Minor fix. dfast_results.json has been renamed as dfast_record, which is generated using the DR_tools module. (Python>=3.10, experimental implementation)
 

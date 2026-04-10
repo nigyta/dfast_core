@@ -33,7 +33,7 @@ class Config:
         "complete": False,
         "use_original_name": False, # If set to True, the first word in the Fasta header line will be used as a sequence name.
         "sort_by_length": True,
-        "minimum_length": 200
+        "minimum_length": 1000
     }
 
     GENOME_SOURCE_INFORMATION = {
