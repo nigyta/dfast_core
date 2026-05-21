@@ -1,4 +1,3 @@
-keyword	HIGH-QUALITY-DRAFT
 bioproject	PRJDB1726
 biosample	SAMD00000344
 sra	DRR024501; DRR054113
@@ -18,7 +17,6 @@ reference	Complete genome sequence of Lactobacillus hokkaidonensis LOOC260.
 author	Tanizawa,Y.; Arita,M.; Nakamura,Y.; Tohno,M.
 ref_consrtm	
 status	Unpublished
-year	2017
 journal	
 volume	
 start_page	
@@ -39,3 +37,4 @@ collected_by
 sub_species	
 host	
 isolation_source	silage
+locus_tag_prefix	LKK
