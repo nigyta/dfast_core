@@ -319,3 +319,10 @@ def enable_amr(config):
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
             setting["enabled"] = True
+
+
+def enable_mge(config):
+    logger.info("Mobile genetic element detection (MobileElementFinder) enabled.")
+    for setting in config.CONTIG_ANNOTATION:
+        if setting.get("tool_name", "") == "MobileElementFinder":
+            setting["enabled"] = True

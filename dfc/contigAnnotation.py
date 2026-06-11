@@ -7,9 +7,11 @@ from logging import getLogger
 from concurrent import futures
 from Bio.SeqFeature import ExactPosition, FeatureLocation
 from .tools.dfast_plasmidfinder import Plasmidfinder
+from .tools.dfast_mge import MobileElementFinder
 
 TOOLS = {
-    "Plasmidfinder": Plasmidfinder
+    "Plasmidfinder": Plasmidfinder,
+    "MobileElementFinder": MobileElementFinder,
 }
 
 
@@ -70,15 +72,18 @@ class ContigAnnotation(object):
         Collect Results from each tool
         """
         dict_source_notes = {}
+        dict_features = {}
         dict_contig_annotation_report = {}
         for tool in self.tools:
             result, dict_report = tool.getResult()   # Dict: key=sequence_id, value=List of Note
             for seq_id, list_note in result.items():
                 tmp_note_list = dict_source_notes.setdefault(seq_id, [])
                 tmp_note_list += list_note
+            for seq_id, features in tool.getFeatures().items():
+                dict_features.setdefault(seq_id, []).extend(features)
             for seq_id, report in dict_report.items():
                 dict_contig_annotation_report.setdefault(seq_id, []).extend(report)
-        return dict_source_notes, dict_contig_annotation_report
+        return dict_source_notes, dict_features, dict_contig_annotation_report
 
     def cleanup(self):
         shutil.rmtree(self.child_dir)

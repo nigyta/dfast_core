@@ -10,6 +10,7 @@ from ftplib import FTP
 import tarfile
 import shutil
 import subprocess
+import tempfile
 
 version = sys.version_info.major
 if version == 3:
@@ -91,16 +92,18 @@ parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--plasmidfinder", action="store_true",
                          help="Reference data for PlasmidFinder")
+parser.add_argument("--mefinder", action="store_true",
+                         help="Install MobileElementFinder and build its MGEdb BLAST index")
 parser.add_argument("--no_indexing", action="store_true",
                          help="Do not perform database indexing")
 group_out = parser.add_mutually_exclusive_group()
 group_out.add_argument("-o", "--out", help="Output directory (default: current directory.\nFor --assembly, --assembly_fasta. Not allowed with argument --dbroot)", type=str, metavar="PATH")
-group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder. Not allowed with argument --out)", type=str, metavar="PATH")
+group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder, --mefinder. Not allowed with argument --out)", type=str, metavar="PATH")
 
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]):
+if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not args.mefinder:
     parser.print_help()
     exit()
 
@@ -212,6 +215,63 @@ def retrieve_plasmidfinder_reference(out_dir="."):
         logger.error(f"command: {cmd}")
         logger.error(err.decode("utf8"))
         exit(1)
+
+
+def retrieve_mefinder_reference(out_dir=".", no_indexing=False):
+    mefinder_db_dir = os.path.join(out_dir, "mefinder_db")
+
+    # 1. Install MobileElementFinder if not already available
+    check = subprocess.run(["mefinder", "--version"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if check.returncode == 0:
+        logger.info("MobileElementFinder is already installed.")
+    else:
+        logger.info("Installing MobileElementFinder (clone, relax biopython pin, pip install)...")
+        tmpdir = tempfile.mkdtemp()
+        clone_dir = os.path.join(tmpdir, "mge_finder")
+        if subprocess.run(["git", "clone",
+                           "https://bitbucket.org/mhkj/mge_finder.git",
+                           clone_dir]).returncode != 0:
+            logger.error("Failed to clone MobileElementFinder repository!")
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            exit(1)
+        # Relax the biopython upper-bound pin so MEF works with DFAST's biopython
+        setup_cfg = os.path.join(clone_dir, "setup.cfg")
+        with open(setup_cfg) as f:
+            cfg = f.read()
+        new_cfg = cfg.replace("biopython<=1.80", "biopython")
+        if new_cfg == cfg:
+            logger.warning("biopython pin 'biopython<=1.80' not found in setup.cfg; skipping patch.")
+        with open(setup_cfg, "w") as f:
+            f.write(new_cfg)
+        # setuptools<81 keeps pkg_resources available, which MobileElementFinder imports.
+        if subprocess.run([sys.executable, "-m", "pip", "install",
+                           clone_dir, "setuptools<81"]).returncode != 0:
+            logger.error("Failed to pip install MobileElementFinder!")
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            exit(1)
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+    if no_indexing:
+        logger.info("Skipping MGEdb BLAST index build (--no_indexing).")
+        return
+
+    # 2. Build BLAST index from the bundled MGEdb into DB_ROOT/mefinder_db
+    if not os.path.exists(mefinder_db_dir):
+        os.makedirs(mefinder_db_dir)
+    logger.info(f"Building MGEdb BLAST index into: {mefinder_db_dir}")
+    if subprocess.run(["mefinder", "index", "--db-path", mefinder_db_dir]).returncode != 0:
+        logger.error("Failed to build MobileElementFinder BLAST index!")
+        exit(1)
+
+    # 3. Verify index files exist
+    required = [os.path.join(mefinder_db_dir, "mge_records." + ext)
+                for ext in ("nin", "nhr", "nsq")]
+    missing = [f for f in required if not os.path.exists(f)]
+    if missing:
+        logger.error(f"BLAST index incomplete, missing: {missing}")
+        exit(1)
+    logger.info(f"MobileElementFinder setup completed. Index at: {mefinder_db_dir}")
 
 
 def gunzip_file(input_file, output_file, cleanup=True):
@@ -329,6 +389,14 @@ if args.plasmidfinder:
         os.makedirs(out_dir)
     logger.info("Trying to retrieve PlasmidFinder reference data. Files will be written into '{}'".format(out_dir))
     retrieve_plasmidfinder_reference(out_dir)
+
+if args.mefinder:
+    db_root = get_db_root(args)
+    out_dir = db_root  # BLAST index will be built into DB_ROOT/mefinder_db
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    logger.info("Setting up MobileElementFinder. Index will be written into '{}'".format(out_dir))
+    retrieve_mefinder_reference(out_dir, no_indexing=args.no_indexing)
 
 
 # test GCF_000091005.1 GCA_000008865.1

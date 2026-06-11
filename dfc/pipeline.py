@@ -55,10 +55,11 @@ class Pipeline():
         self.sa.execute()  # execute structural annotation
         self.fu.execute()  # feature adjustment: sort, remove_partial, (merge)
         self.fa.execute()  # functional annotation
-        source_notes, dict_contig_annotation_report = self.ca.execute()  # contig annotation
+        source_notes, dict_features, dict_contig_annotation_report = self.ca.execute()  # contig annotation
         self.fu.execute_remove_partial()  # feature adjustment remove partial
         self.ltg.execute()  # assigning locus_tags
         self.genome.add_source_features(source_notes)  # set source feature
+        self.genome.add_contig_features(dict_features)  # add located MGE features (after locus_tag)
 
         # writing result files.
         write_results(self.genome, self.config)

@@ -247,6 +247,7 @@ Workflow options:
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
   --amr                 [Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs
+  --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
@@ -326,6 +327,30 @@ See [CARD/download](https://card.mcmaster.ca/download) for the latest version of
 Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
 ```
 dfast -g example/pOXA-48.fa --amr
+```
+
+### Mobile genetic element (MGE) detection
+Invoke DFAST with `--mge` to detect mobile genetic elements using
+[MobileElementFinder](https://bitbucket.org/mhkj/mge_finder) (`mefinder`).
+Detected MGEs are annotated as `mobile_element` features (with
+`/mobile_element_type`, e.g. `transposon:Tn1999`) when the element type maps to
+an INSDC controlled vocabulary, or as `misc_feature` otherwise (ICE/IME/CIME and
+putative composite transposons). The default coverage threshold is stricter than
+MobileElementFinder's (`--min-coverage 0.95`); adjust it via the `cmd_options` of
+the `MobileElementFinder` entry in `CONTIG_ANNOTATION`.
+
+First, install MobileElementFinder and build its reference (MGEdb) BLAST index
+into `DB_ROOT/mefinder_db`:
+```
+scripts/dfast_file_downloader.py --mefinder
+```
+(This installs MobileElementFinder into the current Python environment, so run it
+where DFAST's Python can `pip install`. The MGEdb sequences ship with the pip
+package; only the BLAST index is written to `DB_ROOT`.)
+
+Then run DFAST with `--mge`:
+```
+dfast -g example/pOXA-48.fa --mge
 ```
 
 ### DFAST Record JSON  

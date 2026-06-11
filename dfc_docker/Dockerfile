@@ -48,6 +48,12 @@ RUN cd / && \
 
 RUN pip install tabulate cgecore
 
+# MobileElementFinder (installed into the same env; biopython pin relaxed)
+RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
+    sed -i 's/biopython<=1.80/biopython/' mge_finder/setup.cfg && \
+    pip install ./mge_finder "setuptools<81" && \
+    rm -rf mge_finder
+
 WORKDIR /work
 
 CMD /bin/bash

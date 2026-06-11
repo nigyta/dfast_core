@@ -409,5 +409,19 @@ class Config:
                 "db_path": "@@DB_ROOT@@/plasmidfinder_db",
                 "cmd_options": "",
             },
-        },    
+        },
+        {
+            # MobileElementFinder to detect mobile genetic elements
+            "tool_name": "MobileElementFinder",
+            "target": "feature",
+            "enabled": False,
+            "options": {
+                # BLAST index built by `dfast_file_downloader.py --mefinder`
+                "db_path": "@@DB_ROOT@@/mefinder_db",
+                # DFAST default is stricter than MEF default (coverage=0.9).
+                # NOTE: --min-coverage is a fraction 0-1 (0.95 = 95%);
+                # passing 95 rejects all hits.
+                "cmd_options": "--min-coverage 0.95",
+            },
+        },
     ]

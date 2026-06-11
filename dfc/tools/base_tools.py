@@ -193,6 +193,14 @@ class ContigAnnotationTool(Tool):
         """Override this method"""
         raise NotImplementedError
 
+    def getFeatures(self):
+        """Return located features as {seq_id: [feature, ...]}.
+
+        Default: no located features. Tools that emit coordinate features
+        (e.g. MobileElementFinder) override this.
+        """
+        return {}
+
 if __name__ == '__main__':
     logger = getLogger(__name__)
 

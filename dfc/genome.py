@@ -262,6 +262,22 @@ class Genome(object):
             else:
                 record.features.insert(0, source_feature)
 
+    def add_contig_features(self, dict_features):
+        """Add located contig-annotation features (e.g. MGE) to records.
+
+        dict_features: {seq_id: [feature, ...]}
+        Called after locus_tag assignment so that these features
+        (mobile_element / misc_feature) are not given locus_tags.
+        """
+        for seq_id, features in dict_features.items():
+            record = self.seq_records.get(seq_id)
+            if record is None:
+                logger.warning("MGE feature for unknown contig '{0}' skipped.".format(seq_id))
+                continue
+            record.features += features
+        self.sort_features()
+        self.set_feature_dictionary()
+
     def to_genbank(self, file_name, verbosity=2):
         logger.info("Writing a GenBank format file to {0}. (verbosity level={1})".format(file_name, verbosity))
         R = deepcopy(list(self.seq_records.values()))
