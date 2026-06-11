@@ -199,22 +199,70 @@ def retrieve_assembly_fasta(accession, out_dir="."):
     ftp.quit()
     return output_file
 
+plasmidfinder_extra_databases = [
+    # {
+    #     # figshare dataset: https://figshare.com/articles/dataset/repP_database_v1_0/31883911
+    #     "url": "https://ndownloader.figshare.com/files/63271042",
+    #     "filename": "repP_database_v2.fsa",
+    #     "db_prefix": "repP_database_v2",
+    #     "name": "repP",
+    #     "description": "repP plasmid replicons",
+    #     "fix_headers": False,
+    # },
+    {
+        # figshare dataset: https://figshare.com/articles/dataset/repP_database_fsa/26778175
+        "url": "https://ndownloader.figshare.com/files/63270934",
+        "filename": "PseudomonasRepDB_v1.fsa",
+        "db_prefix": "PseudomonasRepDB_v1",
+        "name": "PseudomonasRepDB",
+        "description": "PseudomonasRepDB database v1.0",
+        "fix_headers": False,
+    },
+    {
+        # figshare dataset: https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887
+        "url": "https://ndownloader.figshare.com/files/63271000",
+        "filename": "WHRepDB_v1.fsa",
+        "db_prefix": "WHRepDB_v1",
+        "name": "WHRepDB",
+        "description": "WHRepDB database v1.0",
+        "fix_headers": False,
+    },
+    {
+        # figshare dataset: https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412
+        # Github: https://github.com/MehradHamidian/AcinetobacterPlasmidTyping
+        "url": "https://ndownloader.figshare.com/files/58980199",
+        "filename": "AcinetobacterPlasmidTyping_v3.fsa",
+        "db_prefix": "AcinetobacterPlasmidTyping_v3",
+        "name": "APT DB",
+        "description": "AcinetobacterPlasmidTyping database v3",
+        # Headers contain spaces (e.g. ">R3-T1_1_NC010605.1 pACICU1_c38"), which
+        # blastn truncates at the space, causing ref_acc to be empty in PlasmidFinder v3.
+        # Replace spaces with underscores in FASTA headers to fix parsing.
+        "fix_headers": True,
+    },
+]
+
+
 def retrieve_plasmidfinder_reference(out_dir="."):
     plasmid_db_dir = os.path.join(out_dir, "plasmidfinder_db")
     if os.path.exists(plasmid_db_dir):
         logger.info(f'Will delete existing directory: "{plasmid_db_dir}"')
         shutil.rmtree(plasmid_db_dir)
-    cmd = f"cd {out_dir} && git clone https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git && "
-    cmd += f"cd plasmidfinder_db && python3 INSTALL.py"
-    logger.info(f'Running command: "{cmd}"')
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+
+    # Clone the database repository
+    clone_cmd = f"cd {out_dir} && git clone https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git"
+    logger.info(f'Cloning PlasmidFinder database: "{clone_cmd}"')
+    p = subprocess.Popen(clone_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, shell=True)
     out, err = p.communicate()
     if p.returncode != 0 and err:
-        logger.error("Failed to download PlasmidFinder reference!")
-        logger.error(f"command: {cmd}")
+        logger.error("Failed to clone PlasmidFinder database!")
         logger.error(err.decode("utf8"))
         exit(1)
+
+    # Download extra databases and update config
+    _download_plasmidfinder_extra_databases(plasmid_db_dir)
+    logger.info("PlasmidFinder database setup completed.")
 
 
 def retrieve_mefinder_reference(out_dir=".", no_indexing=False):
@@ -272,6 +320,56 @@ def retrieve_mefinder_reference(out_dir=".", no_indexing=False):
         logger.error(f"BLAST index incomplete, missing: {missing}")
         exit(1)
     logger.info(f"MobileElementFinder setup completed. Index at: {mefinder_db_dir}")
+
+
+def _download_plasmidfinder_extra_databases(plasmid_db_dir):
+    # PlasmidFinder v3 uses blastn with -subject <db>.fsa directly,
+    # so no pre-built index (makeblastdb/KMA) is needed.
+    config_file = os.path.join(plasmid_db_dir, "config")
+    for db in plasmidfinder_extra_databases:
+        output_file = os.path.join(plasmid_db_dir, db["filename"])
+        logger.info(f'\tDownloading extra database: {db["filename"]} from {db["url"]}')
+        try:
+            request.urlretrieve(db["url"], output_file)
+        except Exception as e:
+            logger.warning(f'\tFailed to download {db["filename"]}: {e}. Skipping.')
+            continue
+        if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+            logger.info(f'\tDownloaded {db["filename"]} ({os.path.getsize(output_file)} bytes)')
+            if db.get("fix_headers"):
+                _fix_fasta_headers(output_file)
+                logger.info(f'\tFixed FASTA headers in {db["filename"]} (spaces replaced with underscores)')
+            entry = f'{db["db_prefix"]}\t{db["name"]}\t{db["description"]}\n'
+            with open(config_file, "a") as f:
+                f.write(entry)
+        else:
+            logger.warning(f'\tDownloaded file is empty: {db["filename"]}. Skipping.')
+
+
+def _fix_fasta_headers(fasta_file):
+    """Reformat FASTA headers for PlasmidFinder v3 compatibility.
+
+    AcinetobacterPlasmidTyping_v3 headers use the format:
+      gene_variant_accession extra_info
+    but PlasmidFinder expects underscore-delimited gene_variant_note_accession.
+    blastn truncates subject headers at spaces, so the accession (position 2) must
+    be moved to the last field. We use double-underscore (empty note) to preserve it:
+      >R3-T1_1_NC010605.1 pACICU1_c38  →  >R3-T1_1__NC010605.1
+    """
+    with open(fasta_file, "r") as f:
+        lines = f.readlines()
+    with open(fasta_file, "w") as f:
+        for line in lines:
+            if line.startswith(">") and " " in line:
+                header = line[1:].strip()
+                before_space = header.split(" ")[0]  # e.g. "R3-T1_1_NC010605.1"
+                parts = before_space.split("_", 2)   # ["R3-T1", "1", "NC010605.1"]
+                if len(parts) == 3:
+                    gene, variant, accession = parts
+                    line = f">{gene}_{variant}__{accession}\n"
+                else:
+                    line = line.replace(" ", "_")
+            f.write(line)
 
 
 def gunzip_file(input_file, output_file, cleanup=True):

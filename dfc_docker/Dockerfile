@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.13
 
 # 環境変数の設定
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -17,12 +17,12 @@ RUN pip install biopython && \
     apt-get clean && rm -rf /var/lib/apt/lists/* 
 
 RUN cd /tmp  && \
-    curl -LO https://github.com/UCSC-LoweLab/tRNAscan-SE/archive/v2.0.6.tar.gz && \
-    tar xfz v2.0.6.tar.gz && \
-    cd tRNAscan-SE-2.0.6 && \
+    curl -LO https://github.com/UCSC-LoweLab/tRNAscan-SE/archive/v2.0.12.tar.gz && \
+    tar xfz v2.0.12.tar.gz && \
+    cd tRNAscan-SE-2.0.12 && \
     ./configure && make && make install && \
     cd .. && \
-    rm -r /tmp/tRNAscan-SE-2.0.6 /tmp/v2.0.6.tar.gz && \
+    rm -r /tmp/tRNAscan-SE-2.0.12 /tmp/v2.0.12.tar.gz && \
     cd /work
 
 # For compatibility (required for older version of BLAST binaries)
@@ -33,20 +33,10 @@ RUN wget http://mirrors.kernel.org/ubuntu/pool/main/libi/libidn/libidn11_1.33-2.
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
 
-# PlasmidFinder and related programs
-RUN cd / && \
-    git clone https://bitbucket.org/genomicepidemiology/plasmidfinder.git && \
-    cd /plasmidfinder && \
-    cp /plasmidfinder/plasmidfinder.py /usr/local/bin/ && \
-    cd / && rm -r /plasmidfinder
-
-RUN cd / && \
-    git clone --branch 1.0.1 --depth 1 https://bitbucket.org/genomicepidemiology/kma.git && \
-    cd kma && make && \
-    mv kma* /usr/local/bin/ && \
-    cd / && rm -r /kma
-
-RUN pip install tabulate cgecore
+# PlasmidFinder (v3.x) and KMA
+RUN pip install plasmidfinder && \
+    printf '#!/bin/bash\nexec python3 -m plasmidfinder "$@"\n' > /usr/local/bin/plasmidfinder.py && \
+    chmod +x /usr/local/bin/plasmidfinder.py
 
 # MobileElementFinder (installed into the same env; biopython pin relaxed)
 RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
@@ -54,11 +44,18 @@ RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
     pip install ./mge_finder "setuptools<81" && \
     rm -rf mge_finder
 
+# KMA is used for PlasmidFinder, but blastn will be used instead of KMA for the FASTA-formated nucleotide sequence search.
+# RUN cd / && \
+#     git clone --branch 1.0.1 --depth 1 https://bitbucket.org/genomicepidemiology/kma.git && \
+#     cd kma && make && \
+#     mv kma* /usr/local/bin/ && \
+#     cd / && rm -r /kma
+
 WORKDIR /work
 
 CMD /bin/bash
 
-ENV INCREMENT_THIS_TO_BUMP 4
+ENV INCREMENT_THIS_TO_BUMP 1
 # Install dfast_core
 RUN cd / && \
     git clone https://github.com/nigyta/dfast_core && \
