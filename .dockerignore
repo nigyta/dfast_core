@@ -1,0 +1,37 @@
+# ---- Version control & tooling ----
+.git
+.github
+.gitignore
+.dockerignore
+.devcontainer
+.idea
+.vscode
+.pytest_cache
+**/__pycache__/
+**/*.pyc
+.python-version
+**/.DS_Store
+
+# ---- Large data / reference dirs (build context に入れない) ----
+db/
+COG/
+dev/
+OUT/
+OUT_*/
+TEST/
+testdata_fix2021nov/
+tests/
+docs/
+
+# ---- Mac-only binaries (image は linux/amd64; 114M 削減) ----
+bin/Darwin/
+
+# ---- 旧 docker dir（移動後は削除されるが念のため） ----
+dfc_docker/
+
+# ---- ルート直下の scratch ファイル ----
+test_dfast_json.ipynb
+test_dfast_json.py
+
+# ---- Dockerfile 自体はイメージに不要 ----
+Dockerfile

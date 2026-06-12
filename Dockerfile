@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED 1
 ENV INFERNAL_NCPU 1
 
 # Create working directory
-RUN mkdir /work && chmod 777 /work 
+RUN mkdir /work && chmod 777 /work
 
 # Install dependency
 RUN pip install biopython && \
@@ -16,7 +16,7 @@ RUN pip install biopython && \
     apt install -y default-jre zip prodigal infernal ncbi-blast+ && \
     ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* 
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp  && \
     curl -LO https://github.com/UCSC-LoweLab/tRNAscan-SE/archive/v2.0.12.tar.gz && \
@@ -54,18 +54,17 @@ RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
 #     mv kma* /usr/local/bin/ && \
 #     cd / && rm -r /kma
 
-WORKDIR /work
+# Install DFAST Record tools (remote git install のまま。小さく変更頻度も低いので COPY より上に置く)
+RUN pip install "git+https://github.com/ddbj/dr_tools.git"
 
-CMD /bin/bash
-
-ENV INCREMENT_THIS_TO_BUMP 1
-# Install dfast_core
-RUN cd / && \
-    git clone https://github.com/nigyta/dfast_core && \
-    ln -s /dfast_core/dfast /usr/local/bin/ && \
+# ---- Install dfast_core from the LOCAL build context ----
+# 重い apt/pip/tRNAscan レイヤのキャッシュを保つため、これを最後のレイヤにする。
+# ローカルソース変更時はこのレイヤだけ再実行される（手動キャッシュ破棄は不要）。
+COPY . /dfast_core
+RUN ln -s /dfast_core/dfast /usr/local/bin/ && \
     ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \
     ln -s /dfast_core/scripts/reference_util.py /usr/local/bin/ && \
     ln -s /dfast_core/scripts/reference_util_for_nucl.py /usr/local/bin/
 
-# Install DFAST Record tools
-RUN pip install "git+https://github.com/ddbj/dr_tools.git"
+WORKDIR /work
+CMD ["/bin/bash"]
