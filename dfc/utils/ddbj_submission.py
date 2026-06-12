@@ -72,6 +72,7 @@ class DDBJsubmission(object):
             if version_info >= (3, 10):            
                 try:
                     from dr_tools import drt_ann2json
+                    from pydantic import ValidationError
                     json_out_dir = os.path.dirname(self.output_dir)
                     json_file = os.path.join(json_out_dir, "dfast_record.json")
                     drt_ann2json(ann_file, fasta_file, json_file, division="BCT", record_version="v2")
@@ -79,6 +80,10 @@ class DDBJsubmission(object):
 
                 except ImportError:
                     self.logger.warning("[Experimental] DFAST Record JSON will not be generated. Please install dr_tools and use Python>=3.10.")
+                except ValidationError as e:
+                    self.logger.warning(f"[Experimental] DFAST Record JSON will not be generated due to a metadata validation error (e.g. a missing reference year): {e}")
+                except Exception as e:
+                    self.logger.warning(f"[Experimental] DFAST Record JSON will not be generated due to an unexpected error: {e}")
         else:
             self.logger.warning("'Generate DDBJ Submission file' is disabled. Skip processing")
 

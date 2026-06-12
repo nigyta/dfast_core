@@ -8,4 +8,5 @@ db/*
 !bin/Darwin/barrnap-0.8/db/
 !db/hmm_search/
 OUT/
+OUT_*/
 dev/
