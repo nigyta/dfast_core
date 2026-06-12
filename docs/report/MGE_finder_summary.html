@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFAST MGE/AMR Annotation Validation Summary</title>
+<style>
+  :root { --fg:#1b1b1b; --muted:#666; --line:#ddd; --accent:#1a5276; --me:#1e6b3a; --mf:#8a5a00; --bg-soft:#f6f8fa; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif;
+         color: var(--fg); line-height: 1.65; margin: 0; padding: 2rem 1.2rem 4rem; max-width: 1000px; margin-inline: auto; }
+  h1 { font-size: 1.6rem; border-bottom: 3px solid var(--accent); padding-bottom: .4rem; }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2.4rem; border-left: 5px solid var(--accent); padding-left: .6rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.6rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #fbfcfd; }
+  pre { background: #0f1b2d; color: #e6edf3; padding: .9rem 1rem; border-radius: 6px; overflow-x: auto;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.5; }
+  pre .k { color: #79c0ff; }      /* feature key */
+  pre .q { color: #d2a8ff; }      /* qualifier */
+  pre .hl { color: #7ee787; }     /* highlight */
+  code { background: var(--bg-soft); padding: .1rem .35rem; border-radius: 3px; font-size: .88em; }
+  .tag { display:inline-block; padding:.05rem .5rem; border-radius: 10px; font-size:.78rem; font-weight:600; color:#fff; }
+  .tag.me { background: var(--me); }
+  .tag.mf { background: var(--mf); }
+  .note { background: #fff8e1; border: 1px solid #f0d98c; padding: .7rem 1rem; border-radius: 6px; font-size: .9rem; }
+  .files li { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>DFAST Mobile Genetic Element (MGE) / Antimicrobial Resistance (AMR) Annotation Validation Summary</h1>
+<p class="meta">
+  Generated: 2026-06-11 &nbsp;|&nbsp; DFAST ver. 1.3.9 &nbsp;|&nbsp;
+  MobileElementFinder 1.1.2 (MGEdb 1.1.1) &nbsp;|&nbsp; PlasmidFinder / CARD / VFDB
+</p>
+
+<p>
+  Validation results from running DFAST on 6 bacterial genomes with the
+  <code>--mge --amr --no_cdd --no_hmm --debug</code> options.
+  <code>--mge</code> enables MGE detection by MobileElementFinder, and <code>--amr</code> enables identification of
+  CARD/VFDB (antimicrobial resistance / virulence factors) and PlasmidFinder (plasmid replicon types).
+  Detected MGEs are written to the GenBank output as features with coordinates.
+</p>
+
+<h2>1. Installation and usage</h2>
+
+<h3>Installing the tool and reference data</h3>
+<p>
+  MobileElementFinder (the tool itself) and the MGEdb BLAST index (reference data) can both be prepared with a single command.
+  This is the procedure <b>for non-Docker DFAST installations</b> (it is not needed for the Docker image <code>dfast2026:dev</code>,
+  which already bundles MobileElementFinder).
+  Substitute <code>&lt;DB_ROOT&gt;</code> with your DFAST database directory (e.g. <code>dfast_core/db</code>).
+</p>
+<pre><span class="k">$</span> dfast_file_downloader.py --mefinder -d <span class="hl">&lt;DB_ROOT&gt;</span></pre>
+<p>This command runs the following steps in order.</p>
+<table>
+  <thead><tr><th>Step</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>(1) Tool installation</td><td>Only if <code>mefinder</code> is not yet installed: fetches the source (<code>bitbucket.org/mhkj/mge_finder</code>), relaxes the biopython upper-bound pin, and runs <code>pip install</code> (so it can coexist with DFAST's biopython 1.87). Skipped if already installed.</td></tr>
+    <tr><td>(2) Index construction</td><td>Builds the blastn index from the bundled MGEdb (v1.1.1) into <code>&lt;DB_ROOT&gt;/mefinder_db</code> (<code>mge_records.nin / .nhr / .nsq</code>, etc.). File existence is verified after completion.</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  Adding <code>--no_indexing</code> installs the tool only and skips index construction.
+  If an index already exists, DFAST does not rebuild it at run time (the existing one is reused).
+</div>
+
+<h3>Running DFAST</h3>
+<p>MGE detection is enabled with the <code>--mge</code> option. It can be combined with <code>--amr</code>.</p>
+<pre><span class="k">$</span> dfast --genome your_genome.fna --mge -o OUTPUT_DIR
+<span class="q"># To also perform AMR/VFG and plasmid replicon typing</span>
+<span class="k">$</span> dfast --genome your_genome.fna --mge --amr -o OUTPUT_DIR</pre>
+<p>
+  By default it runs with <code>--min-coverage 0.95</code> (stricter than MEF's default of 0.9), and uses the reference index at
+  <code>&lt;DB_ROOT&gt;/mefinder_db</code>. Detected MGEs are written to <code>genome.gbk</code> as features with coordinates
+  (<span class="tag me">mobile_element</span> / <span class="tag mf">misc_feature</span>), and the findings are written as
+  <code>##</code> lines in <code>amr_summary.tsv</code> (details in the following sections).
+</p>
+
+<h2>2. Detection results per genome</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Species / strain</th><th>Accession</th>
+      <th>mobile_element</th><th>misc_feature</th>
+      <th>AMR/VFG hits</th><th>MGE annotation lines (##)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><i>Escherichia coli</i> K-12 MG1655</td><td>GCA_000005845.2</td><td class="num">52</td><td class="num">8</td><td class="num">169</td><td class="num">60</td></tr>
+    <tr><td><i>Klebsiella pneumoniae</i> NTUH-K2044</td><td>GCA_000009345.1</td><td class="num">78</td><td class="num">5</td><td class="num">236</td><td class="num">84</td></tr>
+    <tr><td><i>Klebsiella pneumoniae</i> plasmid pOXA-48</td><td>JN626286.1</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td></tr>
+    <tr><td><i>Lactobacillus hokkaidonensis</i> LOOC260</td><td>GCA_000829395.1</td><td class="num">25</td><td class="num">5</td><td class="num">0</td><td class="num">30</td></tr>
+    <tr><td><i>Salmonella enterica</i> Typhimurium DT104</td><td>GCA_000493675.1</td><td class="num">25</td><td class="num">1</td><td class="num">316</td><td class="num">28</td></tr>
+    <tr><td><i>Vibrio cholerae</i> N16961</td><td>GCA_000006745.1</td><td class="num">15</td><td class="num">0</td><td class="num">193</td><td class="num">15</td></tr>
+  </tbody>
+</table>
+<p class="meta">
+  DFAST finished normally (exit 0) for all 6 genomes. Zero AMR hits for <i>L. hokkaidonensis</i> (food-derived) is reasonable.
+  mobile_element / misc_feature are written to <code>genome.gbk</code>; AMR/VFG hits and MGE annotation lines are written to <code>amr_summary.tsv</code>.
+</p>
+
+<h2>3. How MGEs are recorded in GenBank</h2>
+<p>
+  The MGE types detected by MobileElementFinder are mapped to features according to the INSDC (DDBJ/GenBank) controlled vocabulary as follows.
+</p>
+
+<table>
+  <thead>
+    <tr><th>MGE type</th><th>GenBank feature key</th><th>Main qualifier</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>insertion sequence (IS)</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="insertion sequence:<i>name</i>"</code></td></tr>
+    <tr><td>MITE</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="MITE:<i>name</i>"</code></td></tr>
+    <tr><td>unit transposon</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="transposon:<i>name</i>"</code></td></tr>
+    <tr><td>composite transposon (DB hit)</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="transposon:<i>name</i>"</code></td></tr>
+    <tr><td>composite transposon (<b>putative</b> = predicted only)</td><td><span class="tag mf">misc_feature</span></td><td><code>/note="putative composite transposon (predicted by MobileElementFinder)"</code></td></tr>
+    <tr><td>ICE / IME / CIME / mobile insertion cassette</td><td><span class="tag mf">misc_feature</span></td><td><code>/note="<i>type description</i>: <i>name</i>"</code></td></tr>
+    <tr><td>integron / superintegron</td><td colspan="2"><b>Not detected</b> (MGEdb v1.1.1 contains no integron reference sequences; see the note below)</td></tr>
+  </tbody>
+</table>
+<p class="meta">
+  All features additionally carry <code>/note="MobileElementFinder: <i>name</i>; identity:X%, coverage:Y%; similar to <i>accession</i> (MGEdb)"</code>
+  (the "similar to ..." part is omitted when no accession is available).
+  <code>/note="MGE_n"</code> is DFAST's internal feature ID (standard behavior at output verbosity level 3).
+  The <code>&lt;</code> / <code>&gt;</code> in coordinates are added only when the 5'/3' end is incomplete relative to the reference sequence.
+</p>
+
+<h3><span class="tag me">mobile_element</span> example 1 — transposon (pOXA-48 / Tn1999)</h3>
+<pre>     <span class="k">mobile_element</span>  complement(2292..8429)
+                     <span class="q">/note</span>="MobileElementFinder: Tn1999; identity:100.0%,
+                     coverage:100.0%; similar to AY236073 (MGEdb)"
+                     <span class="q">/note</span>="MGE_1"
+                     <span class="q">/mobile_element_type</span>=<span class="hl">"transposon:Tn1999"</span></pre>
+
+<h3><span class="tag me">mobile_element</span> example 2 — insertion sequence (<i>L. hokkaidonensis</i> / ISLho1)</h3>
+<pre>     <span class="k">mobile_element</span>  9186..10732
+                     <span class="q">/note</span>="MobileElementFinder: ISLho1; identity:100.0%,
+                     coverage:100.0%"
+                     <span class="q">/note</span>="MGE_23"
+                     <span class="q">/mobile_element_type</span>=<span class="hl">"insertion sequence:ISLho1"</span></pre>
+
+<h3><span class="tag mf">misc_feature</span> example 3 — ICE (<i>L. hokkaidonensis</i> / Tn6254)</h3>
+<pre>     <span class="k">misc_feature</span>    1799238..1851240
+                     <span class="q">/note</span>="MobileElementFinder: Tn6254; identity:100.0%,
+                     coverage:99.1%; similar to AP014680 (MGEdb)"
+                     <span class="q">/note</span>=<span class="hl">"integrative conjugative element (ICE): Tn6254"</span></pre>
+
+<h3><span class="tag mf">misc_feature</span> example 4 — putative composite transposon (<i>E. coli</i> K-12)</h3>
+<pre>     <span class="k">misc_feature</span>    complement(257907..279930)
+                     <span class="q">/note</span>="MobileElementFinder: cn_22023_ISSen9;
+                     identity:94.0%, coverage:100.0%"
+                     <span class="q">/note</span>=<span class="hl">"putative composite transposon (predicted by MobileElementFinder)"</span></pre>
+
+<div class="note">
+  <b>About integrons / superintegrons:</b>
+  MobileElementFinder's reference database MGEdb v1.1.1 does not include integron reference sequences
+  (the 8 registered types are IS, ICE, transposon, IME, MITE, CIME, and mobile insertion cassette).
+  Therefore the superintegron of <i>V. cholerae</i> N16961 and the class 1 integron within SGI1 of <i>S. enterica</i> DT104
+  are not detected as "integrons" (the IS elements within them are detected as insertion sequences). This is an inherent limitation of the alignment-based detection method.
+</div>
+
+<h3>Note: classification criteria</h3>
+<p><b>Why are ICEs and the like recorded as <span class="tag mf">misc_feature</span>:</b>
+the INSDC <code>/mobile_element_type</code> is restricted to a controlled vocabulary (insertion sequence, MITE, transposon, integron, retrotransposon, etc.),
+and <b>there is no value corresponding to ICE / IME / CIME / mobile insertion cassette</b>.
+Rather than forcing them into <code>other</code>, they are recorded as a <code>misc_feature</code> with a descriptive <code>/note</code> that preserves the information (this also passes DDBJ validation).
+IS, MITE, and transposon have matching vocabulary terms, so they are output as <span class="tag me">mobile_element</span>.</p>
+
+<p><b>Conditions under which a putative composite transposon is output:</b>
+when the same insertion sequence (IS) occurs in 2 copies on the same contig and the following are satisfied —
+(1) at least one of them is a confidently detected IS,
+(2) the inverted repeats (IR) are conserved (terminal truncation &le; 20 bp and adjacent HSP &ge; 60 bp), and
+(3) the full length spanning the 2 IS copies is &lt; 52,452 bp.
+Since there is no known entry in MGEdb and it is inferred from the IS arrangement (evidence = PUTATIVE), it is output as a low-confidence <span class="tag mf">misc_feature</span>
+with a name of the form <code>cn_&lt;full length&gt;_&lt;IS name&gt;</code> (e.g. <code>cn_22023_ISSen9</code>). The cargo content in between is not considered, so false positives are possible.</p>
+
+<h2>4. AMR &times; MGE context (amr_summary.tsv)</h2>
+<p>
+  In <code>amr_summary.tsv</code>, the findings from PlasmidFinder and MobileElementFinder are written as <code>##</code> lines
+  above the antimicrobial resistance / virulence factor hits (tab-separated rows) for each contig.
+  The example below is for pOXA-48, where it is immediately clear that <b>the OXA-48 carbapenemase sits on an IncL plasmid carried on the Tn1999 composite transposon</b>.
+</p>
+<pre>#locus  location  hit_accession  gene  product  identity  q_cov  s_cov  e_value  note
+<span class="hl">## sequence1 PlasmidFinder: IncL</span>, Description: Possibly derived from enterobacteriales IncL type plasmid., ...
+<span class="hl">## sequence1 MobileElementFinder: Tn1999 (composite transposon)</span>, identity:100.0%, coverage:100.0%, 2292..8429
+LOCUS_060  sequence1:complement(5445..6242)  ARO:3001782:AAP70012.1  <span class="hl">OXA-48</span>  OXA beta-lactamase  100.0  100.0  100.0  0.0  similar to CARD:OXA-48 ...</pre>
+
+<h2>5. Included files</h2>
+<p>For each genome, the following 2 files are included, named <code>&lt;species_strain_accession&gt;</code> (12 files in total).</p>
+<ul class="files">
+  <li><b>*.genome.gbk</b> — full annotation (CDS/RNA + mobile_element/misc_feature) in GenBank format</li>
+  <li><b>*.amr_summary.tsv</b> — AMR/VFG hits + PlasmidFinder/MGE annotations (## lines)</li>
+  <li><b>MANIFEST.tsv</b> — file listing and the run status of each run</li>
+</ul>
+
+<footer>
+  This summary is for validation purposes. For the GenBank format, see <code>genome.gbk</code>; for the tabular list of resistance genes, see <code>amr_summary.tsv</code>.
+</footer>
+
+</body>
+</html>

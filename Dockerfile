@@ -2,7 +2,7 @@
 # so the image must be amd64 (also keeps the libidn.so path below valid).
 FROM --platform=linux/amd64 python:3.13
 
-# 環境変数の設定
+# Environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV INFERNAL_NCPU 1
@@ -54,12 +54,12 @@ RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
 #     mv kma* /usr/local/bin/ && \
 #     cd / && rm -r /kma
 
-# Install DFAST Record tools (remote git install のまま。小さく変更頻度も低いので COPY より上に置く)
+# Install DFAST Record tools (kept as a remote git install; small and rarely changes, so placed above COPY)
 RUN pip install "git+https://github.com/ddbj/dr_tools.git"
 
 # ---- Install dfast_core from the LOCAL build context ----
-# 重い apt/pip/tRNAscan レイヤのキャッシュを保つため、これを最後のレイヤにする。
-# ローカルソース変更時はこのレイヤだけ再実行される（手動キャッシュ破棄は不要）。
+# Keep this as the last layer so the heavy apt/pip/tRNAscan layers above stay cached.
+# Only this layer re-runs when the local source changes (no manual cache-bust needed).
 COPY . /dfast_core
 RUN ln -s /dfast_core/dfast /usr/local/bin/ && \
     ln -s /dfast_core/scripts/dfast_file_downloader.py /usr/local/bin/ && \

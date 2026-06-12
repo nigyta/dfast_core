@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFAST MGE/AMR アノテーション検証サマリ</title>
+<style>
+  :root { --fg:#1b1b1b; --muted:#666; --line:#ddd; --accent:#1a5276; --me:#1e6b3a; --mf:#8a5a00; --bg-soft:#f6f8fa; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Segoe UI", Meiryo, sans-serif;
+         color: var(--fg); line-height: 1.65; margin: 0; padding: 2rem 1.2rem 4rem; max-width: 1000px; margin-inline: auto; }
+  h1 { font-size: 1.6rem; border-bottom: 3px solid var(--accent); padding-bottom: .4rem; }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2.4rem; border-left: 5px solid var(--accent); padding-left: .6rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.6rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #fbfcfd; }
+  pre { background: #0f1b2d; color: #e6edf3; padding: .9rem 1rem; border-radius: 6px; overflow-x: auto;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.5; }
+  pre .k { color: #79c0ff; }      /* feature key */
+  pre .q { color: #d2a8ff; }      /* qualifier */
+  pre .hl { color: #7ee787; }     /* highlight */
+  code { background: var(--bg-soft); padding: .1rem .35rem; border-radius: 3px; font-size: .88em; }
+  .tag { display:inline-block; padding:.05rem .5rem; border-radius: 10px; font-size:.78rem; font-weight:600; color:#fff; }
+  .tag.me { background: var(--me); }
+  .tag.mf { background: var(--mf); }
+  .note { background: #fff8e1; border: 1px solid #f0d98c; padding: .7rem 1rem; border-radius: 6px; font-size: .9rem; }
+  .files li { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>DFAST 可動性遺伝因子 (MGE) / 薬剤耐性 (AMR) アノテーション検証サマリ</h1>
+<p class="meta">
+  生成日: 2026-06-11 &nbsp;|&nbsp; DFAST ver. 1.3.9 &nbsp;|&nbsp;
+  MobileElementFinder 1.1.2 (MGEdb 1.1.1) &nbsp;|&nbsp; PlasmidFinder / CARD / VFDB
+</p>
+
+<p>
+  6 種の細菌ゲノムに対し、DFAST を
+  <code>--mge --amr --no_cdd --no_hmm --debug</code> オプションで実行した検証結果です。
+  <code>--mge</code> は MobileElementFinder による MGE 検出、<code>--amr</code> は CARD/VFDB（薬剤耐性・病原因子）と
+  PlasmidFinder（プラスミド型）の同定を有効化します。検出された MGE は GenBank 出力に座標付き feature として記載されます。
+</p>
+
+<h2>1. インストールと使い方</h2>
+
+<h3>ツール・参照データのインストール</h3>
+<p>
+  MobileElementFinder（ツール本体）と MGEdb の BLAST インデックス（参照データ）は、次の 1 コマンドでまとめて準備できます。
+  <b>非 Docker の DFAST インストール向け</b>の手順です（Docker イメージ <code>dfast2026:dev</code> には MobileElementFinder が同梱済みのため不要）。
+  <code>&lt;DB_ROOT&gt;</code> は DFAST のデータベースディレクトリ（例: <code>dfast_core/db</code>）に読み替えてください。
+</p>
+<pre><span class="k">$</span> dfast_file_downloader.py --mefinder -d <span class="hl">&lt;DB_ROOT&gt;</span></pre>
+<p>このコマンドは次を順に実行します。</p>
+<table>
+  <thead><tr><th>段階</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>① ツール導入</td><td><code>mefinder</code> が未インストールの場合のみ、ソース（<code>bitbucket.org/mhkj/mge_finder</code>）を取得し、biopython の上限ピンを緩めて <code>pip install</code> します（DFAST の biopython 1.87 と共存させるため）。導入済みならスキップ。</td></tr>
+    <tr><td>② インデックス構築</td><td>同梱の MGEdb (v1.1.1) から blastn 用インデックスを <code>&lt;DB_ROOT&gt;/mefinder_db</code> に構築します（<code>mge_records.nin / .nhr / .nsq</code> 等）。完了後にファイル存在を検証。</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <code>--no_indexing</code> を付けるとツールの導入のみ行い、インデックス構築をスキップします。
+  既にインデックスがある場合、DFAST 実行時に再構築は行われません（既存を再利用）。
+</div>
+
+<h3>DFAST の実行</h3>
+<p>MGE 検出は <code>--mge</code> オプションで有効化します。<code>--amr</code> と併用できます。</p>
+<pre><span class="k">$</span> dfast --genome your_genome.fna --mge -o OUTPUT_DIR
+<span class="q"># AMR/VFG・プラスミド型判定も同時に行う場合</span>
+<span class="k">$</span> dfast --genome your_genome.fna --mge --amr -o OUTPUT_DIR</pre>
+<p>
+  既定では <code>--min-coverage 0.95</code>（MEF 既定の 0.9 より厳しめ）で実行され、参照インデックスは
+  <code>&lt;DB_ROOT&gt;/mefinder_db</code> を使用します。検出された MGE は <code>genome.gbk</code> に座標付き feature
+  （<span class="tag me">mobile_element</span> / <span class="tag mf">misc_feature</span>）として、所見は
+  <code>amr_summary.tsv</code> の <code>##</code> 行として記載されます（詳細は次節以降）。
+</p>
+
+<h2>2. ゲノム別 検出結果</h2>
+<table>
+  <thead>
+    <tr>
+      <th>生物種 / 株</th><th>アクセッション</th>
+      <th>mobile_element</th><th>misc_feature</th>
+      <th>AMR/VFG ヒット</th><th>MGE 注釈行 (##)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><i>Escherichia coli</i> K-12 MG1655</td><td>GCA_000005845.2</td><td class="num">52</td><td class="num">8</td><td class="num">169</td><td class="num">60</td></tr>
+    <tr><td><i>Klebsiella pneumoniae</i> NTUH-K2044</td><td>GCA_000009345.1</td><td class="num">78</td><td class="num">5</td><td class="num">236</td><td class="num">84</td></tr>
+    <tr><td><i>Klebsiella pneumoniae</i> plasmid pOXA-48</td><td>JN626286.1</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">2</td></tr>
+    <tr><td><i>Lactobacillus hokkaidonensis</i> LOOC260</td><td>GCA_000829395.1</td><td class="num">25</td><td class="num">5</td><td class="num">0</td><td class="num">30</td></tr>
+    <tr><td><i>Salmonella enterica</i> Typhimurium DT104</td><td>GCA_000493675.1</td><td class="num">25</td><td class="num">1</td><td class="num">316</td><td class="num">28</td></tr>
+    <tr><td><i>Vibrio cholerae</i> N16961</td><td>GCA_000006745.1</td><td class="num">15</td><td class="num">0</td><td class="num">193</td><td class="num">15</td></tr>
+  </tbody>
+</table>
+<p class="meta">
+  全 6 ゲノムで DFAST は正常終了 (exit 0)。<i>L. hokkaidonensis</i>（食品由来）で AMR ヒット 0 件は妥当。
+  mobile_element / misc_feature は <code>genome.gbk</code> に、AMR/VFG ヒットと MGE 注釈行は <code>amr_summary.tsv</code> に記載されます。
+</p>
+
+<h2>3. MGE が GenBank にどう記載されるか</h2>
+<p>
+  MobileElementFinder が検出した MGE のタイプを、INSDC（DDBJ/GenBank）の統制語彙に従って次のように feature へマッピングします。
+</p>
+
+<table>
+  <thead>
+    <tr><th>MGE タイプ</th><th>GenBank feature key</th><th>主な qualifier</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>insertion sequence (IS)</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="insertion sequence:<i>名称</i>"</code></td></tr>
+    <tr><td>MITE</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="MITE:<i>名称</i>"</code></td></tr>
+    <tr><td>unit transposon</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="transposon:<i>名称</i>"</code></td></tr>
+    <tr><td>composite transposon（DB ヒット）</td><td><span class="tag me">mobile_element</span></td><td><code>/mobile_element_type="transposon:<i>名称</i>"</code></td></tr>
+    <tr><td>composite transposon（<b>putative</b> = 予測のみ）</td><td><span class="tag mf">misc_feature</span></td><td><code>/note="putative composite transposon (predicted by MobileElementFinder)"</code></td></tr>
+    <tr><td>ICE / IME / CIME / mobile insertion cassette</td><td><span class="tag mf">misc_feature</span></td><td><code>/note="<i>タイプ説明</i>: <i>名称</i>"</code></td></tr>
+    <tr><td>integron / superintegron</td><td colspan="2"><b>検出されません</b>（MGEdb v1.1.1 に integron 参照配列が無いため。下記の注記参照）</td></tr>
+  </tbody>
+</table>
+<p class="meta">
+  共通で全 feature に <code>/note="MobileElementFinder: <i>名称</i>; identity:X%, coverage:Y%; similar to <i>accession</i> (MGEdb)"</code>
+  を付与（accession が無い場合は "similar to ..." 部分を省略）。
+  <code>/note="MGE_n"</code> は DFAST の内部 feature ID（出力詳細度 3 の標準動作）。
+  座標の <code>&lt;</code> / <code>&gt;</code> は参照配列に対して 5'/3' が不完全な場合のみ付与されます。
+</p>
+
+<h3><span class="tag me">mobile_element</span> 記載例① — transposon（pOXA-48 / Tn1999）</h3>
+<pre>     <span class="k">mobile_element</span>  complement(2292..8429)
+                     <span class="q">/note</span>="MobileElementFinder: Tn1999; identity:100.0%,
+                     coverage:100.0%; similar to AY236073 (MGEdb)"
+                     <span class="q">/note</span>="MGE_1"
+                     <span class="q">/mobile_element_type</span>=<span class="hl">"transposon:Tn1999"</span></pre>
+
+<h3><span class="tag me">mobile_element</span> 記載例② — insertion sequence（<i>L. hokkaidonensis</i> / ISLho1）</h3>
+<pre>     <span class="k">mobile_element</span>  9186..10732
+                     <span class="q">/note</span>="MobileElementFinder: ISLho1; identity:100.0%,
+                     coverage:100.0%"
+                     <span class="q">/note</span>="MGE_23"
+                     <span class="q">/mobile_element_type</span>=<span class="hl">"insertion sequence:ISLho1"</span></pre>
+
+<h3><span class="tag mf">misc_feature</span> 記載例③ — ICE（<i>L. hokkaidonensis</i> / Tn6254）</h3>
+<pre>     <span class="k">misc_feature</span>    1799238..1851240
+                     <span class="q">/note</span>="MobileElementFinder: Tn6254; identity:100.0%,
+                     coverage:99.1%; similar to AP014680 (MGEdb)"
+                     <span class="q">/note</span>=<span class="hl">"integrative conjugative element (ICE): Tn6254"</span></pre>
+
+<h3><span class="tag mf">misc_feature</span> 記載例④ — putative composite transposon（<i>E. coli</i> K-12）</h3>
+<pre>     <span class="k">misc_feature</span>    complement(257907..279930)
+                     <span class="q">/note</span>="MobileElementFinder: cn_22023_ISSen9;
+                     identity:94.0%, coverage:100.0%"
+                     <span class="q">/note</span>=<span class="hl">"putative composite transposon (predicted by MobileElementFinder)"</span></pre>
+
+<div class="note">
+  <b>integron / superintegron について:</b>
+  MobileElementFinder の参照データベース MGEdb v1.1.1 には integron の参照配列が含まれていません
+  （登録があるのは IS・ICE・transposon・IME・MITE・CIME・mobile insertion cassette の 8 タイプ）。
+  そのため <i>V. cholerae</i> N16961 のスーパーインテグロンや <i>S. enterica</i> DT104 の SGI1 内 class 1 integron は
+  「integron」としては検出されません（内部の IS は insertion sequence として検出されます）。これはアライメント検出方式の原理的制約です。
+</div>
+
+<h3>補足: 分類の判断基準</h3>
+<p><b>なぜ ICE などが <span class="tag mf">misc_feature</span> なのか:</b>
+INSDC の <code>/mobile_element_type</code> は統制語彙（insertion sequence・MITE・transposon・integron・retrotransposon 等）に限定され、
+<b>ICE / IME / CIME / mobile insertion cassette に対応する値が存在しません</b>。
+無理に <code>other</code> とせず、情報を保持できる <code>misc_feature</code> ＋ 説明 <code>/note</code> で記載しています（DDBJ バリデーションも通過）。
+IS・MITE・transposon は対応語彙があるため <span class="tag me">mobile_element</span> として出力されます。</p>
+
+<p><b>putative composite transposon が出力される条件:</b>
+同一の挿入配列 (IS) が同一 contig 上に 2 コピー存在し、次を満たすとき —
+(1) 少なくとも片方が確実に検出された IS、
+(2) 逆位反復配列 (IR) が保存（端の切断 ≤ 20 bp かつ隣接 HSP ≥ 60 bp）、
+(3) 2 つの IS を含む全長が &lt; 52,452 bp。
+MGEdb に既知エントリは無く IS の配置から推定する（evidence = PUTATIVE）ため、確信度の低い <span class="tag mf">misc_feature</span> として
+<code>cn_&lt;全長&gt;_&lt;IS名&gt;</code>（例 <code>cn_22023_ISSen9</code>）の名称で出力します。間の積荷の中身は問わないため偽陽性もあり得ます。</p>
+
+<h2>4. AMR × MGE の文脈（amr_summary.tsv）</h2>
+<p>
+  <code>amr_summary.tsv</code> では、各 contig の薬剤耐性/病原因子ヒット（タブ区切り行）の上に、
+  PlasmidFinder と MobileElementFinder の所見が <code>##</code> 行として併記されます。
+  下は pOXA-48 の例で、<b>OXA-48 カルバペネマーゼが Tn1999 複合トランスポゾン上の IncL プラスミドに載っている</b>ことが一目で分かります。
+</p>
+<pre>#locus  location  hit_accession  gene  product  identity  q_cov  s_cov  e_value  note
+<span class="hl">## sequence1 PlasmidFinder: IncL</span>, Description: Possibly derived from enterobacteriales IncL type plasmid., ...
+<span class="hl">## sequence1 MobileElementFinder: Tn1999 (composite transposon)</span>, identity:100.0%, coverage:100.0%, 2292..8429
+LOCUS_060  sequence1:complement(5445..6242)  ARO:3001782:AAP70012.1  <span class="hl">OXA-48</span>  OXA beta-lactamase  100.0  100.0  100.0  0.0  similar to CARD:OXA-48 ...</pre>
+
+<h2>5. 同梱ファイル</h2>
+<p>各ゲノムについて以下 2 ファイルを <code>&lt;生物種_株_アクセッション&gt;</code> 命名で収録しています（計 12 ファイル）。</p>
+<ul class="files">
+  <li><b>*.genome.gbk</b> — 全アノテーション（CDS/RNA + mobile_element/misc_feature 含む）GenBank 形式</li>
+  <li><b>*.amr_summary.tsv</b> — AMR/VFG ヒット + PlasmidFinder/MGE 注釈（## 行）</li>
+  <li><b>MANIFEST.tsv</b> — ファイル一覧と各 run の実行ステータス</li>
+</ul>
+
+<footer>
+  本サマリは検証用です。GenBank 形式は <code>genome.gbk</code> を、表形式の耐性遺伝子一覧は <code>amr_summary.tsv</code> をご確認ください。
+</footer>
+
+</body>
+</html>

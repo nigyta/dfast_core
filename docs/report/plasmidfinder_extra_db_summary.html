@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFAST PlasmidFinder Additional Database Integration Summary</title>
+<style>
+  :root { --fg:#1b1b1b; --muted:#666; --line:#ddd; --accent:#1a5276; --me:#1e6b3a; --mf:#8a5a00; --bg-soft:#f6f8fa; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif;
+         color: var(--fg); line-height: 1.65; margin: 0; padding: 2rem 1.2rem 4rem; max-width: 1000px; margin-inline: auto; }
+  h1 { font-size: 1.6rem; border-bottom: 3px solid var(--accent); padding-bottom: .4rem; }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2.4rem; border-left: 5px solid var(--accent); padding-left: .6rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.6rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #fbfcfd; }
+  pre { background: #0f1b2d; color: #e6edf3; padding: .9rem 1rem; border-radius: 6px; overflow-x: auto;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.5; }
+  pre .k { color: #79c0ff; }      /* prompt / key */
+  pre .q { color: #d2a8ff; }      /* comment */
+  pre .hl { color: #7ee787; }     /* highlight */
+  code { background: var(--bg-soft); padding: .1rem .35rem; border-radius: 3px; font-size: .88em; }
+  .tag { display:inline-block; padding:.05rem .5rem; border-radius: 10px; font-size:.78rem; font-weight:600; color:#fff; }
+  .tag.me { background: var(--me); }
+  .tag.mf { background: var(--mf); }
+  .note { background: #fff8e1; border: 1px solid #f0d98c; padding: .7rem 1rem; border-radius: 6px; font-size: .9rem; }
+  .files li { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>DFAST PlasmidFinder Additional Database Integration Summary</h1>
+<p class="meta">
+  Generated: 2026-06-11 &nbsp;|&nbsp; DFAST ver. 1.4.0 &nbsp;|&nbsp;
+  PlasmidFinder v3 (blastn) &nbsp;|&nbsp; 3 additional DBs (distributed via figshare)
+</p>
+
+<p>
+  Three <strong>additional databases</strong> for replicon typing and plasmid typing have been integrated into
+  DFAST's PlasmidFinder reference data. In addition to the standard PlasmidFinder database
+  (enterobacteriales, Inc18, Rep1&ndash;3, RepA_N, etc.), the following are automatically fetched and registered by
+  <code>dfast_file_downloader.py --plasmidfinder</code> and used for plasmid (replicon type) typing during an
+  <code>--amr</code> run.
+</p>
+
+<h2>1. List of additional databases</h2>
+<table>
+  <thead>
+    <tr>
+      <th>DB name</th><th>Description</th><th>File</th>
+      <th class="num">Sequences</th><th class="num">Size</th><th>Source (figshare)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>PseudomonasRepDB</b></td><td>Pseudomonas replicon typing database v1.0</td>
+      <td><code>PseudomonasRepDB_v1.fsa</code></td><td class="num">404</td><td class="num">421 KB</td>
+      <td><a href="https://figshare.com/articles/dataset/repP_database_fsa/26778175" target="_blank" rel="noopener">PseudomonasRepDB database v1.0</a></td>
+    </tr>
+    <tr>
+      <td><b>WHRepDB</b></td><td>WHRepDB database v1.0</td>
+      <td><code>WHRepDB_v1.fsa</code></td><td class="num">12,923</td><td class="num">12 MB</td>
+      <td><a href="https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887" target="_blank" rel="noopener">WHRepDB database v1.0</a></td>
+    </tr>
+    <tr>
+      <td><b>Acinetobacter</b></td><td>AcinetobacterPlasmidTyping database v3</td>
+      <td><code>AcinetobacterPlasmidTyping_v3.fsa</code></td><td class="num">555</td><td class="num">561 KB</td>
+      <td><a href="https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412" target="_blank" rel="noopener">AcinetobacterPlasmidTyping database v3.0</a></td>
+    </tr>
+  </tbody>
+</table>
+<p class="meta">
+  Sizes are the values after installation into <code>db/plasmidfinder_db/</code>; sequence counts are the number of <code>&gt;</code> lines in the FASTA.
+  The figshare file ID, file name, and size of each dataset were confirmed via the figshare API to match the download URL
+  (<code>ndownloader.figshare.com/files/&lt;id&gt;</code>).
+</p>
+
+<h2>2. FASTA header format</h2>
+<p>
+  All are distributed in PlasmidFinder v3 format (underscore-delimited, containing no spaces) and
+  can be used directly as blastn subjects. No prior indexing (makeblastdb / KMA) is required.
+</p>
+<table>
+  <thead><tr><th>DB name</th><th>Example header</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>PseudomonasRepDB</td><td><code>&gt;PInc-1alpha__CP002151.1</code></td><td>&mdash;</td></tr>
+    <tr><td>WHRepDB</td><td><code>&gt;WH-A1__NZCP038616.1</code></td><td>&mdash;</td></tr>
+    <tr><td>Acinetobacter</td><td><code>&gt;R3-T1_1__NC010605.1</code></td><td>The original headers contain spaces, so they are automatically corrected on download (spaces &rarr; underscores)</td></tr>
+  </tbody>
+</table>
+
+<h2>3. Usage</h2>
+<p>Substitute <code>&lt;DB_ROOT&gt;</code> with your DFAST database directory (e.g. <code>dfast_core/db</code>).</p>
+
+<h3>Step 1: Fetch and register the reference data</h3>
+<p>Cloning of the standard PlasmidFinder DB and fetching/registration of the 3 additional DBs from figshare are performed automatically.</p>
+<pre><span class="k">$</span> dfast_file_downloader.py --plasmidfinder -d <span class="hl">&lt;DB_ROOT&gt;</span></pre>
+<p>
+  The data is downloaded to <code>&lt;DB_ROOT&gt;/plasmidfinder_db</code>, and rows for the additional DBs are appended to
+  <code>&lt;DB_ROOT&gt;/plasmidfinder_db/config</code>.
+</p>
+<div class="note">
+  <b>Re-running is safe.</b> This command deletes and recreates the <code>plasmidfinder_db</code> directory every time,
+  so the additional DBs are never registered more than once no matter how often it is run.
+</div>
+
+<h3>Step 2: Run DFAST</h3>
+<p>Plasmid (replicon type) typing is enabled with the <code>--amr</code> option (which includes PlasmidFinder). The additional DBs are used automatically.</p>
+<pre><span class="k">$</span> dfast --genome your_genome.fna --amr -o OUTPUT_DIR</pre>
+
+<h3>Step 3: Check the results</h3>
+<p>
+  Matched replicon types are written to the contig (source feature) annotation and to <code>amr_summary.tsv</code>.
+  The 3 fetched additional DBs are each registered in <code>&lt;DB_ROOT&gt;/plasmidfinder_db/config</code> and used for typing.
+</p>
+
+<div class="note">
+  <b>Record of sources:</b> the figshare dataset page for each DB (linked in the table above) is also recorded as a comment
+  in each entry of <code>plasmidfinder_extra_databases</code> in the source <code>scripts/dfast_file_downloader.py</code>.
+  Direct downloads use URLs of the form <code>ndownloader.figshare.com/files/&lt;id&gt;</code>
+  (the <code>figshare.com/...</code> form of the dataset page returns an empty response and cannot be used).
+</div>
+
+<footer>
+  This summary documents the PlasmidFinder additional database integration (DFAST Ver 1.4.0).
+  Fetching and registration is done with <code>dfast_file_downloader.py --plasmidfinder</code>, and usage with <code>dfast --amr</code>.
+  The same procedure works with the Docker image <code>dfast2026:dev</code>.
+</footer>
+
+</body>
+</html>

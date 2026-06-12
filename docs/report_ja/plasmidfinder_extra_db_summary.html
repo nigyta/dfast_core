@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFAST PlasmidFinder 追加データベース統合 サマリ</title>
+<style>
+  :root { --fg:#1b1b1b; --muted:#666; --line:#ddd; --accent:#1a5276; --me:#1e6b3a; --mf:#8a5a00; --bg-soft:#f6f8fa; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Segoe UI", Meiryo, sans-serif;
+         color: var(--fg); line-height: 1.65; margin: 0; padding: 2rem 1.2rem 4rem; max-width: 1000px; margin-inline: auto; }
+  h1 { font-size: 1.6rem; border-bottom: 3px solid var(--accent); padding-bottom: .4rem; }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2.4rem; border-left: 5px solid var(--accent); padding-left: .6rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.6rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #fbfcfd; }
+  pre { background: #0f1b2d; color: #e6edf3; padding: .9rem 1rem; border-radius: 6px; overflow-x: auto;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .82rem; line-height: 1.5; }
+  pre .k { color: #79c0ff; }      /* prompt / key */
+  pre .q { color: #d2a8ff; }      /* comment */
+  pre .hl { color: #7ee787; }     /* highlight */
+  code { background: var(--bg-soft); padding: .1rem .35rem; border-radius: 3px; font-size: .88em; }
+  .tag { display:inline-block; padding:.05rem .5rem; border-radius: 10px; font-size:.78rem; font-weight:600; color:#fff; }
+  .tag.me { background: var(--me); }
+  .tag.mf { background: var(--mf); }
+  .note { background: #fff8e1; border: 1px solid #f0d98c; padding: .7rem 1rem; border-radius: 6px; font-size: .9rem; }
+  .files li { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .82rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+
+<h1>DFAST PlasmidFinder 追加データベース統合 サマリ</h1>
+<p class="meta">
+  生成日: 2026-06-11 &nbsp;|&nbsp; DFAST ver. 1.4.0 &nbsp;|&nbsp;
+  PlasmidFinder v3 (blastn) &nbsp;|&nbsp; 追加 DB 3 件 (figshare 配布)
+</p>
+
+<p>
+  DFAST の PlasmidFinder 参照データに、レプリコン型・プラスミドタイピング用の
+  <strong>追加データベース 3 件</strong>を統合しました。標準の PlasmidFinder データベース
+  （enterobacteriales・Inc18・Rep1–3・RepA_N など）に加え、以下が
+  <code>dfast_file_downloader.py --plasmidfinder</code> で自動取得・登録され、
+  <code>--amr</code> 実行時のプラスミド（レプリコン型）判定に使用されます。
+</p>
+
+<h2>1. 追加データベース一覧</h2>
+<table>
+  <thead>
+    <tr>
+      <th>DB 名</th><th>説明</th><th>ファイル</th>
+      <th class="num">配列数</th><th class="num">サイズ</th><th>配布元 (figshare)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>PseudomonasRepDB</b></td><td>Pseudomonas レプリコン型データベース v1.0</td>
+      <td><code>PseudomonasRepDB_v1.fsa</code></td><td class="num">404</td><td class="num">421 KB</td>
+      <td><a href="https://figshare.com/articles/dataset/repP_database_fsa/26778175" target="_blank" rel="noopener">PseudomonasRepDB database v1.0</a></td>
+    </tr>
+    <tr>
+      <td><b>WHRepDB</b></td><td>WHRepDB database v1.0</td>
+      <td><code>WHRepDB_v1.fsa</code></td><td class="num">12,923</td><td class="num">12 MB</td>
+      <td><a href="https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887" target="_blank" rel="noopener">WHRepDB database v1.0</a></td>
+    </tr>
+    <tr>
+      <td><b>Acinetobacter</b></td><td>AcinetobacterPlasmidTyping database v3</td>
+      <td><code>AcinetobacterPlasmidTyping_v3.fsa</code></td><td class="num">555</td><td class="num">561 KB</td>
+      <td><a href="https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412" target="_blank" rel="noopener">AcinetobacterPlasmidTyping database v3.0</a></td>
+    </tr>
+  </tbody>
+</table>
+<p class="meta">
+  サイズは <code>db/plasmidfinder_db/</code> にインストール後の値、配列数は FASTA の <code>&gt;</code> 行数。
+  各 figshare データセットのファイル ID・ファイル名・サイズがダウンロード URL
+  （<code>ndownloader.figshare.com/files/&lt;id&gt;</code>）と一致することを figshare API で確認済みです。
+</p>
+
+<h2>2. FASTA ヘッダ形式</h2>
+<p>
+  いずれも PlasmidFinder v3 形式（アンダースコア区切り・スペースを含まない）で配布されており、
+  そのまま blastn の subject として使用できます。事前インデックス（makeblastdb / KMA）は不要です。
+</p>
+<table>
+  <thead><tr><th>DB 名</th><th>ヘッダ例</th><th>備考</th></tr></thead>
+  <tbody>
+    <tr><td>PseudomonasRepDB</td><td><code>&gt;PInc-1alpha__CP002151.1</code></td><td>—</td></tr>
+    <tr><td>WHRepDB</td><td><code>&gt;WH-A1__NZCP038616.1</code></td><td>—</td></tr>
+    <tr><td>Acinetobacter</td><td><code>&gt;R3-T1_1__NC010605.1</code></td><td>元ヘッダにスペースを含むため取得時に自動補正（空白→アンダースコア）</td></tr>
+  </tbody>
+</table>
+
+<h2>3. 使い方</h2>
+<p><code>&lt;DB_ROOT&gt;</code> は DFAST のデータベースディレクトリ（例: <code>dfast_core/db</code>）に読み替えてください。</p>
+
+<h3>手順① 参照データの取得・登録</h3>
+<p>標準 PlasmidFinder DB のクローンと、追加 DB 3 件の figshare からの取得・登録が自動で行われます。</p>
+<pre><span class="k">$</span> dfast_file_downloader.py --plasmidfinder -d <span class="hl">&lt;DB_ROOT&gt;</span></pre>
+<p>
+  データは <code>&lt;DB_ROOT&gt;/plasmidfinder_db</code> にダウンロードされ、追加 DB の行が
+  <code>&lt;DB_ROOT&gt;/plasmidfinder_db/config</code> に追記されます。
+</p>
+<div class="note">
+  <b>再実行は安全です。</b> このコマンドは毎回 <code>plasmidfinder_db</code> ディレクトリを削除してから
+  作り直すため、何度実行しても追加 DB が重複登録されることはありません。
+</div>
+
+<h3>手順② DFAST の実行</h3>
+<p>プラスミド（レプリコン型）判定は <code>--amr</code> オプションで有効になります（PlasmidFinder を含む）。追加 DB は自動的に使用されます。</p>
+<pre><span class="k">$</span> dfast --genome your_genome.fna --amr -o OUTPUT_DIR</pre>
+
+<h3>手順③ 結果の確認</h3>
+<p>
+  ヒットしたレプリコン型は、コンティグ（source feature）の注釈および <code>amr_summary.tsv</code> に出力されます。
+  取得した 3 つの追加 DB はそれぞれ <code>&lt;DB_ROOT&gt;/plasmidfinder_db/config</code> に登録され、判定に使用されます。
+</p>
+
+<div class="note">
+  <b>取得元の記録:</b> 各 DB の figshare データセットページ（上表のリンク）は、ソース
+  <code>scripts/dfast_file_downloader.py</code> の <code>plasmidfinder_extra_databases</code> 各エントリにも
+  コメントとして記載しています。直接ダウンロードには <code>ndownloader.figshare.com/files/&lt;id&gt;</code> 形式の URL を使用します
+  （データセットページの <code>figshare.com/...</code> 形式は空レスポンスを返すため不可）。
+</div>
+
+<footer>
+  本サマリは PlasmidFinder 追加データベース統合（DFAST Ver 1.4.0）の説明用です。
+  取得・登録は <code>dfast_file_downloader.py --plasmidfinder</code>、利用は <code>dfast --amr</code> で行います。
+  Docker イメージ <code>dfast2026:dev</code> でも同手順で利用できます。
+</footer>
+
+</body>
+</html>

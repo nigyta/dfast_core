@@ -311,6 +311,17 @@ Invoke DFAST:
 docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_core:latest dfast --genome /data/your_genome.fa --out /data/your_result --dbroot /dfast_db
 ```
 
+### Building the Docker image
+The `Dockerfile` is located at the repository root and uses the local source tree (copied via `COPY`, so your local changes are reflected). A `.dockerignore` keeps the build context small by excluding reference data and non-Linux binaries.
+```
+git clone https://github.com/nigyta/dfast_core
+cd dfast_core
+docker build -t nigyta/dfast_core .
+```
+The image is pinned to `linux/amd64` because the bundled binaries under `bin/Linux` are x86_64.
+
+Images on Docker Hub are built automatically: pushing a version tag (e.g. `1.4.0`) to the repository triggers a GitHub Actions workflow ([.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)) that builds the image and pushes both `nigyta/dfast_core:<tag>` and `nigyta/dfast_core:latest`.
+
 ## Experimental work
 ### Annotation for antibiotic registance genes and virulence fators  
 `blastn` and `PlasmidFinder` are required. Please install it by yourself.  
