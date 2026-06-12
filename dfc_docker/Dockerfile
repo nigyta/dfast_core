@@ -1,4 +1,6 @@
-FROM python:3.13
+# Pin to linux/amd64: the bundled binaries under bin/Linux are x86_64,
+# so the image must be amd64 (also keeps the libidn.so path below valid).
+FROM --platform=linux/amd64 python:3.13
 
 # 環境変数の設定
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -25,10 +27,11 @@ RUN cd /tmp  && \
     rm -r /tmp/tRNAscan-SE-2.0.12 /tmp/v2.0.12.tar.gz && \
     cd /work
 
-# For compatibility (required for older version of BLAST binaries)
-RUN wget http://mirrors.kernel.org/ubuntu/pool/main/libi/libidn/libidn11_1.33-2.2ubuntu2_amd64.deb && \
-    apt install ./libidn11_1.33-2.2ubuntu2_amd64.deb && \
-    rm libidn11_1.33-2.2ubuntu2_amd64.deb
+# For compatibility (required for older version of BLAST binaries that link libidn.so.11).
+# Debian 13 (trixie) only ships libidn12, so install it and provide a libidn.so.11 symlink.
+RUN apt-get update && apt-get install -y libidn12 && \
+    ln -sf /usr/lib/x86_64-linux-gnu/libidn.so.12 /usr/lib/x86_64-linux-gnu/libidn.so.11 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
