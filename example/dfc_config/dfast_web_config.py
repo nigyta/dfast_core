@@ -399,5 +399,15 @@ class Config:
                 "db_path": "@@DB_ROOT@@/plasmidfinder_db",
                 "cmd_options": "",
             },
-        },    
+        },
+        {
+            # MobileElementFinder to detect mobile genetic elements
+            "tool_name": "MobileElementFinder",
+            "target": "feature",
+            "enabled": False,
+            "options": {
+                "db_path": "@@DB_ROOT@@/mefinder_db",
+                "cmd_options": "--min-coverage 0.95",
+            },
+        },
     ]
