@@ -25,7 +25,7 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 * [Cookbook](docs/cookbook.md)
 
 
-## <a id="overview"></a>Overview
+## Overview
 
 * **Easy install**  
 DFAST is implemented in Python and runs on Mac and Linux. No additional modules are required other than BioPython. It comes with external binaries for the default workflow.  
@@ -41,7 +41,7 @@ DFAST can annotate a typical-sized bacterial genome within several minutes. In a
 * **INSDC submission**  
 As its name suggested, DFAST is intended to support rapid genome submission to the INSDC through DDBJ. DFAST generates submission files for DDBJ Mass Submission System (MSS).
 
-## <a id="installation"></a>Installation
+## Installation
 If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `conda`.
 
 ### Prerequisites
@@ -197,7 +197,7 @@ By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be use
 * Statistics for genome sequences and annotated features
 * DDBJ submission files
 
-## <a id="options"></a>Options
+## Options
 
 ```
 Basic usage:
@@ -272,7 +272,7 @@ Run options:
   -h, --help            Show this help message
 ```
 
-## <a id="distribution"></a>Software distribution
+## Software distribution
 DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](docs/LICENSE)).
 
 This distribution contains following external programs.
@@ -287,7 +287,7 @@ This distribution contains following external programs.
 * hmmpress, hmmscan from [HMMer](http://hmmer.org/) package (GPLv3)
 * [LAST](http://last.cbrc.jp/) (GPLv3)
 
-## <a id="trouble_shoot"></a>Trouble shoot
+## Trouble shoot
 * DBsearch is slow  
 The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
 If your machine does not have enough memory, decrease the number of CPUs (`--cpu 2` or `--cpu 1`) or use BLASTP instead (`--aligner blastp`). 
@@ -298,7 +298,7 @@ Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GL
 * libidn-11 on ArchLinux  
 According to the report from users, DFAST fails on ArchLinux due to `libidn-11` required for BLASTP. You may need to install `libidn-133-compat` from the AUR repository.
 
-## <a id="howtorundocker"></a>How to run DFAST within a Docker container.
+## How to run DFAST within a Docker container.
 The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags).  
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
@@ -332,8 +332,8 @@ scripts/dfast_file_downloader.py --plasmidfinder
 scripts/reference_util_for_nucl.py --card --card_version 3.2.9 --vfdb --vfdb_update_date 2024-05-10
 ```
 Since VFDB provides only the latest version, the value specified with `--vfdb_update_date` is used only as a timestamp for the reference data.  
-See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.
-
+See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.  
+DFAST uses the following custom reference data for PlasmidFinder: [PseudomonasRepDB v1.0](https://figshare.com/articles/dataset/repP_database_fsa/26778175), [WHRepDB v1.0](https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887), and [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
 Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
 ```
