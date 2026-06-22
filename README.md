@@ -333,7 +333,7 @@ scripts/reference_util_for_nucl.py --card --card_version 3.2.9 --vfdb --vfdb_upd
 ```
 Since VFDB provides only the latest version, the value specified with `--vfdb_update_date` is used only as a timestamp for the reference data.  
 See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.  
-DFAST uses the following custom reference data for PlasmidFinder: [PseudomonasRepDB v1.0](https://figshare.com/articles/dataset/repP_database_fsa/26778175), [WHRepDB v1.0](https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887), and [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
+DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.0](https://figshare.com/articles/dataset/repP_database_fsa/26778175), and [WHRepDB v1.0](https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
 Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
 ```
