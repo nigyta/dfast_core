@@ -63,9 +63,9 @@ class Plasmidfinder(ContigAnnotationTool):
 
             # Extract organism from ref_database (e.g. "PlasmidFinder-2.2.0:enterobacteriales")
             ref_database = hit.get("ref_database", "")
-            organism = ref_database.split(":")[-1] if ":" in ref_database else ""
+            # organism = ref_database.split(":")[-1] if ":" in ref_database else ""
 
-            description = f"Possibly derived from {organism} {plasmid_type} type plasmid."
+            description = f"Possibly derived from {ref_database} {plasmid_type} type plasmid."
             hit_info = f"Similar to {accession}, {positions_in_contig}, identity:{identity}%, aligned:{coverage}"
 
             list_note = D.setdefault(contig_name, [])
