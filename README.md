@@ -45,9 +45,8 @@ As its name suggested, DFAST is intended to support rapid genome submission to t
 If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `conda`.
 
 ### Prerequisites
-* **Python (3.7-)**  
-  DFAST runs both on Python 3.7 or later. Python 2 is no longer supported.  
-  Python>=3.10 is recommended.
+* **Python (3.10-)**  
+  DFAST requires Python 3.10 or later. Python 2 is no longer supported.
 * **BioPython package**  
   You can install this with the Python package management tool `pip`:  
   ```
