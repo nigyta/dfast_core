@@ -260,6 +260,8 @@ if args.mge:
     enable_mge(config)
 
 if args.mag:  # --mag
+    if args.strain:
+        logger.warning("--strain is ignored for MAG/MAG-WGS submissions. Use --isolate instead.")
     enable_mag(config, complete=config.GENOME_CONFIG.get("complete", False))
 
 if args.no_hmm:  # --no_hmm
