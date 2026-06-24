@@ -408,3 +408,43 @@ def test_file_prefix_mag_no_biosample():
 def test_file_prefix_fallback():
     obj = _make_ddbj_submission("", strain="", isolate="", is_mag=False)
     assert obj.get_file_prefix() == "mss"
+
+
+# --- enable_mag() tests ---
+
+from dfc.utils.config_util import enable_mag
+
+
+class _MockConfig:
+    def __init__(self, complete=False, project_type=""):
+        self.GENOME_CONFIG = {"complete": complete, "project_type": project_type}
+
+
+def test_enable_mag_sets_mag_wgs():
+    config = _MockConfig()
+    enable_mag(config, complete=False)
+    assert config.GENOME_CONFIG["project_type"] == "mag-wgs"
+
+
+def test_enable_mag_wgs_does_not_set_complete():
+    config = _MockConfig(complete=False)
+    enable_mag(config, complete=False)
+    assert config.GENOME_CONFIG["complete"] == False
+
+
+def test_enable_mag_complete_sets_project_type_mag():
+    config = _MockConfig()
+    enable_mag(config, complete=True)
+    assert config.GENOME_CONFIG["project_type"] == "mag"
+
+
+def test_enable_mag_complete_sets_complete_true():
+    config = _MockConfig(complete=False)
+    enable_mag(config, complete=True)
+    assert config.GENOME_CONFIG["complete"] == True
+
+
+def test_enable_mag_overwrites_existing_project_type():
+    config = _MockConfig(project_type="wgs")
+    enable_mag(config, complete=False)
+    assert config.GENOME_CONFIG["project_type"] == "mag-wgs"

@@ -327,3 +327,11 @@ def enable_mge(config):
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "MobileElementFinder":
             setting["enabled"] = True
+
+
+def enable_mag(config, complete=False):
+    project_type = "mag" if complete else "mag-wgs"
+    config.GENOME_CONFIG["project_type"] = project_type
+    if complete:
+        config.GENOME_CONFIG["complete"] = True
+    logger.info("MAG mode enabled (project_type={})".format(project_type))
