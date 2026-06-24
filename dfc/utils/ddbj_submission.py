@@ -141,7 +141,8 @@ def source_feature_to_table(feature, record, seq_rank, rec_length, metadata, pro
         ret.append(["", "", "", "submitter_seqid", "@@[entry]@@"])
     # print(record.annotations)
     plasmid = record.annotations.get("plasmid")
-    ret.append(create_ff_definiton(seq_rank, plasmid, project_type=project_type))
+    isolate_present = bool(record.annotations.get("isolate", ""))
+    ret.append(create_ff_definiton(seq_rank, plasmid, project_type=project_type, isolate_present=isolate_present))
     ret += metadata.render_ex_source(project_type)
     ret[0][1] = feature.type
     ret[0][2] = location_string
@@ -150,9 +151,9 @@ def source_feature_to_table(feature, record, seq_rank, rec_length, metadata, pro
     return ret
 
 
-def create_ff_definiton(seq_rank, plasmid, project_type=""):
+def create_ff_definiton(seq_rank, plasmid, project_type="", isolate_present=False):
     assert seq_rank in ["complete", "scaffold", "contig"]
-    identifier = "@@[isolate]@@" if project_type in ("mag", "mag-wgs") else "@@[strain]@@"
+    identifier = "@@[isolate]@@" if (project_type in ("mag", "mag-wgs") or isolate_present) else "@@[strain]@@"
     if seq_rank == "complete":
         if plasmid:
             ff_definition = f"@@[organism]@@ {identifier} plasmid @@[plasmid]@@ DNA, complete sequence"

@@ -257,12 +257,15 @@ class Genome(object):
             qualifiers = OrderedDict()
             qualifiers["mol_type"] = [record.annotations.get("mol_type", "genomic DNA")]
             qualifiers["organism"] = [record.annotations.get("organism", "")]
+            isolate_in_record = record.annotations.get("isolate", "")
             for field_name in ["strain", "isolate"]:
                 field_def = get_field_definition(field_name)
                 if field_def is None:
                     continue
                 value = record.annotations.get(field_name, "")
                 if field_def.is_excluded_for(self.project_type):
+                    continue
+                if field_name == "strain" and isolate_in_record:
                     continue
                 if value or field_def.effective_required(self.project_type):
                     qualifiers[field_name] = [value]

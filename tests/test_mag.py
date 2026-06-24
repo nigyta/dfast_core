@@ -310,6 +310,20 @@ def test_source_features_strain_placeholder_for_wgs_empty():
     assert "strain" in q
     assert q["strain"] == [""]  # placeholder (mss_required=TRUE)
 
+def test_source_features_strain_suppressed_when_isolate_set():
+    g = _make_genome_for_source_features("wgs", strain="", isolate="ISO-001")
+    g.add_source_features({})
+    q = list(g.seq_records.values())[0].features[0].qualifiers
+    assert "strain" not in q
+    assert q["isolate"] == ["ISO-001"]
+
+def test_source_features_strain_suppressed_even_with_strain_value():
+    g = _make_genome_for_source_features("wgs", strain="K-12", isolate="ISO-001")
+    g.add_source_features({})
+    q = list(g.seq_records.values())[0].features[0].qualifiers
+    assert "strain" not in q
+    assert q["isolate"] == ["ISO-001"]
+
 
 # ---- Task 4: render_common_entry tests ----
 
@@ -379,6 +393,17 @@ def test_ff_definition_non_mag_unchanged():
     row = create_ff_definiton("complete", plasmid=None, project_type="wgs")
     assert "@@[strain]@@" in row[4]
     assert "@@[isolate]@@" not in row[4]
+
+def test_ff_definition_non_mag_with_isolate_present():
+    from dfc.utils.ddbj_submission import create_ff_definiton
+    row = create_ff_definiton("complete", plasmid=None, project_type="", isolate_present=True)
+    assert "@@[isolate]@@" in row[4]
+    assert "@@[strain]@@" not in row[4]
+
+def test_ff_definition_wgs_with_isolate_present():
+    from dfc.utils.ddbj_submission import create_ff_definiton
+    row = create_ff_definiton("contig", plasmid=None, project_type="wgs", isolate_present=True)
+    assert "@@[isolate]@@" in row[4]
 
 
 # ---- get_file_prefix tests ----
