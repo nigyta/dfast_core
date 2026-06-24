@@ -19,6 +19,7 @@ try:
 except ImportError:
     generic_dna = None
 from .models.bio_feature import ExtendedFeature
+from dfc.utils.metadata_util import get_field_definition
 logger = getLogger(__name__)
 
 
@@ -42,9 +43,12 @@ class Genome(object):
             logger.info("Loading a genomic fasta file from {}".format(config.GENOME_FASTA))
 
         self.complete = config.GENOME_CONFIG.get("complete", False)
+        self.project_type = config.GENOME_CONFIG.get("project_type", "")
+        self.is_mag = self.project_type in ("mag", "mag-wgs")
 
         self.organism = config.GENOME_SOURCE_INFORMATION.get("organism", "")
         self.strain = config.GENOME_SOURCE_INFORMATION.get("strain", "")
+        self.isolate = config.GENOME_SOURCE_INFORMATION.get("isolate", "")
 
         seq_names = config.GENOME_SOURCE_INFORMATION.get("seq_names", "").replace(",", ";").strip("; \t\n\r")
         self.seq_names = [x.strip().replace(" ", "_") for x in seq_names.strip().split(";")]
@@ -180,29 +184,40 @@ class Genome(object):
 
     def add_source_information(self):
         today = datetime.now().strftime('%d-%b-%Y').upper()
-        source = self.organism + " strain " + self.strain if self.strain else self.organism
+        division = "ENV" if self.is_mag else "BCT"
+        if self.is_mag:
+            source = self.organism + " isolate " + self.isolate if self.isolate else self.organism
+        else:
+            source = self.organism + " strain " + self.strain if self.strain else self.organism
         if self.complete:
             assert len(self.seq_types) == len(self.seq_topologies) == len(self.seq_names) == len(self.seq_records)
             for i, record, seq_name, seq_type, seq_topology in zip(range(len(self.seq_records)), self.seq_records.values(),
                                                                    self.seq_names, self.seq_types, self.seq_topologies):
                 annotations = {
-                    "organism": self.organism, "source": source, "strain": self.strain,
+                    "organism": self.organism, "source": source,
                     "complete": self.complete, "date": today, "topology": seq_topology,
-                    "data_file_division": "BCT", "molecule_type": "DNA",
-                    # "sequence_version": 1, "data_file_division": "BCT",
-                    # "taxonomy":['Eukaryota', 'Viridiplantae', 'Streptophyta', 'Embryophyta', 'Paphiopedilum'],
+                    "data_file_division": division, "molecule_type": "DNA",
                 }
+                if self.isolate:
+                    annotations["isolate"] = self.isolate
+                if self.strain:
+                    annotations["strain"] = self.strain
                 if seq_type == "plasmid" or seq_type == "p":
                     annotations["plasmid"] = record.name
                 logger.debug("DEBUG: " + str(annotations))
                 record.annotations = annotations
         else:
             for i, record in enumerate(self.seq_records.values()):
-                record.annotations = {
-                    "date": today, "data_file_division": "BCT", "topology": "linear",
-                    "organism": self.organism, "source": source, "strain": self.strain, "complete": self.complete,
-                    "molecule_type": "DNA"
+                annotations = {
+                    "date": today, "data_file_division": division, "topology": "linear",
+                    "organism": self.organism, "source": source,
+                    "complete": self.complete, "molecule_type": "DNA",
                 }
+                if self.isolate:
+                    annotations["isolate"] = self.isolate
+                if self.strain:
+                    annotations["strain"] = self.strain
+                record.annotations = annotations
 
     # def load_metadata(self, config):
     #     def _read_file(file_name):
@@ -242,9 +257,15 @@ class Genome(object):
             qualifiers = OrderedDict()
             qualifiers["mol_type"] = [record.annotations.get("mol_type", "genomic DNA")]
             qualifiers["organism"] = [record.annotations.get("organism", "")]
-            strain = record.annotations.get("strain")
-            if strain:
-                qualifiers["strain"] = [strain]
+            for field_name in ["strain", "isolate"]:
+                field_def = get_field_definition(field_name)
+                if field_def is None:
+                    continue
+                value = record.annotations.get(field_name, "")
+                if field_def.is_excluded_for(self.project_type):
+                    continue
+                if value or field_def.effective_required(self.project_type):
+                    qualifiers[field_name] = [value]
             plasmid = record.annotations.get("plasmid")
             if plasmid:
                 qualifiers["plasmid"] = [plasmid]

@@ -1,0 +1,1249 @@
+<title>MAG/MAG-WGS DDBJ 提出ルール — DFAST</title>
+<style>
+/* ── palette ─────────────────────────────── */
+:root {
+  --ground:      #EDF2F1;
+  --surface:     #FFFFFF;
+  --text:        #162420;
+  --text-muted:  #4D706A;
+  --accent:      #1B6B5A;
+  --accent-dim:  #2D8A74;
+  --accent-bg:   #D8EDEA;
+  --warm:        #D4610B;
+  --warm-bg:     #FAEAE0;
+  --border:      #C0D8D2;
+  --code-bg:     #F0F5F4;
+  --track-h:     28px;
+  --sidebar-w:   220px;
+  --r:           4px;
+}
+
+/* ── reset & base ────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--ground);
+}
+
+/* ── hero ───────────────────────────────── */
+.hero {
+  background: var(--accent);
+  color: #fff;
+  padding: 52px 40px 44px;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  opacity: .7;
+  margin-bottom: 14px;
+}
+
+.hero h1 {
+  font-size: clamp(22px, 4vw, 36px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  max-width: 640px;
+  margin-bottom: 10px;
+}
+
+.hero-sub {
+  font-size: 14px;
+  opacity: .75;
+  margin-bottom: 36px;
+}
+
+/* genome track preview in hero */
+.track-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 560px;
+}
+
+.track-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  opacity: .9;
+}
+
+.track-label {
+  width: 180px;
+  flex-shrink: 0;
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: .02em;
+  opacity: .85;
+}
+
+.track-bar {
+  height: var(--track-h);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.track-bar.active  { background: rgba(255,255,255,.28); color: #fff; flex: 1; }
+.track-bar.placeholder { background: rgba(255,255,255,.12); color: rgba(255,255,255,.7);
+  border: 1px dashed rgba(255,255,255,.35); flex: 1; }
+.track-bar.excluded { background: rgba(212, 97, 11, .35); color: rgba(255,255,255,.65);
+  text-decoration: line-through; flex: 1; }
+.track-bar.badge {
+  flex: none;
+  font-size: 10px;
+  padding: 0 8px;
+  border-radius: 20px;
+  height: 20px;
+}
+.badge-req  { background: rgba(255,255,255,.2); }
+.badge-excl { background: rgba(212,97,11,.5); }
+
+/* ── page layout ─────────────────────────── */
+.page-layout {
+  display: flex;
+  align-items: flex-start;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  gap: 40px;
+}
+
+/* ── sidebar ─────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+}
+
+.sidebar-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar nav a {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 5px 0 5px 12px;
+  border-left: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  line-height: 1.4;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+/* ── main ────────────────────────────────── */
+.main { flex: 1; min-width: 0; }
+
+/* ── section wrapper ─────────────────────── */
+.section {
+  background: var(--surface);
+  border-radius: 8px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-track {
+  width: 4px;
+  height: 28px;
+  border-radius: 2px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.section-track.warm { background: var(--warm); }
+
+.section-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+
+.section-body {
+  padding: 24px;
+}
+
+/* ── prose ───────────────────────────────── */
+.prose p { margin-bottom: 12px; }
+.prose p:last-child { margin-bottom: 0; }
+
+h3.sub {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 24px 0 12px;
+}
+h3.sub:first-child { margin-top: 0; }
+
+/* ── priority diagram ───────────────────── */
+.priority-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.priority-controls .ctrl-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-right: 4px;
+  font-weight: 600;
+}
+
+.pt-btn {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--ground);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  cursor: pointer;
+  transition: all .15s;
+  font-weight: 600;
+}
+
+.pt-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.pt-btn.sel {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.priority-diagram {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pdiag-header {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr 1fr 100px;
+  gap: 0;
+  background: var(--ground);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pdiag-header div, .pdiag-row > div {
+  padding: 8px 12px;
+  border-right: 1px solid var(--border);
+}
+.pdiag-header div:last-child, .pdiag-row > div:last-child { border-right: none; }
+
+.pdiag-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr 1fr 100px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  transition: background .2s;
+}
+
+.pdiag-row .field-name {
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--ground);
+  display: flex;
+  align-items: center;
+}
+
+.cell-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pill-excl  { background: var(--warm-bg);  color: var(--warm); }
+.pill-req   { background: var(--accent-bg); color: var(--accent); }
+.pill-none  { color: var(--text-muted); }
+
+.result-cell {
+  display: flex;
+  align-items: center;
+}
+
+.result-pill {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+.result-yes        { background: var(--accent-bg); color: var(--accent); }
+.result-no         { background: #F3F3F3; color: #999; }
+.result-placeholder{ background: #FFF8E0; color: #8A6800; }
+.result-valueless  { background: var(--accent-bg); color: var(--accent); }
+
+/* ── field cards ─────────────────────────── */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.field-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.field-card-head {
+  padding: 12px 16px;
+  background: var(--ground);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field-card-name {
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.field-card-type {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
+.field-card-body {
+  padding: 14px 16px;
+}
+
+.fc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ground);
+  font-size: 13px;
+  gap: 8px;
+}
+
+.fc-row:last-child { border-bottom: none; }
+
+.fc-pt {
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.fc-val { font-size: 12.5px; text-align: right; }
+.fc-val.out    { color: var(--accent); font-weight: 600; }
+.fc-val.ph     { color: #8A6800; font-weight: 600; }
+.fc-val.no     { color: #AAA; }
+.fc-val.excl   { color: var(--warm); font-weight: 600; }
+
+.fc-note {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  line-height: 1.5;
+}
+
+/* ── tables ──────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th {
+  background: var(--ground);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 9px 14px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+
+td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+
+td code, th code {
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: .9em;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── code blocks ─────────────────────────── */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+pre .cm { color: var(--text-muted); }
+pre .kw { color: var(--accent); font-weight: 600; }
+pre .st { color: var(--warm); }
+pre .nu { color: #1A6BB0; }
+
+/* ── callout ─────────────────────────────── */
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  font-size: 13.5px;
+  margin-top: 16px;
+}
+.callout.warm {
+  border-left-color: var(--warm);
+  background: var(--warm-bg);
+}
+.callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── verification grid ───────────────────── */
+.verif-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.verif-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.verif-card-head {
+  padding: 10px 14px;
+  background: var(--ground);
+  border-bottom: 1px solid var(--border);
+}
+
+.verif-card-dir {
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.verif-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.verif-card-body {
+  padding: 12px 14px;
+}
+
+.verif-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  padding: 3px 0;
+}
+
+.verif-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-ok   { background: var(--accent); }
+.dot-excl { background: var(--warm); }
+.dot-ph   { background: #E8B800; }
+
+/* ── extensions ──────────────────────────── */
+.ext-block {
+  background: var(--ground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+
+.ext-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* ── file list ───────────────────────────── */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--ground);
+}
+
+.file-name {
+  font-family: "SF Mono", "Fira Mono", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 260px;
+  flex-shrink: 0;
+}
+
+.file-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── responsive ──────────────────────────── */
+@media (max-width: 780px) {
+  .page-layout { flex-direction: column; padding: 20px 14px; }
+  .sidebar { width: 100%; position: static; }
+  .sidebar nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  .sidebar nav a { border-left: none; border-bottom: 2px solid transparent; padding: 4px 10px; }
+  .hero { padding: 36px 20px 30px; }
+  .track-label { width: 130px; }
+  .pdiag-header, .pdiag-row { grid-template-columns: 140px 1fr 1fr 1fr 90px; }
+  .file-name { min-width: 0; width: 100%; }
+  .file-item { flex-direction: column; gap: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ── animation: slide-in for track bars ──── */
+@keyframes trackIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.track-bar { animation: trackIn .4s ease both; }
+.track-row:nth-child(1) .track-bar { animation-delay: .05s; }
+.track-row:nth-child(2) .track-bar { animation-delay: .15s; }
+.track-row:nth-child(3) .track-bar { animation-delay: .25s; }
+.track-row:nth-child(4) .track-bar { animation-delay: .35s; }
+</style>
+
+<!-- HERO -->
+<header class="hero">
+  <p class="hero-eyebrow">DFAST — DDBJ MSS 提出ルール仕様書 / 2026-06-24</p>
+  <h1>MAG / MAG-WGS<br>フィールド出力ルール</h1>
+  <p class="hero-sub">project_type に応じたメタデータフィールドの条件付き出力制御</p>
+
+  <div class="track-preview" aria-hidden="true">
+    <div class="track-row">
+      <span class="track-label">isolate</span>
+      <span class="track-bar active">MAG-001</span>
+      <span class="track-bar badge badge-req">required_for</span>
+    </div>
+    <div class="track-row">
+      <span class="track-label">metagenome_source</span>
+      <span class="track-bar active">soil metagenome</span>
+      <span class="track-bar badge badge-req">required_for</span>
+    </div>
+    <div class="track-row">
+      <span class="track-label">environmental_sample</span>
+      <span class="track-bar placeholder">（valueless）</span>
+      <span class="track-bar badge badge-req">required_for</span>
+    </div>
+    <div class="track-row">
+      <span class="track-label">strain</span>
+      <span class="track-bar excluded">除外 — 値があっても非出力</span>
+      <span class="track-bar badge badge-excl">excluded_for</span>
+    </div>
+  </div>
+</header>
+
+<!-- PAGE BODY -->
+<div class="page-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <p class="sidebar-title">目次</p>
+    <nav id="toc">
+      <a href="#overview">概要</a>
+      <a href="#mechanism">制御の仕組み</a>
+      <a href="#priority">優先順位ルール</a>
+      <a href="#fields">フィールドごとの挙動</a>
+      <a href="#ffdef">ff_definition の切り替え</a>
+      <a href="#verification">検証結果</a>
+      <a href="#extension">将来の拡張方法</a>
+      <a href="#files">変更ファイル一覧</a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- 概要 -->
+    <section class="section" id="overview">
+      <div class="section-header">
+        <div class="section-track"></div>
+        <h2>概要</h2>
+      </div>
+      <div class="section-body prose">
+        <p>
+          DFAST の DDBJ MSS 提出ファイル（<code>.ann</code>）生成において、従来は <code>is_mag</code> フラグによるハードコードで MAG 固有フィールドを制御していました。この実装では新しい project_type への対応のたびにコード変更が必要となる問題がありました。
+        </p>
+        <p>
+          本実装では <code>metadata_definition.tsv</code> に <code>required_for</code>・<code>excluded_for</code> の 2 列を追加し、<strong>TSV 設定だけでフィールドの出力条件を制御する仕組み</strong>に置き換えました。新しい project_type への対応は TSV 編集のみで完結します。
+        </p>
+
+        <h3 class="sub">対象 project_type</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>project_type</th>
+              <th>区分</th>
+              <th>genome タイプ</th>
+              <th>DDBJ division</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>mag</code></td>
+              <td>MAG — Metagenome-Assembled Genome</td>
+              <td>complete</td>
+              <td>ENV</td>
+            </tr>
+            <tr>
+              <td><code>mag-wgs</code></td>
+              <td>MAG-WGS（ドラフトMAG）</td>
+              <td>draft</td>
+              <td>ENV</td>
+            </tr>
+            <tr>
+              <td><code>gnm</code></td>
+              <td>通常ゲノム</td>
+              <td>complete</td>
+              <td>BCT / etc.</td>
+            </tr>
+            <tr>
+              <td><code>wgs</code></td>
+              <td>ドラフトゲノム</td>
+              <td>draft</td>
+              <td>BCT / etc.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 制御の仕組み -->
+    <section class="section" id="mechanism">
+      <div class="section-header">
+        <div class="section-track"></div>
+        <h2>制御の仕組み</h2>
+      </div>
+      <div class="section-body">
+
+        <h3 class="sub">TSV 列の役割</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>列番号</th>
+              <th>列名</th>
+              <th>型</th>
+              <th>意味</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>7</td>
+              <td><code>mss_required</code></td>
+              <td>TRUE / FALSE</td>
+              <td>project_type に依存しないデフォルト必須フラグ。TRUE の場合、値が空でもプレースホルダーを出力する</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><code>required_for</code></td>
+              <td>カンマ区切り project_type</td>
+              <td>ここに列挙された project_type でのみ必須（値が空でもプレースホルダーを出力）</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td><code>excluded_for</code></td>
+              <td>カンマ区切り project_type</td>
+              <td>ここに列挙された project_type では出力しない（値があっても除外。最優先）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="sub" style="margin-top:24px">主要フィールドの TSV 設定値</h3>
+        <pre><span class="cm"># フィールド名    mss_required  required_for      excluded_for</span>
+strain               TRUE          —                 mag,mag-wgs
+isolate              FALSE         mag,mag-wgs        —
+metagenome_source    FALSE         mag,mag-wgs        —
+environmental_sample FALSE         mag,mag-wgs        —</pre>
+
+        <h3 class="sub">出力判定コード（MetadataField）</h3>
+        <pre><span class="kw">def</span> should_render(<span class="st">self</span>, project_type: str) -> bool:
+    <span class="kw">if</span> project_type <span class="kw">in</span> <span class="st">self</span>.excluded_for:
+        <span class="kw">return</span> False      <span class="cm"># 除外 — 値があっても出力しない</span>
+    <span class="kw">if</span> <span class="st">self</span>.value:
+        <span class="kw">return</span> True       <span class="cm"># 値あり → 常に出力</span>
+    <span class="kw">return</span> <span class="st">self</span>.effective_required(project_type)  <span class="cm"># 必須なら空でも出力</span>
+
+<span class="kw">def</span> effective_required(<span class="st">self</span>, project_type: str) -> bool:
+    <span class="kw">if</span> project_type <span class="kw">in</span> <span class="st">self</span>.excluded_for:  <span class="kw">return</span> False
+    <span class="kw">if</span> project_type <span class="kw">in</span> <span class="st">self</span>.required_for:   <span class="kw">return</span> True
+    <span class="kw">return</span> <span class="st">self</span>.mss_required</pre>
+      </div>
+    </section>
+
+    <!-- 優先順位 -->
+    <section class="section" id="priority">
+      <div class="section-header">
+        <div class="section-track"></div>
+        <h2>優先順位ルール（インタラクティブ）</h2>
+      </div>
+      <div class="section-body">
+        <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:16px">
+          project_type を選択すると、各フィールドの出力判定が変わります。
+        </p>
+
+        <div class="priority-controls">
+          <span class="ctrl-label">project_type:</span>
+          <button class="pt-btn sel" data-pt="mag">mag</button>
+          <button class="pt-btn" data-pt="mag-wgs">mag-wgs</button>
+          <button class="pt-btn" data-pt="wgs">wgs</button>
+          <button class="pt-btn" data-pt="gnm">gnm</button>
+        </div>
+
+        <div class="priority-diagram">
+          <div class="pdiag-header">
+            <div>フィールド</div>
+            <div>mss_required</div>
+            <div>required_for</div>
+            <div>excluded_for</div>
+            <div>出力結果</div>
+          </div>
+
+          <!-- strain -->
+          <div class="pdiag-row" id="row-strain">
+            <div class="field-name">strain</div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="result-cell"></div>
+          </div>
+
+          <!-- isolate -->
+          <div class="pdiag-row" id="row-isolate">
+            <div class="field-name">isolate</div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="result-cell"></div>
+          </div>
+
+          <!-- metagenome_source -->
+          <div class="pdiag-row" id="row-mgs">
+            <div class="field-name">metagenome_source</div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="result-cell"></div>
+          </div>
+
+          <!-- environmental_sample -->
+          <div class="pdiag-row" id="row-es">
+            <div class="field-name">environmental_sample</div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="cell"></div>
+            <div class="result-cell"></div>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top:16px">
+          <span class="callout-icon">⚡</span>
+          <div style="font-size:13.5px"><strong>優先順位: excluded_for &gt; required_for &gt; mss_required</strong><br>
+          excluded_for に一致した時点で他のルールは無効になります。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- フィールドごとの挙動 -->
+    <section class="section" id="fields">
+      <div class="section-header">
+        <div class="section-track"></div>
+        <h2>フィールドごとの挙動</h2>
+      </div>
+      <div class="section-body">
+        <div class="field-grid">
+
+          <!-- strain -->
+          <div class="field-card">
+            <div class="field-card-head">
+              <span class="field-card-name">strain</span>
+              <span class="field-card-type">string</span>
+            </div>
+            <div class="field-card-body">
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm</span>
+                <span class="fc-val out">出力（値あり）</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（空）</span>
+                <span class="fc-val ph">プレースホルダー</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">mag / mag-wgs</span>
+                <span class="fc-val excl">除外（値があっても）</span>
+              </div>
+              <p class="fc-note">CLI から <code>--strain</code> を渡しても MAG/MAG-WGS では出力されません。</p>
+            </div>
+          </div>
+
+          <!-- isolate -->
+          <div class="field-card">
+            <div class="field-card-head">
+              <span class="field-card-name">isolate</span>
+              <span class="field-card-type">string</span>
+            </div>
+            <div class="field-card-body">
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（値あり）</span>
+                <span class="fc-val out">出力</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（空）</span>
+                <span class="fc-val no">出力なし</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">mag / mag-wgs（値あり）</span>
+                <span class="fc-val out">出力</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">mag / mag-wgs（空）</span>
+                <span class="fc-val ph">プレースホルダー</span>
+              </div>
+              <p class="fc-note">MAG/MAG-WGS では未指定でも placeholder として出力されます。</p>
+            </div>
+          </div>
+
+          <!-- metagenome_source -->
+          <div class="field-card">
+            <div class="field-card-head">
+              <span class="field-card-name">metagenome_source</span>
+              <span class="field-card-type">string</span>
+            </div>
+            <div class="field-card-body">
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（値あり）</span>
+                <span class="fc-val out">出力</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（空）</span>
+                <span class="fc-val no">出力なし</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">mag / mag-wgs（値あり）</span>
+                <span class="fc-val out">出力</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">mag / mag-wgs（空）</span>
+                <span class="fc-val ph">プレースホルダー</span>
+              </div>
+              <p class="fc-note">EX_SOURCE フィーチャーに出力されます。</p>
+            </div>
+          </div>
+
+          <!-- environmental_sample -->
+          <div class="field-card">
+            <div class="field-card-head">
+              <span class="field-card-name">environmental_sample</span>
+              <span class="field-card-type">boolean</span>
+            </div>
+            <div class="field-card-body">
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（値あり）</span>
+                <span class="fc-val out">出力</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">wgs / gnm（空）</span>
+                <span class="fc-val no">出力なし</span>
+              </div>
+              <div class="fc-row">
+                <span class="fc-pt">mag / mag-wgs（空）</span>
+                <span class="fc-val out">valueless 出力</span>
+              </div>
+              <p class="fc-note">boolean 型のため値なしでも qualifier 行として出力（INSDC valueless qualifier）。値を指定した場合も同様の空行で出力されます。</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ff_definition -->
+    <section class="section" id="ffdef">
+      <div class="section-header">
+        <div class="section-track warm"></div>
+        <h2>ff_definition の切り替え</h2>
+      </div>
+      <div class="section-body">
+        <p class="prose" style="margin-bottom:16px">
+          DDBJ フラットファイルの DEFINITION 行テンプレートも project_type に応じて自動切り替えされます。MAG/MAG-WGS では <code>@@[strain]@@</code> の代わりに <code>@@[isolate]@@</code> が使われます。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>project_type</th>
+              <th>ff_definition テンプレート</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>mag</code></td>
+              <td><code>@@[organism]@@ @@[isolate]@@ DNA, complete genome</code></td>
+            </tr>
+            <tr>
+              <td><code>mag-wgs</code></td>
+              <td><code>@@[organism]@@ @@[isolate]@@ DNA, @@[submitter_seqid]@@</code></td>
+            </tr>
+            <tr>
+              <td><code>gnm</code></td>
+              <td><code>@@[organism]@@ @@[strain]@@ DNA, complete genome</code></td>
+            </tr>
+            <tr>
+              <td><code>wgs</code></td>
+              <td><code>@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 検証結果 -->
+    <section class="section" id="verification">
+      <div class="section-header">
+        <div class="section-track"></div>
+        <h2>検証結果</h2>
+      </div>
+      <div class="section-body">
+        <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:20px">
+          全パターンのゲノムは <code>example/sample.lactobacillus.fna</code>（3配列）を使用。
+        </p>
+
+        <div class="verif-grid">
+          <div class="verif-card">
+            <div class="verif-card-head">
+              <div class="verif-card-dir">out_mag/mag_full/</div>
+              <div class="verif-card-desc">MAG + 全項目記入</div>
+            </div>
+            <div class="verif-card-body">
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>isolate = MAG-001（値付き）</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>metagenome_source = soil metagenome</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>environmental_sample valueless 出力</div>
+              <div class="verif-result"><span class="verif-dot dot-excl"></span>strain 出力なし</div>
+            </div>
+          </div>
+
+          <div class="verif-card">
+            <div class="verif-card-head">
+              <div class="verif-card-dir">out_mag/mag_wgs_full/</div>
+              <div class="verif-card-desc">MAG-WGS + 全項目記入</div>
+            </div>
+            <div class="verif-card-body">
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>isolate = MAG-002（値付き）</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>metagenome_source = soil metagenome</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>environmental_sample valueless 出力</div>
+              <div class="verif-result"><span class="verif-dot dot-excl"></span>strain 出力なし</div>
+            </div>
+          </div>
+
+          <div class="verif-card">
+            <div class="verif-card-head">
+              <div class="verif-card-dir">out_mag/mag_min/</div>
+              <div class="verif-card-desc">MAG + project_type のみ</div>
+            </div>
+            <div class="verif-card-body">
+              <div class="verif-result"><span class="verif-dot dot-ph"></span>isolate 空のプレースホルダー</div>
+              <div class="verif-result"><span class="verif-dot dot-ph"></span>metagenome_source 空のプレースホルダー</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>environmental_sample valueless 出力</div>
+              <div class="verif-result"><span class="verif-dot dot-excl"></span>strain 出力なし</div>
+            </div>
+          </div>
+
+          <div class="verif-card">
+            <div class="verif-card-head">
+              <div class="verif-card-dir">out_mag/mag_wgs_min/</div>
+              <div class="verif-card-desc">MAG-WGS + project_type のみ</div>
+            </div>
+            <div class="verif-card-body">
+              <div class="verif-result"><span class="verif-dot dot-ph"></span>isolate 空のプレースホルダー</div>
+              <div class="verif-result"><span class="verif-dot dot-ph"></span>metagenome_source 空のプレースホルダー</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>environmental_sample valueless 出力</div>
+              <div class="verif-result"><span class="verif-dot dot-excl"></span>strain 出力なし</div>
+            </div>
+          </div>
+
+          <div class="verif-card">
+            <div class="verif-card-head">
+              <div class="verif-card-dir">out_mag/mag_full_strain/</div>
+              <div class="verif-card-desc">MAG + 全項目 + <code>--strain CLI</code></div>
+            </div>
+            <div class="verif-card-body">
+              <div class="verif-result"><span class="verif-dot dot-excl"></span>strain 出力なし（CLI 指定も無効）</div>
+              <div class="verif-result"><span class="verif-dot dot-ok"></span>isolate・metagenome_source 正常出力</div>
+            </div>
+          </div>
+
+          <div class="verif-card">
+            <div class="verif-card-head">
+              <div class="verif-card-dir">out_mag/mag_strain_only/</div>
+              <div class="verif-card-desc">MAG + project_type のみ + <code>--strain CLI</code></div>
+            </div>
+            <div class="verif-card-body">
+              <div class="verif-result"><span class="verif-dot dot-excl"></span>strain 出力なし</div>
+              <div class="verif-result"><span class="verif-dot dot-ph"></span>isolate 空のプレースホルダー</div>
+              <div class="verif-result"><span class="verif-dot dot-ph"></span>metagenome_source 空のプレースホルダー</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top:20px">
+          <span class="callout-icon">✓</span>
+          <div style="font-size:13.5px">全パターンで期待通りの出力を確認。テストスイート 46 件すべてパス。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 将来の拡張 -->
+    <section class="section" id="extension">
+      <div class="section-header">
+        <div class="section-track warm"></div>
+        <h2>将来の拡張方法</h2>
+      </div>
+      <div class="section-body">
+        <p class="prose">
+          新しい project_type に対応する場合、<strong>コードの変更は不要</strong>です。<code>metadata_definition.tsv</code> の該当行の <code>required_for</code> または <code>excluded_for</code> 列にカンマ区切りで project_type を追加するだけです。
+        </p>
+
+        <div class="ext-block">
+          <p class="ext-label">例: 新しい project_type <code>env-sample</code> を追加</p>
+          <pre><span class="cm"># required_for 列に追記するだけ</span>
+metagenome_source  ...  FALSE  .*  <span class="kw">mag,mag-wgs,env-sample</span>
+environmental_sample  ...  FALSE  .*  <span class="kw">mag,mag-wgs,env-sample</span></pre>
+        </div>
+
+        <div class="callout warm" style="margin-top:16px">
+          <span class="callout-icon">⚠</span>
+          <div style="font-size:13.5px">TSV は後方互換です。列 10・11 のない既存の行はそのまま動作します（デフォルトは空セット）。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 変更ファイル -->
+    <section class="section" id="files">
+      <div class="section-header">
+        <div class="section-track"></div>
+        <h2>変更ファイル一覧</h2>
+      </div>
+      <div class="section-body">
+        <div class="file-list">
+          <div class="file-item">
+            <span class="file-name">dfc/utils/metadata_definition.tsv</span>
+            <span class="file-desc"><code>required_for</code>・<code>excluded_for</code> 列追加（後方互換）。4フィールドに設定値を記載。</span>
+          </div>
+          <div class="file-item">
+            <span class="file-name">dfc/utils/metadata_util.py</span>
+            <span class="file-desc"><code>MetadataField.should_render(project_type)</code> 等4メソッド追加。<code>render_ex_source(project_type)</code> 対応。<code>get_field_definition()</code> キャッシュ関数追加。</span>
+          </div>
+          <div class="file-item">
+            <span class="file-name">dfc/genome.py</span>
+            <span class="file-desc"><code>add_source_features()</code> を TSV 駆動に変更。<code>add_source_information()</code> で isolate/strain を条件なく設定。</span>
+          </div>
+          <div class="file-item">
+            <span class="file-name">dfc/utils/ddbj_submission.py</span>
+            <span class="file-desc"><code>is_mag</code> パラメータ廃止、<code>project_type</code> に統一。ハードコードされた MAG ブロックを削除。</span>
+          </div>
+          <div class="file-item">
+            <span class="file-name">dfc/utils/config_util.py</span>
+            <span class="file-desc"><code>isolate</code> キーを GENOME_SOURCE_INFORMATION に追加。<code>project_type</code> を GENOME_CONFIG に格納。</span>
+          </div>
+          <div class="file-item">
+            <span class="file-name">tests/test_mag.py</span>
+            <span class="file-desc">MAG/MAG-WGS 対応の新規テスト 46 件（単体・統合・DDBJ出力検証）。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ── priority diagram data ─────────────────
+const FIELDS = {
+  'strain':               { mss: true,  req: ['mag','mag-wgs'], excl: ['mag','mag-wgs'] },
+  'isolate':              { mss: false, req: ['mag','mag-wgs'], excl: [] },
+  'metagenome_source':    { mss: false, req: ['mag','mag-wgs'], excl: [] },
+  'environmental_sample': { mss: false, req: ['mag','mag-wgs'], excl: [], boolean: true },
+};
+
+const ROW_IDS = {
+  'strain': 'row-strain',
+  'isolate': 'row-isolate',
+  'metagenome_source': 'row-mgs',
+  'environmental_sample': 'row-es',
+};
+
+function pill(label, cls) {
+  return `<span class="cell-pill ${cls}">${label}</span>`;
+}
+
+function resultPill(pt, def) {
+  if (def.excl.includes(pt)) return ['result-no', '出力なし'];
+  if (def.req.includes(pt) || def.mss) {
+    if (def.boolean) return ['result-valueless', 'valueless 出力'];
+    return ['result-placeholder', 'プレースホルダー'];
+  }
+  return ['result-no', '出力なし（値なし時）'];
+}
+
+function updateDiagram(pt) {
+  for (const [name, def] of Object.entries(FIELDS)) {
+    const row = document.getElementById(ROW_IDS[name]);
+    if (!row) continue;
+    const cells = row.querySelectorAll('.cell');
+    const rc = row.querySelector('.result-cell');
+
+    // mss_required
+    cells[0].innerHTML = def.mss ? pill('TRUE', 'pill-req') : `<span class="pill-none">FALSE</span>`;
+
+    // required_for
+    cells[1].innerHTML = def.req.length
+      ? pill(def.req.join(', '), def.req.includes(pt) ? 'pill-req' : 'pill-none')
+      : `<span class="pill-none">—</span>`;
+
+    // excluded_for
+    cells[2].innerHTML = def.excl.length
+      ? pill(def.excl.join(', '), def.excl.includes(pt) ? 'pill-excl' : 'pill-none')
+      : `<span class="pill-none">—</span>`;
+
+    // result
+    const [cls, label] = resultPill(pt, def);
+    rc.innerHTML = `<span class="result-pill ${cls}">${label}</span>`;
+
+    // row highlight
+    row.style.background = def.excl.includes(pt) ? 'var(--warm-bg)'
+      : def.req.includes(pt) ? 'var(--accent-bg)' : '';
+  }
+}
+
+// ── buttons ───────────────────────────────
+document.querySelectorAll('.pt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pt-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    updateDiagram(btn.dataset.pt);
+  });
+});
+
+updateDiagram('mag');
+
+// ── active TOC link ───────────────────────
+const sections = document.querySelectorAll('section[id]');
+const tocLinks  = document.querySelectorAll('#toc a');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>

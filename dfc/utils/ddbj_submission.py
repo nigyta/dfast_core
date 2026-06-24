@@ -48,13 +48,16 @@ class DDBJsubmission(object):
 
     def get_file_prefix(self):
         bio_sample_id = self.metadata.get("biosample")
-        strain = self.genome.strain
-        if bio_sample_id and strain:
-            return bio_sample_id + "_" + strain
+        if getattr(self.genome, "is_mag", False):
+            identifier = self.genome.isolate
+        else:
+            identifier = self.genome.strain
+        if bio_sample_id and identifier:
+            return bio_sample_id + "_" + identifier
         elif bio_sample_id:
             return bio_sample_id
-        elif strain:
-            return strain
+        elif identifier:
+            return identifier
         else:
             return "mss"
 
@@ -75,7 +78,8 @@ class DDBJsubmission(object):
                     from pydantic import ValidationError
                     json_out_dir = os.path.dirname(self.output_dir)
                     json_file = os.path.join(json_out_dir, "dfast_record.json")
-                    drt_ann2json(ann_file, fasta_file, json_file, division="BCT", record_version="v2")
+                    division = "ENV" if getattr(self.genome, "is_mag", False) else "BCT"
+                    drt_ann2json(ann_file, fasta_file, json_file, division=division, record_version="v2")
                     self.logger.info(f"Converted MSS file into JSON. {ann_file} --> {json_file} [Experimental]")
 
                 except ImportError:
@@ -126,23 +130,19 @@ def feature_to_table(feature, rec_length):
     return ret
 
 
-def source_feature_to_table(feature, record, seq_rank, rec_length, metadata):
+def source_feature_to_table(feature, record, seq_rank, rec_length, metadata, project_type=""):
     ret = []
     # location_string = get_location_string(feature.location)
     location_string = _insdc_location_string(feature.location, rec_length)
     for key in feature.qualifiers:
         ret += qualifier_to_table(feature.qualifiers, key)
     topology = record.annotations.get("topology", "linear")
-    # organism = record.annotations.get("strain", "")
-    strain = record.annotations.get("strain", "")
-    # if strain:
-    #     ret.append(["", "", "", "strain", strain])
     if seq_rank in ["contig", "scaffold"]:
         ret.append(["", "", "", "submitter_seqid", "@@[entry]@@"])
     # print(record.annotations)
     plasmid = record.annotations.get("plasmid")
-    ret.append(create_ff_definiton(seq_rank, plasmid))
-    ret += metadata.render_ex_source()
+    ret.append(create_ff_definiton(seq_rank, plasmid, project_type=project_type))
+    ret += metadata.render_ex_source(project_type)
     ret[0][1] = feature.type
     ret[0][2] = location_string
     if topology == "circular":
@@ -150,23 +150,16 @@ def source_feature_to_table(feature, record, seq_rank, rec_length, metadata):
     return ret
 
 
-def create_ff_definiton(seq_rank, plasmid):
+def create_ff_definiton(seq_rank, plasmid, project_type=""):
     assert seq_rank in ["complete", "scaffold", "contig"]
+    identifier = "@@[isolate]@@" if project_type in ("mag", "mag-wgs") else "@@[strain]@@"
     if seq_rank == "complete":
         if plasmid:
-            ff_definition = "@@[organism]@@ @@[strain]@@ plasmid @@[plasmid]@@ DNA, complete sequence"
+            ff_definition = f"@@[organism]@@ {identifier} plasmid @@[plasmid]@@ DNA, complete sequence"
         else:
-            ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome"
-        # if strain:
-        #     ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome: @@[entry]@@"
-        # else:
-        #     ff_definition = "@@[organism]@@ DNA, complete genome: @@[entry]@@"
+            ff_definition = f"@@[organism]@@ {identifier} DNA, complete genome"
     else:
-        ff_definition = "@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@"
-        # if strain:
-        #     ff_definition = "@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@"
-        # else:
-        #     ff_definition = "@@[organism]@@ DNA, @@[submitter_seqid]@@"
+        ff_definition = f"@@[organism]@@ {identifier} DNA, @@[submitter_seqid]@@"
     return ["", "", "", "ff_definition", ff_definition]
 
 
@@ -188,7 +181,11 @@ def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, ver
     R = deepcopy(list(genome.seq_records.values()))
     seq_rank = get_seq_rank(genome)  # complete, scaffold, or contig
     metadata = Metadata(dict_metadata)
-    ann_buffer = metadata.render_common_entry(dfast_version=dfast_version, complete=genome.complete)
+    ann_buffer = metadata.render_common_entry(
+        dfast_version=dfast_version,
+        complete=genome.complete,
+        project_type=getattr(genome, "project_type", ""),
+    )
     fasta_buffer = ""
     for record in R:
         rec_length = len(record)
@@ -196,8 +193,10 @@ def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, ver
         for feature in record.features:
             feature.assign_hit(verbosity=verbosity)
             if feature.type == "source":
-                entry_buffer += source_feature_to_table(feature, record, seq_rank, rec_length, metadata)
-                # entry_buffer.append(create_ff_definiton(genome, seq_rank))
+                entry_buffer += source_feature_to_table(
+                    feature, record, seq_rank, rec_length, metadata,
+                    project_type=getattr(genome, "project_type", ""),
+                )
             else:
                 entry_buffer += feature_to_table(feature, rec_length)
         entry_buffer[0][0] = record.name
