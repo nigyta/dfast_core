@@ -209,7 +209,8 @@ Basic options:
   -c PATH, --config PATH
                         Configuration file (default config will be used if not specified)
   --organism STR        Organism name
-  --strain STR          Strain name
+  --strain STR          Strain name (mutually exclusive with --isolate)
+  --isolate STR         Isolate name for MAG/MAG-WGS submissions (mutually exclusive with --strain)
 
 Genome settings:
   --complete BOOL       Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f(=default)]
@@ -258,6 +259,7 @@ Genome source modifiers and metadata [advanced]:
   --additional_modifiers STR
                         Additional modifiers for source features
   --metadata_file PATH  Path to a metadata file (optional for DDBJ submission file)
+  --mag                 Enable MAG submission mode (sets project_type=mag-wgs). Use with --complete t to set project_type=mag.
 
 Run options:
   --cpu INT             Number of CPUs to use
