@@ -58,7 +58,7 @@ parser = argparse.ArgumentParser(description="Reference Utility for Nucleotide d
 
 # group_basic = parser.add_argument_group("Basic options")
 parser.add_argument("--card", action="store_true", help="Prepare reference data for CARD")
-parser.add_argument("--card_version", type=str, help="CARD version number (default: fetch latest from GitHub). e.g. 3.2.9")
+parser.add_argument("--card_version", type=str, help="CARD version number (default: fetch latest from card.mcmaster.ca). e.g. 3.2.9")
 parser.add_argument("--vfdb", action="store_true", help="Prepare reference data for VFDB")
 parser.add_argument("--vfdb_update_date", type=str, help="VFDB update date label (default: today's date). e.g. 2024-05-03")
 # parser.add_argument("--plasmid", action="store_true", help="Prepare reference data for PlasmidDB")
@@ -77,16 +77,20 @@ if not any([args.card, args.vfdb]):
 set_binaries_path(app_root)
 
 def get_latest_card_version():
-    url = "https://api.github.com/repos/arpcard/CARD/releases/latest"
+    import re
+    url = "https://card.mcmaster.ca/download"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "dfast_core"})
         with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read())
-            version = data["tag_name"].lstrip("v")
-            logger.info(f"Latest CARD version retrieved from GitHub: {version}")
-            return version
+            html = response.read().decode("utf-8", errors="replace")
+        versions = re.findall(r"broadstreet-v([\d.]+)\.tar\.bz2", html)
+        if not versions:
+            raise ValueError("No version found in CARD download page")
+        version = versions[0]  # first match is the latest
+        logger.info(f"Latest CARD version retrieved from {url}: {version}")
+        return version
     except Exception as e:
-        logger.warning(f"Failed to retrieve latest CARD version from GitHub: {e}")
+        logger.warning(f"Failed to retrieve latest CARD version: {e}")
         logger.warning(f"Falling back to default version: {CARD_DEFAULT_VERSION}")
         return CARD_DEFAULT_VERSION
 
