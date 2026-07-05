@@ -15,7 +15,7 @@ logger = getLogger("")
 logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
-CARD_DEFAULT_VERSION = "3.2.9"  # fallback if GitHub API is unreachable
+CARD_DEFAULT_VERSION = "4.0.1"  # fallback if card.mcmaster.ca is unreachable
 
 # srcPath = os.path.join(os.path.dirname(__file__), "..", "dfc")
 sys.path.append(app_root)
