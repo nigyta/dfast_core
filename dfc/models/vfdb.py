@@ -81,13 +81,15 @@ class VFDB(NucRefBase):
         ret = {}
         # for r_nucl, r_prot in zip(SeqIO.parse(vfdb_nucl_fasta_file, "fasta"), SeqIO.parse(vfdb_prot_fasta_file, "fasta")):
 
-        R_prot = list(SeqIO.parse(vfdb_prot_fasta_file, "fasta"))
         dict_prot = {}
-        for r in R_prot:
-            r.id = r.id.split()[0].split("(")[0]
-            dict_prot[r.id] = str(r.seq.upper())
+        with open(vfdb_prot_fasta_file, encoding="latin-1") as fh:
+            for r in SeqIO.parse(fh, "fasta"):
+                r.id = r.id.split()[0].split("(")[0]
+                dict_prot[r.id] = str(r.seq.upper())
 
-        for r_nucl in SeqIO.parse(vfdb_nucl_fasta_file, "fasta"):
+        with open(vfdb_nucl_fasta_file, encoding="latin-1") as fh:
+            nucl_records = list(SeqIO.parse(fh, "fasta"))
+        for r_nucl in nucl_records:
             descr_nucl = r_nucl.description
             # descr_prot = r_prot.description
             # assert r_nucl.id == r_prot.id
