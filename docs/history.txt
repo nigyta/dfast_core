@@ -1,3 +1,11 @@
+Ver 1.4.1 (20260705) ---------------------------------------
+Added MAG/MAG-WGS submission support for DDBJ ENV division. Use '--mag' to enable MAG mode (sets project_type=mag-wgs; use with '--complete t' for project_type=mag). The '--isolate' option sets the isolate qualifier (mutually exclusive with '--strain'). ENV/MAG keywords and required source qualifiers (metagenome_source, environmental_sample) are added automatically. project_type can also be specified in a metadata file.
+
+Fixed UnicodeDecodeError when parsing VFDB FASTA files containing non-UTF-8 bytes (latin-1 encoding is now used).
+
+'scripts/reference_util_for_nucl.py' now automatically fetches the latest CARD version from card.mcmaster.ca when '--card_version' is omitted. The '--vfdb_update_date' option now defaults to today's date when omitted.
+
+
 Ver 1.4.0 (20260611) ---------------------------------------
 Python 3.10 or later is now required.
 
