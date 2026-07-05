@@ -1,0 +1,800 @@
+<title>MAG/MAG-WGS 実装レポート — DFAST</title>
+<style>
+:root {
+  --ground:     #EDF2F1;
+  --surface:    #FFFFFF;
+  --text:       #162420;
+  --muted:      #4D706A;
+  --accent:     #1B6B5A;
+  --accent-bg:  #D8EDEA;
+  --warm:       #D4610B;
+  --warm-bg:    #FAEAE0;
+  --border:     #C0D8D2;
+  --code-bg:    #F0F5F4;
+  --del-bg:     #FEF0F0;
+  --del-text:   #C0392B;
+  --add-bg:     #EDFAF5;
+  --add-text:   #1B6B5A;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--ground);
+}
+
+/* ── hero ─────────────────────────────────── */
+.hero {
+  background: var(--accent);
+  color: #fff;
+  padding: 48px 40px 40px;
+}
+.hero-eye {
+  font-size: 11px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; opacity: .65; margin-bottom: 12px;
+}
+.hero h1 {
+  font-size: clamp(20px, 3.5vw, 32px); font-weight: 800;
+  line-height: 1.2; letter-spacing: -.02em; margin-bottom: 8px;
+}
+.hero-sub { font-size: 14px; opacity: .72; margin-bottom: 36px; }
+
+/* diff summary banner */
+.diff-summary {
+  display: flex; gap: 24px; flex-wrap: wrap;
+}
+.diff-stat {
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.diff-num {
+  font-size: 28px; font-weight: 800; line-height: 1;
+  letter-spacing: -.03em;
+}
+.diff-label {
+  font-size: 11px; opacity: .7; letter-spacing: .06em;
+  text-transform: uppercase; margin-top: 2px;
+}
+.diff-stat.add .diff-num { color: #7DFFCC; }
+.diff-stat.mod .diff-num { color: #FFE066; }
+.diff-stat.new .diff-num { color: #7AD7FF; }
+
+/* ── layout ───────────────────────────────── */
+.page-layout {
+  display: flex; align-items: flex-start; max-width: 1100px;
+  margin: 0 auto; padding: 36px 20px; gap: 36px;
+}
+
+/* ── sidebar ──────────────────────────────── */
+.sidebar {
+  width: 210px; flex-shrink: 0; position: sticky;
+  top: 20px; align-self: flex-start;
+}
+.sidebar-title {
+  font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+#toc a {
+  display: block; font-size: 12.5px; color: var(--muted);
+  text-decoration: none; padding: 4px 0 4px 12px;
+  border-left: 2px solid transparent; transition: color .15s, border-color .15s;
+  line-height: 1.4;
+}
+#toc a:hover, #toc a.active { color: var(--accent); border-left-color: var(--accent); }
+
+/* ── main ─────────────────────────────────── */
+.main { flex: 1; min-width: 0; }
+
+/* ── card ─────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 20px; overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+}
+.track { width: 4px; height: 26px; border-radius: 2px; background: var(--accent); flex-shrink: 0; }
+.track.warm { background: var(--warm); }
+.track.new  { background: #1A6BB0; }
+.card-head h2 { font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; }
+.card-head .badge {
+  margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 20px;
+  background: var(--accent-bg); color: var(--accent);
+}
+.card-head .badge.new-badge { background: #DDF0FF; color: #1A6BB0; }
+.card-body { padding: 22px; }
+
+/* ── sub heading ──────────────────────────── */
+h3.sh {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--accent);
+  margin: 22px 0 10px;
+}
+h3.sh:first-child { margin-top: 0; }
+
+/* ── tables ───────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th {
+  background: var(--ground); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  padding: 8px 13px; text-align: left; border-bottom: 2px solid var(--border);
+}
+td { padding: 8px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td code, th code {
+  font-family: "SF Mono","Fira Mono",Consolas,monospace;
+  font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px;
+}
+
+/* ── diff block ───────────────────────────── */
+.diff-block {
+  font-family: "SF Mono","Fira Mono",Consolas,monospace;
+  font-size: 12px; line-height: 1.55;
+  border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  margin-top: 12px;
+}
+.diff-file {
+  background: var(--ground); padding: 6px 14px;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  border-bottom: 1px solid var(--border); letter-spacing: .04em;
+}
+.diff-body { overflow-x: auto; }
+.dl, .da, .dc {
+  display: block; padding: 1px 14px; white-space: pre;
+}
+.dl { background: var(--del-bg); color: var(--del-text); }
+.da { background: var(--add-bg); color: var(--add-text); }
+.dc { color: var(--muted); }
+
+/* ── code block ───────────────────────────── */
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 18px; overflow-x: auto;
+  font-family: "SF Mono","Fira Mono",Consolas,monospace; font-size: 12.5px;
+  line-height: 1.6; color: var(--text); margin-top: 10px;
+}
+pre .cm { color: var(--muted); }
+pre .kw { color: var(--accent); font-weight: 600; }
+pre .st { color: var(--warm); }
+pre .hi { background: #FFF8C5; border-radius: 2px; padding: 0 2px; }
+
+/* ── change item ──────────────────────────── */
+.change-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.change-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--ground);
+}
+.change-icon {
+  width: 26px; height: 26px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 13px;
+  flex-shrink: 0; margin-top: 1px;
+}
+.icon-add  { background: var(--accent-bg); }
+.icon-mod  { background: #FFF8E0; }
+.icon-fix  { background: var(--warm-bg); }
+.change-body { flex: 1; min-width: 0; }
+.change-title { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+.change-desc  { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* ── callout ──────────────────────────────── */
+.callout {
+  display: flex; gap: 10px; padding: 12px 16px; border-radius: 6px;
+  border-left: 3px solid var(--accent); background: var(--accent-bg);
+  font-size: 13px; margin-top: 14px;
+}
+.callout.warm { border-left-color: var(--warm); background: var(--warm-bg); }
+.callout-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+
+/* ── two-col ──────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ── keyword track ────────────────────────── */
+.kw-track {
+  border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  font-family: "SF Mono","Fira Mono",Consolas,monospace; font-size: 12px;
+}
+.kw-head {
+  padding: 6px 12px; background: var(--ground); border-bottom: 1px solid var(--border);
+  font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.kw-row {
+  display: flex; padding: 5px 12px; border-bottom: 1px solid var(--border);
+  gap: 8px; align-items: center;
+}
+.kw-row:last-child { border-bottom: none; }
+.kw-type { color: var(--muted); min-width: 80px; }
+.kw-val  { color: var(--text); }
+.kw-row.new-row { background: var(--add-bg); }
+.kw-row.new-row .kw-val { color: var(--add-text); font-weight: 600; }
+
+/* ── file list ────────────────────────────── */
+.file-list { display: flex; flex-direction: column; gap: 8px; }
+.file-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 11px 14px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--ground);
+}
+.fi-name {
+  font-family: "SF Mono","Fira Mono",Consolas,monospace;
+  font-size: 11.5px; font-weight: 700; color: var(--accent); min-width: 250px; flex-shrink: 0;
+}
+.fi-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 10px;
+  flex-shrink: 0;
+}
+.fi-tag.mod { background: #FFF8E0; color: #8A6800; }
+.fi-tag.new { background: #DDF0FF; color: #1A6BB0; }
+.fi-desc { font-size: 12.5px; color: var(--muted); }
+
+/* ── test summary ─────────────────────────── */
+.test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.test-card {
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 16px; background: var(--ground);
+}
+.test-count { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1; }
+.test-label { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+/* ── responsive ───────────────────────────── */
+@media (max-width: 760px) {
+  .page-layout { flex-direction: column; padding: 16px 14px; }
+  .sidebar { width: 100%; position: static; }
+  #toc { display: flex; flex-wrap: wrap; gap: 4px; }
+  #toc a { border-left: none; padding: 3px 10px; border-radius: 14px;
+            border: 1px solid var(--border); }
+  .hero { padding: 32px 18px 28px; }
+  .two-col { grid-template-columns: 1fr; }
+  .fi-name { min-width: 0; width: 100%; }
+  .file-item { flex-direction: column; gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<!-- HERO -->
+<header class="hero">
+  <p class="hero-eye">DFAST — 実装レポート / 2026-06-24</p>
+  <h1>MAG / MAG-WGS 対応<br>実装レポート</h1>
+  <p class="hero-sub">mainブランチからの新規実装内容 — DDBJ ENV 提出サポート</p>
+  <div class="diff-summary">
+    <div class="diff-stat mod"><span class="diff-num">5</span><span class="diff-label">変更ファイル</span></div>
+    <div class="diff-stat new"><span class="diff-num">2</span><span class="diff-label">新規ファイル</span></div>
+    <div class="diff-stat add"><span class="diff-num">46</span><span class="diff-label">新規テスト</span></div>
+    <div class="diff-stat add"><span class="diff-num">+220</span><span class="diff-label">行追加</span></div>
+  </div>
+</header>
+
+<!-- PAGE -->
+<div class="page-layout">
+  <aside class="sidebar">
+    <p class="sidebar-title">目次</p>
+    <nav id="toc">
+      <a href="#overview">概要・背景</a>
+      <a href="#config">project_type の認識</a>
+      <a href="#division">ENV division / KEYWORD</a>
+      <a href="#isolate">isolate フィールド追加</a>
+      <a href="#tsv">TSV 条件付き制御</a>
+      <a href="#ffdef">ff_definition 切り替え</a>
+      <a href="#fileprefix">ファイル名生成</a>
+      <a href="#render">boolean フィールド修正</a>
+      <a href="#tests">テスト</a>
+      <a href="#files">変更ファイル一覧</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <!-- 概要 -->
+    <section class="card" id="overview">
+      <div class="card-head"><div class="track"></div><h2>概要・背景</h2></div>
+      <div class="card-body">
+        <p style="margin-bottom:14px">
+          mainブランチでは <code>project_type</code> は読み込まれていたものの、<code>gnm</code>（complete ゲノム）の判定にのみ使われていました。MAG（Metagenome-Assembled Genome）や MAG-WGS に特有の DDBJ 提出要件（ENV division、MAG キーワード、<code>isolate</code> qualifier、<code>metagenome_source</code> など）はサポートされていませんでした。
+        </p>
+        <p style="margin-bottom:14px">
+          本実装では mainブランチとの差分として以下を新規に追加・変更しました。
+        </p>
+
+        <div class="change-list">
+          <div class="change-item">
+            <div class="change-icon icon-add">＋</div>
+            <div class="change-body">
+              <div class="change-title">MAG / MAG-WGS の project_type 認識と complete フラグ</div>
+              <div class="change-desc"><code>mag</code> が <code>complete=True</code> を自動設定。<code>project_type</code> を GENOME_CONFIG に格納し、パイプライン全体に伝播。</div>
+            </div>
+          </div>
+          <div class="change-item">
+            <div class="change-icon icon-add">＋</div>
+            <div class="change-body">
+              <div class="change-title">ENV division と MAG キーワードの自動出力</div>
+              <div class="change-desc">MAG/MAG-WGS で <code>DIVISION: ENV</code>、<code>KEYWORD: ENV / Metagenome Assembled Genome / MAG</code> を自動追加。</div>
+            </div>
+          </div>
+          <div class="change-item">
+            <div class="change-icon icon-add">＋</div>
+            <div class="change-body">
+              <div class="change-title">isolate フィールドのサポート</div>
+              <div class="change-desc">metadata → GENOME_SOURCE_INFORMATION → Genome オブジェクト → source feature → ann ファイルまで <code>isolate</code> を一貫して伝播。</div>
+            </div>
+          </div>
+          <div class="change-item">
+            <div class="change-icon icon-add">＋</div>
+            <div class="change-body">
+              <div class="change-title">TSV 駆動の条件付きフィールド制御</div>
+              <div class="change-desc"><code>required_for</code> / <code>excluded_for</code> 列を追加。<code>strain</code> 除外・<code>isolate</code>/<code>metagenome_source</code>/<code>environmental_sample</code> 必須化をコード変更なしで制御。</div>
+            </div>
+          </div>
+          <div class="change-item">
+            <div class="change-icon icon-mod">✎</div>
+            <div class="change-body">
+              <div class="change-title">ff_definition の @@[strain]@@ → @@[isolate]@@ 切り替え</div>
+              <div class="change-desc">MAG/MAG-WGS では DEFINITION 行の識別子テンプレートを自動切り替え。</div>
+            </div>
+          </div>
+          <div class="change-item">
+            <div class="change-icon icon-fix">✔</div>
+            <div class="change-body">
+              <div class="change-title">boolean フィールドの render() 修正</div>
+              <div class="change-desc"><code>environmental_sample</code>（boolean 型）が値なしでも valueless qualifier として正しく出力されるよう render ロジックを修正。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- project_type の認識 -->
+    <section class="card" id="config">
+      <div class="card-head"><div class="track"></div><h2>project_type の認識と complete フラグ</h2><span class="badge">config_util.py / genome.py</span></div>
+      <div class="card-body">
+        <h3 class="sh">config_util.py の変更</h3>
+        <div class="diff-block">
+          <div class="diff-file">dfc/utils/config_util.py</div>
+          <div class="diff-body">
+<span class="dl">-    keys = ["organism", "strain", "seq_names", "seq_types", "seq_topologies", "additional_modifiers"]</span>
+<span class="da">+    keys = ["organism", "strain", "isolate", "seq_names", "seq_types", "seq_topologies", "additional_modifiers"]</span>
+<span class="dc"> </span>
+<span class="dl">-    if project_type == "gnm":</span>
+<span class="dl">-        complete = True</span>
+<span class="da">+    if project_type in ("gnm", "mag"):</span>
+<span class="da">+        complete = True</span>
+<span class="da">+    config.GENOME_CONFIG["project_type"] = project_type</span>
+          </div>
+        </div>
+
+        <h3 class="sh">genome.py の変更</h3>
+        <div class="diff-block">
+          <div class="diff-file">dfc/genome.py</div>
+          <div class="diff-body">
+<span class="dc"> self.complete = config.GENOME_CONFIG.get("complete", False)</span>
+<span class="da">+self.project_type = config.GENOME_CONFIG.get("project_type", "")</span>
+<span class="da">+self.is_mag = self.project_type in ("mag", "mag-wgs")</span>
+<span class="dc"> self.organism = config.GENOME_SOURCE_INFORMATION.get("organism", "")</span>
+<span class="dc"> self.strain = config.GENOME_SOURCE_INFORMATION.get("strain", "")</span>
+<span class="da">+self.isolate = config.GENOME_SOURCE_INFORMATION.get("isolate", "")</span>
+          </div>
+        </div>
+
+        <table style="margin-top:16px">
+          <thead><tr><th>project_type</th><th>complete</th><th>is_mag</th></tr></thead>
+          <tbody>
+            <tr><td><code>mag</code></td><td>✔ True</td><td>✔ True</td></tr>
+            <tr><td><code>mag-wgs</code></td><td>— False</td><td>✔ True</td></tr>
+            <tr><td><code>gnm</code></td><td>✔ True</td><td>— False</td></tr>
+            <tr><td><code>wgs</code></td><td>— False</td><td>— False</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ENV division / KEYWORD -->
+    <section class="card" id="division">
+      <div class="card-head"><div class="track"></div><h2>ENV division と MAG キーワード</h2><span class="badge">metadata_util.py / genome.py</span></div>
+      <div class="card-body">
+        <p style="margin-bottom:16px;font-size:13.5px">MAG/MAG-WGS では DDBJ の ENV division に提出するため、ann ファイルの COMMON エントリに専用のブロックを出力します。</p>
+
+        <div class="two-col">
+          <div>
+            <h3 class="sh">WGS（変更なし）</h3>
+            <div class="kw-track">
+              <div class="kw-head">COMMON エントリ</div>
+              <div class="kw-row"><span class="kw-type">DATATYPE</span><span class="kw-val">type: WGS</span></div>
+              <div class="kw-row"><span class="kw-type">KEYWORD</span><span class="kw-val">keyword: WGS</span></div>
+              <div class="kw-row"><span class="kw-type"></span><span class="kw-val">keyword: STANDARD_DRAFT</span></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="sh">MAG-WGS（新規）</h3>
+            <div class="kw-track">
+              <div class="kw-head">COMMON エントリ</div>
+              <div class="kw-row new-row"><span class="kw-type">DIVISION</span><span class="kw-val">division: ENV</span></div>
+              <div class="kw-row new-row"><span class="kw-type">KEYWORD</span><span class="kw-val">keyword: ENV</span></div>
+              <div class="kw-row new-row"><span class="kw-type"></span><span class="kw-val">keyword: Metagenome Assembled Genome</span></div>
+              <div class="kw-row new-row"><span class="kw-type"></span><span class="kw-val">keyword: MAG</span></div>
+              <div class="kw-row"><span class="kw-type">DATATYPE</span><span class="kw-val">type: WGS</span></div>
+              <div class="kw-row"><span class="kw-type">KEYWORD</span><span class="kw-val">keyword: WGS</span></div>
+              <div class="kw-row"><span class="kw-type"></span><span class="kw-val">keyword: STANDARD_DRAFT</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top:14px">
+          <div>
+            <h3 class="sh">GNM / complete（変更なし）</h3>
+            <div class="kw-track">
+              <div class="kw-head">COMMON エントリ</div>
+              <div class="kw-row"><span class="kw-type muted">（DATATYPE/KEYWORD なし）</span></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="sh">MAG / complete（新規）</h3>
+            <div class="kw-track">
+              <div class="kw-head">COMMON エントリ</div>
+              <div class="kw-row new-row"><span class="kw-type">DIVISION</span><span class="kw-val">division: ENV</span></div>
+              <div class="kw-row new-row"><span class="kw-type">KEYWORD</span><span class="kw-val">keyword: ENV</span></div>
+              <div class="kw-row new-row"><span class="kw-type"></span><span class="kw-val">keyword: Metagenome Assembled Genome</span></div>
+              <div class="kw-row new-row"><span class="kw-type"></span><span class="kw-val">keyword: MAG</span></div>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top:14px;font-size:13px;color:var(--muted)">
+          <code>data_file_division</code>（GenBank/EMBL ファイル内部）も <code>BCT</code> から <code>ENV</code> に切り替わります（<code>genome.py</code> の <code>add_source_information()</code>）。
+        </p>
+      </div>
+    </section>
+
+    <!-- isolate -->
+    <section class="card" id="isolate">
+      <div class="card-head"><div class="track new"></div><h2>isolate フィールドの追加</h2><span class="badge new-badge">新規</span></div>
+      <div class="card-body">
+        <p style="font-size:13.5px;margin-bottom:16px">
+          mainブランチでは <code>isolate</code> はどこにも存在しませんでした。MAG 提出の識別子として <code>strain</code> の代わりに使うため、パイプライン全体に追加しました。
+        </p>
+
+        <h3 class="sh">伝播経路</h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:16px">
+          <span style="background:var(--accent-bg);color:var(--accent);padding:4px 12px;border-radius:14px;font-weight:600">metadata ファイル</span>
+          <span style="color:var(--muted)">→</span>
+          <span style="background:var(--accent-bg);color:var(--accent);padding:4px 12px;border-radius:14px;font-weight:600">config_util</span>
+          <span style="color:var(--muted)">→</span>
+          <span style="background:var(--accent-bg);color:var(--accent);padding:4px 12px;border-radius:14px;font-weight:600">Genome.isolate</span>
+          <span style="color:var(--muted)">→</span>
+          <span style="background:var(--accent-bg);color:var(--accent);padding:4px 12px;border-radius:14px;font-weight:600">record.annotations</span>
+          <span style="color:var(--muted)">→</span>
+          <span style="background:var(--accent-bg);color:var(--accent);padding:4px 12px;border-radius:14px;font-weight:600">source feature qualifier</span>
+          <span style="color:var(--muted)">→</span>
+          <span style="background:var(--accent-bg);color:var(--accent);padding:4px 12px;border-radius:14px;font-weight:600">.ann ファイル</span>
+        </div>
+
+        <h3 class="sh">source エントリの source 行</h3>
+        <div class="diff-block">
+          <div class="diff-file">dfc/genome.py — add_source_information()</div>
+          <div class="diff-body">
+<span class="dl">-source = self.organism + " strain " + self.strain if self.strain else self.organism</span>
+<span class="da">+if self.is_mag:</span>
+<span class="da">+    source = self.organism + " isolate " + self.isolate if self.isolate else self.organism</span>
+<span class="da">+else:</span>
+<span class="da">+    source = self.organism + " strain " + self.strain if self.strain else self.organism</span>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top:14px">
+          <span class="callout-icon">ℹ</span>
+          <div style="font-size:13px">
+            <strong>非 MAG でも <code>isolate</code> が使える</strong>: <code>isolate</code> は <code>required_for=mag,mag-wgs</code> ですが、値が設定されている場合は WGS/GNM でも出力されます（<code>should_render</code> の「値ありなら常に出力」ルールによる）。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TSV 条件付き制御 -->
+    <section class="card" id="tsv">
+      <div class="card-head"><div class="track new"></div><h2>TSV 駆動の条件付きフィールド制御</h2><span class="badge new-badge">新規アーキテクチャ</span></div>
+      <div class="card-body">
+        <p style="font-size:13.5px;margin-bottom:16px">
+          mainブランチでは <code>MetadataField</code> に project_type の概念が一切なく、EX_SOURCE の出力は <code>field.value or field.mss_required</code> の単純な条件でした。本実装では TSV の 2 列拡張と 4 つの新メソッドでこれを置き換えます。
+        </p>
+
+        <h3 class="sh">metadata_definition.tsv への追加フィールド</h3>
+        <table>
+          <thead>
+            <tr><th>フィールド</th><th>type</th><th>feature</th><th>mss_required</th><th>required_for（新）</th><th>excluded_for（新）</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>strain</code>（既存）</td><td>string</td><td>source</td>
+              <td>TRUE</td><td>—</td><td><code>mag,mag-wgs</code></td>
+            </tr>
+            <tr style="background:var(--add-bg)">
+              <td><code>isolate</code> <strong>★新規</strong></td><td>string</td><td>source</td>
+              <td>FALSE</td><td><code>mag,mag-wgs</code></td><td>—</td>
+            </tr>
+            <tr style="background:var(--add-bg)">
+              <td><code>metagenome_source</code> <strong>★新規</strong></td><td>string</td><td>EX_SOURCE</td>
+              <td>FALSE</td><td><code>mag,mag-wgs</code></td><td>—</td>
+            </tr>
+            <tr style="background:var(--add-bg)">
+              <td><code>environmental_sample</code> <strong>★新規</strong></td><td>boolean</td><td>EX_SOURCE</td>
+              <td>FALSE</td><td><code>mag,mag-wgs</code></td><td>—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="sh">MetadataField に追加したメソッド</h3>
+        <pre><span class="kw">def</span> is_required_for(<span class="st">self</span>, project_type: str) -> bool:
+    <span class="kw">return</span> project_type <span class="kw">in</span> <span class="st">self</span>.required_for
+
+<span class="kw">def</span> is_excluded_for(<span class="st">self</span>, project_type: str) -> bool:
+    <span class="kw">return</span> project_type <span class="kw">in</span> <span class="st">self</span>.excluded_for
+
+<span class="kw">def</span> effective_required(<span class="st">self</span>, project_type: str) -> bool:
+    <span class="kw">if</span> project_type <span class="kw">in</span> <span class="st">self</span>.excluded_for: <span class="kw">return</span> False
+    <span class="kw">if</span> project_type <span class="kw">in</span> <span class="st">self</span>.required_for:  <span class="kw">return</span> True
+    <span class="kw">return</span> <span class="st">self</span>.mss_required
+
+<span class="kw">def</span> should_render(<span class="st">self</span>, project_type: str) -> bool:
+    <span class="kw">if</span> project_type <span class="kw">in</span> <span class="st">self</span>.excluded_for: <span class="kw">return</span> False
+    <span class="kw">if</span> <span class="st">self</span>.value:                          <span class="kw">return</span> True
+    <span class="kw">return</span> <span class="st">self</span>.effective_required(project_type)</pre>
+
+        <h3 class="sh">render_ex_source() の変更</h3>
+        <div class="diff-block">
+          <div class="diff-file">dfc/utils/metadata_util.py</div>
+          <div class="diff-body">
+<span class="dl">-def render_ex_source(self):</span>
+<span class="da">+def render_ex_source(self, project_type: str = ""):</span>
+<span class="dc">     RET = []</span>
+<span class="dc">     for field in self.fields.values():</span>
+<span class="dc">         if field.feature == "source" and field.entry == "EX_SOURCE":</span>
+<span class="dl">-            if field.value or field.mss_required:</span>
+<span class="dl">-                RET += field.render()</span>
+<span class="da">+            if field.should_render(project_type):</span>
+<span class="da">+                rows = field.render()</span>
+<span class="da">+                if rows:</span>
+<span class="da">+                    RET += rows</span>
+<span class="da">+                else:                          # boolean で値なし → valueless placeholder</span>
+<span class="da">+                    RET.append(["", "", "", field.qualifier, ""])</span>
+          </div>
+        </div>
+
+        <h3 class="sh">get_field_definition() — 新規追加</h3>
+        <p style="font-size:13.5px;margin-bottom:8px">
+          <code>genome.py</code> から source feature 生成時に TSV 定義を参照するためのモジュールレベルキャッシュ関数。TSV を一度だけ読み込みます。
+        </p>
+        <pre><span class="cm"># module level</span>
+_FIELD_DEF_CACHE: <span class="st">"dict | None"</span> = None
+
+<span class="kw">def</span> get_field_definition(name: str):
+    <span class="kw">global</span> _FIELD_DEF_CACHE
+    <span class="kw">if</span> _FIELD_DEF_CACHE <span class="kw">is</span> None:
+        _FIELD_DEF_CACHE = {}
+        <span class="cm"># TSV を一度だけ読み込んでキャッシュ</span>
+        ...
+    <span class="kw">return</span> _FIELD_DEF_CACHE.get(name)</pre>
+      </div>
+    </section>
+
+    <!-- ff_definition -->
+    <section class="card" id="ffdef">
+      <div class="card-head"><div class="track warm"></div><h2>ff_definition の切り替え</h2><span class="badge">ddbj_submission.py</span></div>
+      <div class="card-body">
+        <p style="font-size:13.5px;margin-bottom:14px">
+          mainブランチでは <code>ff_definition</code> は常に <code>@@[strain]@@</code> を使っていました。MAG/MAG-WGS では <code>@@[isolate]@@</code> に切り替わります。
+        </p>
+        <div class="diff-block">
+          <div class="diff-file">dfc/utils/ddbj_submission.py — create_ff_definiton()</div>
+          <div class="diff-body">
+<span class="dl">-def create_ff_definiton(seq_rank, plasmid):</span>
+<span class="da">+def create_ff_definiton(seq_rank, plasmid, project_type=""):</span>
+<span class="dc">     assert seq_rank in ["complete", "scaffold", "contig"]</span>
+<span class="da">+    identifier = "@@[isolate]@@" if project_type in ("mag", "mag-wgs") else "@@[strain]@@"</span>
+<span class="dc">     if seq_rank == "complete":</span>
+<span class="dc">         if plasmid:</span>
+<span class="dl">-            ff_definition = "@@[organism]@@ @@[strain]@@ plasmid @@[plasmid]@@ DNA, complete sequence"</span>
+<span class="da">+            ff_definition = f"@@[organism]@@ {identifier} plasmid @@[plasmid]@@ DNA, complete sequence"</span>
+<span class="dl">-        ff_definition = "@@[organism]@@ @@[strain]@@ DNA, complete genome"</span>
+<span class="da">+        ff_definition = f"@@[organism]@@ {identifier} DNA, complete genome"</span>
+<span class="dl">-    ff_definition = "@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@"</span>
+<span class="da">+    ff_definition = f"@@[organism]@@ {identifier} DNA, @@[submitter_seqid]@@"</span>
+          </div>
+        </div>
+
+        <table style="margin-top:16px">
+          <thead><tr><th>project_type</th><th>ff_definition テンプレート</th></tr></thead>
+          <tbody>
+            <tr><td><code>mag</code></td><td><code>@@[organism]@@ @@[isolate]@@ DNA, complete genome</code></td></tr>
+            <tr><td><code>mag-wgs</code></td><td><code>@@[organism]@@ @@[isolate]@@ DNA, @@[submitter_seqid]@@</code></td></tr>
+            <tr><td><code>gnm</code></td><td><code>@@[organism]@@ @@[strain]@@ DNA, complete genome</code></td></tr>
+            <tr><td><code>wgs</code></td><td><code>@@[organism]@@ @@[strain]@@ DNA, @@[submitter_seqid]@@</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ファイル名生成 -->
+    <section class="card" id="fileprefix">
+      <div class="card-head"><div class="track warm"></div><h2>出力ファイル名の生成</h2><span class="badge">ddbj_submission.py</span></div>
+      <div class="card-body">
+        <p style="font-size:13.5px;margin-bottom:14px">
+          mainブランチでは常に <code>biosample_strain</code> パターンでファイル名を生成していました。MAG では <code>strain</code> を使わないため、<code>isolate</code> を使うよう変更しました。
+        </p>
+        <div class="diff-block">
+          <div class="diff-file">dfc/utils/ddbj_submission.py — get_file_prefix()</div>
+          <div class="diff-body">
+<span class="dl">-    strain = self.genome.strain</span>
+<span class="dl">-    if bio_sample_id and strain:</span>
+<span class="dl">-        return bio_sample_id + "_" + strain</span>
+<span class="da">+    if getattr(self.genome, "is_mag", False):</span>
+<span class="da">+        identifier = self.genome.isolate</span>
+<span class="da">+    else:</span>
+<span class="da">+        identifier = self.genome.strain</span>
+<span class="da">+    if bio_sample_id and identifier:</span>
+<span class="da">+        return bio_sample_id + "_" + identifier</span>
+          </div>
+        </div>
+
+        <table style="margin-top:14px">
+          <thead><tr><th>条件</th><th>ファイル名</th></tr></thead>
+          <tbody>
+            <tr><td>MAG + biosample あり + isolate あり</td><td><code>SAMDxxxxxxxx_MAG-001.ann</code></td></tr>
+            <tr><td>MAG + biosample のみ</td><td><code>SAMDxxxxxxxx.ann</code></td></tr>
+            <tr><td>WGS + biosample あり + strain あり</td><td><code>SAMDxxxxxxxx_strain.ann</code></td></tr>
+            <tr><td>いずれも未指定</td><td><code>mss.ann</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- boolean render 修正 -->
+    <section class="card" id="render">
+      <div class="card-head"><div class="track warm"></div><h2>boolean フィールドの render() 修正</h2><span class="badge">metadata_util.py</span></div>
+      <div class="card-body">
+        <p style="font-size:13.5px;margin-bottom:14px">
+          mainブランチでは boolean フィールドの render() は値が <code>"NO"</code> 以外のとき valueless qualifier を出力する実装でした。<code>environmental_sample=TRUE</code> のときは動作しましたが、値が空（未指定）のときは <code>[]</code> を返すため、MAG のプレースホルダー出力ができませんでした。
+        </p>
+        <div class="diff-block">
+          <div class="diff-file">dfc/utils/metadata_util.py — MetadataField.render()</div>
+          <div class="diff-body">
+<span class="da">+        if self.type == "boolean":</span>
+<span class="da">+            if str(self.value).lower() in ("yes", "true"):</span>
+<span class="da">+                RET.append(["", "", "", self.qualifier, ""])</span>
+<span class="da">+            return RET    # 値なしのときは [] を返す（render_ex_source 側でフォロー）</span>
+<span class="dc"> </span>
+<span class="dc">         if self.value == "" or self.value == []:</span>
+<span class="dc">             RET.append(["", "", "", self.qualifier, ""])</span>
+<span class="dl">-        elif self.type == "boolean" and self.value:</span>
+<span class="dl">-            if self.value != "NO":</span>
+<span class="dl">-                RET.append(["", "", "", self.qualifier, ""])</span>
+          </div>
+        </div>
+        <div class="callout warm">
+          <span class="callout-icon">⚠</span>
+          <div style="font-size:13px">
+            <code>render()</code> が <code>[]</code> を返したとき、<code>render_ex_source()</code> 側で <code>should_render()</code> が True なら valueless placeholder 行を追加するフォールバックを実装しています。これにより <code>environmental_sample</code> は値なしでも MAG 提出時に必ず出力されます。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- テスト -->
+    <section class="card" id="tests">
+      <div class="card-head"><div class="track new"></div><h2>テスト</h2><span class="badge new-badge">新規 46 件</span></div>
+      <div class="card-body">
+        <div class="test-grid">
+          <div class="test-card">
+            <div class="test-count">46</div>
+            <div class="test-label">総テスト数（全 PASS）</div>
+          </div>
+          <div class="test-card">
+            <div class="test-count">0</div>
+            <div class="test-label">失敗・エラー</div>
+          </div>
+        </div>
+
+        <h3 class="sh" style="margin-top:20px">テストカテゴリ</h3>
+        <table>
+          <thead><tr><th>カテゴリ</th><th>内容</th><th>件数</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>MetadataField 単体</td>
+              <td><code>should_render</code>、<code>effective_required</code>、<code>is_excluded_for</code> 等の動作確認</td>
+              <td>約 12</td>
+            </tr>
+            <tr>
+              <td>TSV パース</td>
+              <td><code>required_for</code>/<code>excluded_for</code> 列の読み込み確認、後方互換性</td>
+              <td>約 6</td>
+            </tr>
+            <tr>
+              <td>render_ex_source</td>
+              <td>MAG/WGS での各フィールド出力確認、boolean valueless 出力</td>
+              <td>約 8</td>
+            </tr>
+            <tr>
+              <td>genome source features</td>
+              <td><code>strain</code> 除外・<code>isolate</code> プレースホルダー・WGS での isolate 出力</td>
+              <td>約 8</td>
+            </tr>
+            <tr>
+              <td>render_common_entry</td>
+              <td>MAG/MAG-WGS の DIVISION・KEYWORD ブロック出力確認</td>
+              <td>約 4</td>
+            </tr>
+            <tr>
+              <td>DDBJ 提出ファイル生成</td>
+              <td><code>create_ff_definiton</code> の <code>@@[isolate]@@</code> 切り替え、ファイル名生成</td>
+              <td>約 8</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 変更ファイル一覧 -->
+    <section class="card" id="files">
+      <div class="card-head"><div class="track"></div><h2>変更ファイル一覧</h2></div>
+      <div class="card-body">
+        <div class="file-list">
+          <div class="file-item">
+            <span class="fi-tag mod">変更</span>
+            <span class="fi-name">dfc/utils/config_util.py</span>
+            <span class="fi-desc"><code>isolate</code> を GENOME_SOURCE_INFORMATION に追加。<code>mag</code> を complete=True に。<code>project_type</code> を GENOME_CONFIG に格納。</span>
+          </div>
+          <div class="file-item">
+            <span class="fi-tag mod">変更</span>
+            <span class="fi-name">dfc/utils/metadata_util.py</span>
+            <span class="fi-desc"><code>MetadataField</code> に <code>required_for</code>/<code>excluded_for</code> と 4 メソッド追加。TSV パーサー拡張。<code>render_common_entry(project_type)</code> で ENV/MAG キーワード出力。<code>render_ex_source(project_type)</code> TSV 駆動化。<code>get_field_definition()</code> 追加。boolean render 修正。</span>
+          </div>
+          <div class="file-item">
+            <span class="fi-tag mod">変更</span>
+            <span class="fi-name">dfc/utils/metadata_definition.tsv</span>
+            <span class="fi-desc">列 10/11（<code>required_for</code>/<code>excluded_for</code>）追加。<code>isolate</code>/<code>metagenome_source</code>/<code>environmental_sample</code> 3 行を新規追加。<code>strain</code> に <code>excluded_for=mag,mag-wgs</code> 設定。</span>
+          </div>
+          <div class="file-item">
+            <span class="fi-tag mod">変更</span>
+            <span class="fi-name">dfc/genome.py</span>
+            <span class="fi-desc"><code>self.project_type</code>/<code>self.is_mag</code>/<code>self.isolate</code> 追加。<code>add_source_information()</code> で ENV division・isolate 対応。<code>add_source_features()</code> を TSV 駆動に変更。</span>
+          </div>
+          <div class="file-item">
+            <span class="fi-tag mod">変更</span>
+            <span class="fi-name">dfc/utils/ddbj_submission.py</span>
+            <span class="fi-desc"><code>is_mag</code> パラメータ廃止・<code>project_type</code> 統一。<code>create_ff_definiton</code> で <code>@@[isolate]@@</code> 切り替え。<code>get_file_prefix()</code> で isolate 使用。ENV division JSON 変換対応。</span>
+          </div>
+          <div class="file-item">
+            <span class="fi-tag new">新規</span>
+            <span class="fi-name">tests/test_mag.py</span>
+            <span class="fi-desc">MAG/MAG-WGS 対応の専用テストファイル。46 件すべて PASS。</span>
+          </div>
+          <div class="file-item">
+            <span class="fi-tag new">新規</span>
+            <span class="fi-name">example/sample.metadata.mag*.txt</span>
+            <span class="fi-desc">MAG・MAG-WGS 用サンプルメタデータファイル（full / nofill / min の各バリエーション）。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// active TOC
+const sections = document.querySelectorAll('section[id]');
+const links    = document.querySelectorAll('#toc a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting)
+      links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#'+e.target.id));
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>

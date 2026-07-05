@@ -128,6 +128,43 @@ dfast -g example/sample.lactobacillus.fna --complete t --organism "Lactobacillus
 ```
 Instead of using `--organism`, `--strain`, `--additional_modifiers` options, they can be specified in the metadata file as shown in the example for a draft genome.
 
+## MAG/MAG-WGS submission (DDBJ ENV division)
+DFAST supports DDBJ submission of Metagenome-Assembled Genomes (MAGs). Use the `--mag` option to activate MAG submission mode.
+
+| Option combination | project_type | Genome type | DDBJ division |
+|---|---|---|---|
+| `--mag` | `mag-wgs` | Draft | ENV |
+| `--mag --complete t` | `mag` | Complete | ENV |
+
+When MAG mode is active, the following changes apply automatically to the DDBJ submission file (`.ann`):
+- **DIVISION** is set to `ENV`
+- **KEYWORD** rows `ENV`, `Metagenome Assembled Genome`, and `MAG` are added
+- `strain` qualifier is suppressed; `isolate` is used instead (placeholder if not specified)
+- `metagenome_source` and `environmental_sample` qualifiers are added as placeholders
+- `ff_definition` uses `@@[isolate]@@` instead of `@@[strain]@@`
+
+Instead of using the `--mag` option, you can set `project_type` to `mag` or `mag-wgs` in a metadata file and pass it with `--metadata_file`. CLI options take precedence over the metadata file when both are specified.
+
+See the example metadata files for details:
+- Draft MAG: [`example/sample.metadata.mag-wgs.txt`](/example/sample.metadata.mag-wgs.txt)
+- Complete MAG: [`example/sample.metadata.mag.txt`](/example/sample.metadata.mag.txt)
+
+Note: `--isolate` and `--strain` are mutually exclusive. Specifying `--strain` together with `--mag` triggers a warning and the strain value is ignored.
+
+#### Examples
+```bash
+# MAG draft (mag-wgs)
+dfast -g your_mag.fna --mag --organism "Candidatus Bacterium sp." --isolate MAG-001
+
+# MAG complete genome (mag)
+dfast -g your_mag.fna --mag --complete t --organism "Candidatus Bacterium sp." --isolate MAG-001 \
+  --use_original_name t --seq_types chromosome --seq_topologies linear
+
+# Via metadata file
+dfast -g your_mag.fna --metadata_file your_mag_metadata.txt
+# (metadata file should contain: project_type<TAB>mag-wgs)
+```
+
 ## GenBank submission
 __GenBank submission is no longer supported. Use [NCBI PGAP](https://github.com/ncbi/pgap).__    
 1. Register the genome project with the BioProject and the BioSample databases.

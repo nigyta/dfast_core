@@ -1,0 +1,20 @@
+project_type	mag
+bioproject	PRJDBxxxx
+biosample	SAMDxxxxxxxx
+submitter	Tanizawa,Y.
+contact	Yasuhiro Tanizawa
+email	dfast@nig.ac.jp
+institute	National Institute of Genetics
+department	
+country	Japan
+city	Mishima
+street	Yata 1111
+zip	411-8540
+reference	MAG submission test.
+author	Tanizawa,Y.
+status	Unpublished
+assembly_method	metaFlye v. 2.9
+sequencing_technology	Nanopore
+genome_coverage	50x
+organism	Candidatus Bacterium sp. test
+locus_tag_prefix	MAGTEST

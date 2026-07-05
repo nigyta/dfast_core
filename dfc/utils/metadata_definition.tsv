@@ -47,7 +47,7 @@ sequencing_technology	Sequencing Technology	Sequencing Technology	ST_COMMENT	COM
 #															
 #---------- source ----------															
 organism	organism	organism	source	COMMON/ENTRY	string	TRUE	[A-Za-z0-9_, \[\]\(\)\-\.]+							
-strain	strain	strain	source	COMMON/ENTRY	string	TRUE	[A-Za-z0-9 ,_\[\]\(\)\-\.]+							
+strain	strain	strain	source	COMMON/ENTRY	string	TRUE	[A-Za-z0-9 ,_\[\]\(\)\-\.]+			mag,mag-wgs
 mol_type	mol_type	mol_type	source	COMMON/ENTRY	string	TRUE	(genomic DNA)|(genomic RNA)|(mRNA)|(tRNA)|(rRNA)|(other RNA)|(other DNA)|(transcribed RNA)|(viral cRNA)|(unassigned DNA)|(unassigned RNA)		private					
 ff_definition	ff_definition	ff_definition	source	COMMON/ENTRY	string	FALSE	[A-Za-z0-9 @:,_\[\]\(\)\-\.]+							
 #
@@ -57,8 +57,11 @@ culture_collection	Culture Collection	culture_collection	source	EX_SOURCE	string
 cultureCollection	Culture Collection (synonym for culture_collection)	culture_collection	source	EX_SOURCE	string	FALSE	[A-Za-z0-9 :,_\[\]\(\)\-\.]+							
 collection_date	collection_date	collection_date	source	EX_SOURCE	string	FALSE	.*							
 #source_country	country	country	source	EX_SOURCE	string	FALSE	F.*							
-geo_loc_name	geo_loc_name	geo_loc_name	source	EX_SOURCE	string	FALSE	FALSE	.*							
+geo_loc_name	geo_loc_name	geo_loc_name	source	EX_SOURCE	string	FALSE	.*	
 collected_by	collected_by	collected_by	source	EX_SOURCE	string	FALSE	.*							
 sub_species	sub_species	sub_species	source	EX_SOURCE	string	FALSE	.*							
 host	host	host	source	EX_SOURCE	string	FALSE	.*							
-isolation_source	isolation_source	isolation_source	source	EX_SOURCE	string	FALSE	.*							
+isolation_source	isolation_source	isolation_source	source	EX_SOURCE	string	FALSE	.*	
+isolate	isolate	isolate	source	COMMON/ENTRY	string	FALSE	.*		mag,mag-wgs
+metagenome_source	metagenome_source	metagenome_source	source	EX_SOURCE	string	FALSE	.*		mag,mag-wgs
+environmental_sample	environmental_sample	environmental_sample	source	EX_SOURCE	boolean	FALSE	.*		mag,mag-wgs

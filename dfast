@@ -13,7 +13,7 @@ from dfc.utils.config_util import load_config, show_config, set_references, set_
     disable_cdd_search, disable_hmm_scan, enable_prodigal, enable_trnascan, disable_rrna_prediction, \
     disable_trna_prediction, disable_cds_prediction, disable_crispr_prediction, set_genetic_code, set_gff, \
     set_threshold, set_values_from_metadata, enable_mga, enable_genemarks2, enable_rnammer, \
-    enable_metagenome_mode, disable_func_annotation, enable_amr, enable_mge
+    enable_metagenome_mode, disable_func_annotation, enable_amr, enable_mge, enable_mag
 from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
@@ -40,7 +40,9 @@ group_basic.add_argument("-g", "--genome", help="Genomic FASTA file for input. C
 group_basic.add_argument("-o", "--out", help="Output directory (default:OUT)", type=str, metavar="PATH")
 group_basic.add_argument("-c", "--config", help="Configuration file (default config will be used if not specified)", type=str, metavar="PATH")
 group_basic.add_argument("--organism", help="Organism name", metavar="STR", default="")
-group_basic.add_argument("--strain", help="Strain name", metavar="STR", default="")
+group_identifier = group_basic.add_mutually_exclusive_group()
+group_identifier.add_argument("--strain", help="Strain name", metavar="STR", default="")
+group_identifier.add_argument("--isolate", help="Isolate name (for MAG/MAG-WGS; mutually exclusive with --strain)", metavar="STR", default="")
 
 
 group_genome = parser.add_argument_group('Genome settings')
@@ -94,6 +96,9 @@ group_source.add_argument("--seq_types", help="Sequence types for each sequence 
 group_source.add_argument("--seq_topologies", help="Sequence topologies for each sequence (linear/circular, for complete genome)", metavar="STR")
 group_source.add_argument("--additional_modifiers", help="Additional modifiers for source features", metavar="STR")
 group_source.add_argument("--metadata_file", help="Path to a metadata file (optional for DDBJ submission file)", metavar="PATH")
+group_source.add_argument("--mag",
+    help="Enable MAG submission mode (project_type=mag-wgs). Combine with --complete t for project_type=mag.",
+    action="store_true")
 # group_source.add_argument("--center_name", help="Genome center name (optional for GenBank submission file)", metavar="STR")  # deprecated
 
 
@@ -167,6 +172,9 @@ if args.organism:  # --organism
 
 if args.strain:  # --strain
     config.GENOME_SOURCE_INFORMATION["strain"] = args.strain
+
+if args.isolate:  # --isolate
+    config.GENOME_SOURCE_INFORMATION["isolate"] = args.isolate
 
 if args.gff:
     set_gff(config, args.gff)
@@ -250,6 +258,11 @@ if args.amr:
 
 if args.mge:
     enable_mge(config)
+
+if args.mag:  # --mag
+    if args.strain:
+        logger.warning("--strain is ignored for MAG/MAG-WGS submissions. Use --isolate instead.")
+    enable_mag(config, complete=config.GENOME_CONFIG.get("complete", False))
 
 if args.no_hmm:  # --no_hmm
     disable_hmm_scan(config)

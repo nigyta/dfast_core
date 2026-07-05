@@ -9,7 +9,9 @@ import os.path
 
 class MetadataField(object):
 
-    def __init__(self, name, description, qualifier, feature, entry, type_="string", mss_required=False, pattern=re.compile(r".*"), value=""):
+    def __init__(self, name, description, qualifier, feature, entry, type_="string",
+                 mss_required=False, pattern=re.compile(r".*"), value="",
+                 required_for=(), excluded_for=()):
         """
             name: a name for a variable used in DFAST (case sensitive, must be unique)
             description: description of this field
@@ -21,12 +23,16 @@ class MetadataField(object):
             mss_required: Is used to check if a generated file is in the valid DDBJ-MSS format.
             pattern: a regex pattern that must MATCH the value
             value: a value for this field
+            required_for: set of project_type strings for which this field is required
+            excluded_for: set of project_type strings for which this field should not render
         """
         if type_ == "array":
             value = [x.strip() for x in value.split(";") if x.strip()]
         self.name, self.description, self.qualifier, self.feature, self.entry, self.type, \
             self.mss_required, self.pattern, self.value = \
             name, description, qualifier, feature, entry, type_, mss_required, pattern, value
+        self.required_for = set(required_for)
+        self.excluded_for = set(excluded_for)
 
     def __repr__(self):
         if self.type == "array":
@@ -48,6 +54,26 @@ class MetadataField(object):
     def set_default(self, value, default_value):
         value = value or default_value
         self.set_value(value)
+
+    def is_required_for(self, project_type: str) -> bool:
+        return project_type in self.required_for
+
+    def is_excluded_for(self, project_type: str) -> bool:
+        return project_type in self.excluded_for
+
+    def effective_required(self, project_type: str) -> bool:
+        if project_type in self.excluded_for:
+            return False
+        if project_type in self.required_for:
+            return True
+        return self.mss_required
+
+    def should_render(self, project_type: str) -> bool:
+        if project_type in self.excluded_for:
+            return False
+        if self.value:
+            return True
+        return self.effective_required(project_type)
 
     def getAdditionalField(self, newName, newValue=""):
         if ":" not in newName:
@@ -88,7 +114,10 @@ class MetadataField(object):
 
     def render(self):
         RET = []
-
+        if self.type == "boolean":
+            if str(self.value).lower() in ("yes", "true"):
+                RET.append(["", "", "", self.qualifier, ""])
+            return RET
         if self.value == "" or self.value == []:
             RET.append(["", "", "", self.qualifier, ""])
             if self.qualifier == "ab_name":
@@ -99,9 +128,6 @@ class MetadataField(object):
             for eachVal in self.value:
                 if eachVal:
                     RET.append(["", "", "", self.qualifier, eachVal])
-        elif self.type == "boolean" and self.value:
-            if self.value != "NO":
-                RET.append(["", "", "", self.qualifier, ""])
         else:
             RET.append(["", "", "", self.qualifier, self.value])
         return RET
@@ -125,10 +151,14 @@ class Metadata(object):
             if line.startswith("#"):
                 continue
             else:
-                name, description, qualifier, feature, entry, type_, mss_required, pattern, value = line.strip("\n").split("\t")[0:9]
+                cols = line.strip("\n").split("\t")
+                name, description, qualifier, feature, entry, type_, mss_required, pattern, value = cols[0:9]
                 mss_required = True if mss_required == "TRUE" else False
                 pattern = re.compile(r"^({0})$".format(pattern))
-                field = MetadataField(name, description, qualifier, feature, entry, type_, mss_required, pattern, value)
+                required_for = {s.strip() for s in cols[9].split(",") if s.strip()} if len(cols) > 9 else set()
+                excluded_for = {s.strip() for s in cols[10].split(",") if s.strip()} if len(cols) > 10 else set()
+                field = MetadataField(name, description, qualifier, feature, entry, type_, mss_required, pattern, value,
+                                      required_for=required_for, excluded_for=excluded_for)
                 self.fields[name] = field
 
         for key, value in metadata_dict.items():
@@ -200,15 +230,23 @@ class Metadata(object):
             errors["status"] = "fail"
         return errors
 
-    def render_common_entry(self, dfast_version=None, complete=False):
+    def render_common_entry(self, dfast_version=None, complete=False, project_type=""):
 
         def render_category():
-            if complete:
-                pass
-            else:
+            is_mag = project_type in ("mag", "mag-wgs")
+            keyword_rows = []
+            if not complete:
                 outputData.append(["", "DATATYPE", "", "type", "WGS"])
-                outputData.append(["", "KEYWORD", "", "keyword", "WGS"])
-                outputData.append(["", "KEYWORD", "", "keyword", self.get_value("keyword", "STANDARD_DRAFT")])
+            if is_mag:
+                outputData.append(["", "DIVISION", "", "division", "ENV"])
+                keyword_rows.append(["", "KEYWORD", "", "keyword", "ENV"])
+                keyword_rows.append(["", "",        "", "keyword", "Metagenome Assembled Genome"])
+                keyword_rows.append(["", "",        "", "keyword", "MAG"])
+            if not complete:
+                first_kw = "KEYWORD" if not keyword_rows else ""
+                keyword_rows.append(["", first_kw, "", "keyword", "WGS"])
+                keyword_rows.append(["", "",       "", "keyword", self.get_value("keyword", "STANDARD_DRAFT")])
+            outputData.extend(keyword_rows)
 
         def renderFeature(outputData, featureType):
             # assert featureType in ["DBLINK", "SUBMITTER", "REFERENCE"]
@@ -271,14 +309,47 @@ class Metadata(object):
                 else:
                     checkNext = False
 
-    def render_ex_source(self):
-
+    def render_ex_source(self, project_type: str = ""):
         RET = []
         for field in self.fields.values():
             if field.feature == "source" and field.entry == "EX_SOURCE":
-                if field.value or field.mss_required:
-                    RET += field.render()
+                if field.should_render(project_type):
+                    rows = field.render()
+                    if rows:
+                        RET += rows
+                    else:
+                        # Boolean placeholder: should render but render() returned [] (empty value)
+                        RET.append(["", "", "", field.qualifier, ""])
         return RET
+
+_FIELD_DEF_CACHE: "dict | None" = None
+
+def get_field_definition(name: str):
+    global _FIELD_DEF_CACHE
+    if _FIELD_DEF_CACHE is None:
+        _FIELD_DEF_CACHE = {}
+        try:
+            f = open(Metadata.METADATA_DEFINITION_FILE, encoding="UTF-8")
+        except TypeError:
+            f = open(Metadata.METADATA_DEFINITION_FILE)
+        with f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                cols = line.strip("\n").split("\t")
+                if len(cols) < 9:
+                    continue
+                field_name, description, qualifier, feature, entry, type_, mss_required, pattern, value = cols[0:9]
+                mss_required_bool = True if mss_required == "TRUE" else False
+                pat = re.compile(r"^({0})$".format(pattern))
+                required_for = {s.strip() for s in cols[9].split(",") if s.strip()} if len(cols) > 9 else set()
+                excluded_for = {s.strip() for s in cols[10].split(",") if s.strip()} if len(cols) > 10 else set()
+                field = MetadataField(field_name, description, qualifier, feature, entry,
+                                      type_, mss_required_bool, pat, "",
+                                      required_for=required_for, excluded_for=excluded_for)
+                _FIELD_DEF_CACHE[field_name] = field
+    return _FIELD_DEF_CACHE.get(name)
+
 
 if __name__ == '__main__':
     # metadataFlle = "/Users/ytanizaw/project/labrep_dev/jobs/53eeb0b5-edc5-427d-99c2-b213d6c187a0/result/metadata.txt"

@@ -209,7 +209,8 @@ Basic options:
   -c PATH, --config PATH
                         Configuration file (default config will be used if not specified)
   --organism STR        Organism name
-  --strain STR          Strain name
+  --strain STR          Strain name (mutually exclusive with --isolate)
+  --isolate STR         Isolate name for MAG/MAG-WGS submissions (mutually exclusive with --strain)
 
 Genome settings:
   --complete BOOL       Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f(=default)]
@@ -258,6 +259,7 @@ Genome source modifiers and metadata [advanced]:
   --additional_modifiers STR
                         Additional modifiers for source features
   --metadata_file PATH  Path to a metadata file (optional for DDBJ submission file)
+  --mag                 Enable MAG submission mode (sets project_type=mag-wgs). Use with --complete t to set project_type=mag.
 
 Run options:
   --cpu INT             Number of CPUs to use
@@ -328,10 +330,10 @@ __Usage__
 1. Prepare [CARD](https://card.mcmaster.ca), [VFDB](http://www.mgc.ac.cn/VFs/), and [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/) reference data.
 ```
 scripts/dfast_file_downloader.py --plasmidfinder
-scripts/reference_util_for_nucl.py --card --card_version 3.2.9 --vfdb --vfdb_update_date 2024-05-10
+scripts/reference_util_for_nucl.py --card --vfdb
 ```
-Since VFDB provides only the latest version, the value specified with `--vfdb_update_date` is used only as a timestamp for the reference data.  
-See [CARD/download](https://card.mcmaster.ca/download) for the latest version of CARD and [VFDB/download](http://www.mgc.ac.cn/VFs/download.htm) for the updated date of VFDB.  
+The script automatically fetches the latest CARD version from [card.mcmaster.ca](https://card.mcmaster.ca/download).
+You can pin a specific version with `--card_version 4.0.1`, and use `--vfdb_update_date` to override the VFDB timestamp (defaults to today's date).  
 DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.0](https://figshare.com/articles/dataset/repP_database_fsa/26778175), and [WHRepDB v1.0](https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
 Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`

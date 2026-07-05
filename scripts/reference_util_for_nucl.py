@@ -5,6 +5,7 @@ import json
 import shutil
 import subprocess
 import argparse
+import urllib.request
 
 from logging import getLogger, DEBUG, INFO, StreamHandler
 
@@ -14,7 +15,7 @@ logger = getLogger("")
 logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
-CARD_DEFAULT_VERSION = "3.2.9"  # Updated at 2024-02-13
+CARD_DEFAULT_VERSION = "4.0.1"  # fallback if card.mcmaster.ca is unreachable
 
 # srcPath = os.path.join(os.path.dirname(__file__), "..", "dfc")
 sys.path.append(app_root)
@@ -57,9 +58,9 @@ parser = argparse.ArgumentParser(description="Reference Utility for Nucleotide d
 
 # group_basic = parser.add_argument_group("Basic options")
 parser.add_argument("--card", action="store_true", help="Prepare reference data for CARD")
-parser.add_argument("--card_version", type=str, help="CARD version number. See https://card.mcmaster.ca/download  e.g. 3.2.9")
+parser.add_argument("--card_version", type=str, help="CARD version number (default: fetch latest from card.mcmaster.ca). e.g. 3.2.9")
 parser.add_argument("--vfdb", action="store_true", help="Prepare reference data for VFDB")
-parser.add_argument("--vfdb_update_date", type=str, help="VFDB update date. See http://www.mgc.ac.cn/VFs/download.htm e.g. 2024-05-03")
+parser.add_argument("--vfdb_update_date", type=str, help="VFDB update date label (default: today's date). e.g. 2024-05-03")
 # parser.add_argument("--plasmid", action="store_true", help="Prepare reference data for PlasmidDB")
 parser.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder. Not allowed with argument --out)", type=str, metavar="PATH")
 
@@ -74,6 +75,25 @@ if not any([args.card, args.vfdb]):
 
 
 set_binaries_path(app_root)
+
+def get_latest_card_version():
+    import re
+    url = "https://card.mcmaster.ca/download"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "dfast_core"})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html = response.read().decode("utf-8", errors="replace")
+        versions = re.findall(r"broadstreet-v([\d.]+)\.tar\.bz2", html)
+        if not versions:
+            raise ValueError("No version found in CARD download page")
+        version = versions[0]  # first match is the latest
+        logger.info(f"Latest CARD version retrieved from {url}: {version}")
+        return version
+    except Exception as e:
+        logger.warning(f"Failed to retrieve latest CARD version: {e}")
+        logger.warning(f"Falling back to default version: {CARD_DEFAULT_VERSION}")
+        return CARD_DEFAULT_VERSION
+
 
 def plasmiddb2ref(ref_file_name, db_name):
     D = NucRef.read_ref_file(ref_file_name)
@@ -142,8 +162,8 @@ def get_db_root(args):
 if args.card:
 
     if not args.card_version:
-        logger.warning(f"CARD version is not specified. Will use the default version. [{CARD_DEFAULT_VERSION}]")
-        CARD_VERSION = CARD_DEFAULT_VERSION
+        logger.info("CARD version not specified. Fetching latest version from GitHub...")
+        CARD_VERSION = get_latest_card_version()
     else:
         CARD_VERSION = args.card_version
     logger.info(f"CARD_VERSION is set to '{CARD_VERSION}'")
@@ -183,14 +203,12 @@ if args.card:
 
 if args.vfdb:
     if not args.vfdb_update_date:
-        logger.warning(f"VFDB update date is not specified. Will use today's date as timestamp.")
         import datetime
-        now = datetime.datetime.now()
-        VFDB_VERSION = now.strftime("%Y-%m-%d") + "(data retrieved)"
-        logger.info(f"VFDB update date is set to '{VFDB_VERSION}'")
+        VFDB_VERSION = datetime.datetime.now().strftime("%Y-%m-%d") + " (latest)"
+        logger.info(f"VFDB update date not specified. Will download latest data (timestamp: {VFDB_VERSION}).")
     else:
         VFDB_VERSION = args.vfdb_update_date
-        logger.info(f"VFDB update date is specified. Will use '{VFDB_VERSION}' as timestamp.")
+        logger.info(f"VFDB update date is set to '{VFDB_VERSION}'.")
 
     # Retrieve and convert VFDB reference data
     db_root = get_db_root(args)

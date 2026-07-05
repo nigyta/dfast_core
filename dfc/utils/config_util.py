@@ -288,7 +288,7 @@ def set_values_from_metadata(config):
             if value:
                 D[key] = value
 
-    keys = ["organism", "strain", "seq_names", "seq_types", "seq_topologies", "additional_modifiers"]
+    keys = ["organism", "strain", "isolate", "seq_names", "seq_types", "seq_topologies", "additional_modifiers"]
     for key in keys:
         value = D.get(key)
         if value:
@@ -303,9 +303,10 @@ def set_values_from_metadata(config):
     complete = D.get("complete", "false")
     complete = True if complete.lower() in ["t", "true"] else False
     project_type = D.get("project_type") or D.get("projectType", "")
-    if project_type == "gnm":
-        complete = True    
+    if project_type in ("gnm", "mag"):
+        complete = True
     config.GENOME_CONFIG["complete"] = complete
+    config.GENOME_CONFIG["project_type"] = project_type
 
 
 def enable_amr(config):
@@ -326,3 +327,11 @@ def enable_mge(config):
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "MobileElementFinder":
             setting["enabled"] = True
+
+
+def enable_mag(config, complete=False):
+    project_type = "mag" if complete else "mag-wgs"
+    config.GENOME_CONFIG["project_type"] = project_type
+    if complete:
+        config.GENOME_CONFIG["complete"] = True
+    logger.info("MAG mode enabled (project_type={})".format(project_type))
