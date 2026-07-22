@@ -1,3 +1,9 @@
+Ver 1.4.2 (20260722) ---------------------------------------
+Fixed incorrect coordinates for putative composite transposons detected by MobileElementFinder ('--mge'). MobileElementFinder reports the start of putative composite transposons as 0-based while other elements are 1-based, which shifted the feature by 1 bp and produced an invalid '<0' location on contig ends (resulting in a null location under Biopython 1.83+). The coordinate system is now detected per feature from the reported allele length, so the correct start is used and a future upstream fix will not cause a double correction.
+
+Putative composite transposons are no longer written to the DDBJ submission file (.ann) by default, since they frequently overlap or duplicate and are hard to curate for submission. They are still included in the GenBank and GFF outputs. Set DDBJ_SUBMISSION["include_putative_composite"] to True in the config to include them in the submission file.
+
+
 Ver 1.4.1 (20260705) ---------------------------------------
 Added MAG/MAG-WGS submission support for DDBJ ENV division. Use '--mag' to enable MAG mode (sets project_type=mag-wgs; use with '--complete t' for project_type=mag). The '--isolate' option sets the isolate qualifier (mutually exclusive with '--strain'). ENV/MAG keywords and required source qualifiers (metagenome_source, environmental_sample) are added automatically. project_type can also be specified in a metadata file.
 

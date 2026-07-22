@@ -95,17 +95,49 @@ def build_qualifiers(entry):
     return qualifiers
 
 
-def _location(start, end, strand, trunc_5p, trunc_3p):
-    """1-based の start/end と strand, truncation から FeatureLocation を作る。
+def _zero_based_left(start, end, allele_seq_length):
+    """MEF の start/end から biopython 用の 0-based left を返す。
 
-    biopython は 0-based half-open。truncation はストランドを考慮して
-    5'/3' を genomic な左右端の partial(Before/After)に対応させる。
+    MobileElementFinder には座標系の不整合がある。putative composite transposon
+    (`cn` evidence=2) は `start` を **0-based** で出力する(内部で配列切り出し用の
+    slice index `flank_IS_start - 1` を start にそのまま保存しているため)。一方、
+    IS 等・DBヒット composite は `start` が **1-based**。このため composite だけ
+    start が 1 小さくなり、contig 先頭では start=0 → `<0` の不正座標になる。
+
+    型や evidence でなく、MEF 自身が出す `allele_seq_length`(＝真の 1-based 長
+    `end - start + 1`。バグのある start とは独立に算出される)との整合で判定する:
+        end - start + 1 == allele_seq_length  -> start は 1-based -> left = start - 1
+        end - start     == allele_seq_length  -> start は 0-based -> left = start
+    こうすると将来 MEF が composite を 1-based に修正した場合も、そのエントリは
+    自動的に 1-based 側へ分類され `-1` が適用されるため、二重補正が起きない。
+    長さが無い/どちらにも一致しない場合は文書化された 1-based を仮定する。
+    """
+    start, end = int(start), int(end)
+    if allele_seq_length is not None:
+        asl = int(allele_seq_length)
+        if end - start == asl:          # 0-based start (MEF composite の -1 込み)
+            left = start
+        elif end - start + 1 == asl:    # 1-based start (通常 / 上流修正後)
+            left = start - 1
+        else:
+            left = start - 1            # 不整合 -> 文書化された 1-based を仮定
+    else:
+        left = start - 1
+    return left
+
+
+def _location(start, end, strand, trunc_5p, trunc_3p, allele_seq_length=None):
+    """MEF の start/end と strand, truncation から FeatureLocation を作る。
+
+    biopython は 0-based half-open。left は _zero_based_left() で座標系差を吸収する。
+    truncation はストランドを考慮して 5'/3' を genomic な左右端の partial
+    (Before/After)に対応させる。
 
     MEF の trunc_5p は参照配列のアラインメント開始位置(1-based)で、5' 端まで
     完全なら 1。trunc_3p は 3' 側の未アラインメント塩基数で、完全なら 0。
     したがって 5' truncated は trunc_5p > 1、3' truncated は trunc_3p > 0。
     """
-    left = int(start) - 1
+    left = _zero_based_left(start, end, allele_seq_length)
     right = int(end)
     is_5p_trunc = int(trunc_5p) > 1
     is_3p_trunc = int(trunc_3p) > 0
@@ -114,6 +146,11 @@ def _location(start, end, strand, trunc_5p, trunc_3p):
         left_trunc, right_trunc = is_3p_trunc, is_5p_trunc
     else:
         left_trunc, right_trunc = is_5p_trunc, is_3p_trunc
+    # contig 先頭を越える(left<0)場合は 0 にクランプし partial 扱いにする。
+    # 不正な `<0` を biopython に渡さないための防御(1.83 では location=None 化)。
+    if left < 0:
+        left = 0
+        left_trunc = True
     left_pos = BeforePosition(left) if left_trunc else ExactPosition(left)
     right_pos = AfterPosition(right) if right_trunc else ExactPosition(right)
     return FeatureLocation(left_pos, right_pos, strand=strand)
@@ -122,12 +159,17 @@ def _location(start, end, strand, trunc_5p, trunc_3p):
 def entry_to_feature(entry, index):
     """MEF JSON の result エントリ1件を (seq_id, ExtendedFeature) に変換する。"""
     seq_id = entry["contig"].split()[0]
-    feature_key, _met, _putative = classify_mge(entry["type"], entry.get("evidence", 1))
+    feature_key, _met, is_putative = classify_mge(entry["type"], entry.get("evidence", 1))
     location = _location(entry["start"], entry["end"], entry["strand"],
-                         entry.get("trunc_5p", 0), entry.get("trunc_3p", 0))
+                         entry.get("trunc_5p", 0), entry.get("trunc_3p", 0),
+                         entry.get("allele_seq_length"))
     feature = ExtendedFeature(location=location, type=feature_key,
                               id="MGE_{0}".format(index), seq_id=seq_id)
     feature.qualifiers = build_qualifiers(entry)
+    if is_putative:
+        # 内部マーカー(出力には出ない)。DDBJ ann では既定で除外する
+        # (overlap/duplicate が多く提出には不適)が、gbk/gff には残す。
+        feature.annotations["mge_putative_composite"] = True
     return seq_id, feature
 
 

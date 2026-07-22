@@ -111,6 +111,126 @@ def test_entry_to_feature_truncation_complement():
     assert isinstance(feat.location.start, ExactPosition)
 
 
+# ---- 座標系判定 (_zero_based_left) : MEF composite の off-by-one 吸収 ----
+from dfc.tools.dfast_mge import _zero_based_left, _location
+
+
+@pytest.mark.parametrize("start,end,asl,expected", [
+    # IS など 1-based: end-start+1 == allele_seq_length -> left = start-1
+    (6350896, 6353278, 2383, 6350895),
+    # DBヒット composite (cn evidence=1) も 1-based (pOXA48 Tn1999 実データ)
+    (2292, 8429, 6138, 2291),
+    # putative composite (cn evidence=2) は 0-based: end-start == asl -> left = start (無補正)
+    (2979776, 2986173, 6397, 2979776),
+    # contig 先頭にかかる putative composite: start=0 -> left=0 (<0 にしない)
+    (0, 1811, 1811, 0),
+    # 将来 MEF が composite を 1-based に修正した場合: end-start+1==asl -> -1 が復活し二重補正なし
+    (100, 200, 101, 99),
+    # allele_seq_length 無し -> 文書化された 1-based を仮定
+    (500, 600, None, 499),
+    # どちらにも一致しない不整合 -> 1-based 仮定
+    (500, 600, 55, 499),
+])
+def test_zero_based_left(start, end, asl, expected):
+    assert _zero_based_left(start, end, asl) == expected
+
+
+def test_putative_composite_zero_based_not_shifted():
+    # putative composite の 0-based start はシフトされず IS と同じ基準に揃う
+    e = _full_entry(evidence=2, start=2979776, end=2986173, allele_seq_length=6397,
+                    trunc_5p=1, trunc_3p=0)
+    _seq_id, feat = entry_to_feature(e, index=1)
+    assert feat.type == "misc_feature"
+    assert int(feat.location.start) == 2979776   # start-1 されない
+    assert int(feat.location.end) == 2986173
+
+
+def test_boundary_composite_not_negative():
+    # contig 先頭の putative composite: <0 でなく <1 (BeforePosition(0)) になり None 化しない
+    e = _full_entry(evidence=2, strand=1, start=0, end=1811, allele_seq_length=1811,
+                    trunc_5p=50, trunc_3p=0, contig="sequence129")
+    _seq_id, feat = entry_to_feature(e, index=33)
+    assert feat.location is not None
+    assert int(feat.location.start) == 0
+    assert isinstance(feat.location.start, BeforePosition)
+
+
+def test_clamp_guards_negative_left_without_length():
+    # allele_seq_length 欠落 + start=0 では left=-1 になるが 0 にクランプされる (防御)
+    loc = _location(0, 500, 1, trunc_5p=1, trunc_3p=0, allele_seq_length=None)
+    assert int(loc.start) == 0
+    assert isinstance(loc.start, BeforePosition)
+
+
+# ---- putative composite の内部マーカーと DDBJ ann からの除外 ----
+
+def test_entry_to_feature_marks_putative_composite():
+    _sid, feat = entry_to_feature(
+        _full_entry(evidence=2, start=2979776, end=2986173, allele_seq_length=6397), index=1)
+    assert feat.type == "misc_feature"
+    assert feat.annotations.get("mge_putative_composite") is True
+
+
+def test_entry_to_feature_no_marker_for_mobile_element():
+    # cn evidence=1 (DBヒット) は mobile_element でマーカー無し
+    _sid, feat = entry_to_feature(
+        _full_entry(evidence=1, start=2292, end=8429, allele_seq_length=6138), index=1)
+    assert feat.type == "mobile_element"
+    assert "mge_putative_composite" not in feat.annotations
+
+
+def _mini_genome_with_mge():
+    from collections import OrderedDict
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+    from Bio.SeqFeature import FeatureLocation
+    from dfc.models.bio_feature import ExtendedFeature
+
+    rec = SeqRecord(Seq("A" * 3000), id="seq1", name="seq1")
+    rec.annotations = {}
+    src = ExtendedFeature(location=FeatureLocation(0, 3000, strand=1),
+                          type="source", id="seq1", seq_id="seq1")
+    src.qualifiers = {"mol_type": ["genomic DNA"], "organism": [""]}
+    me = ExtendedFeature(location=FeatureLocation(100, 900, strand=1),
+                         type="mobile_element", id="MGE_1", seq_id="seq1")
+    me.qualifiers = {"mobile_element_type": ["insertion sequence:ISxx"],
+                     "note": ["MobileElementFinder: ISxx"]}
+    pc = ExtendedFeature(location=FeatureLocation(100, 2000, strand=1),
+                         type="misc_feature", id="MGE_2", seq_id="seq1")
+    pc.qualifiers = {"note": ["MobileElementFinder: cn_1900_ISxx",
+                              "putative composite transposon (predicted by MobileElementFinder)"]}
+    pc.annotations["mge_putative_composite"] = True
+    rec.features = [src, me, pc]
+
+    class FakeGenome:
+        pass
+    g = FakeGenome()
+    g.seq_records = OrderedDict({"seq1": rec})
+    g.features = OrderedDict({"seq1": src, "MGE_1": me, "MGE_2": pc})
+    g.complete = False
+    g.project_type = ""
+    return g
+
+
+def test_ann_excludes_putative_composite_by_default(tmp_path):
+    from dfc.utils.ddbj_submission import create_ddbj_submission_file
+    g = _mini_genome_with_mge()
+    ann = str(tmp_path / "out.ann"); fa = str(tmp_path / "out.fasta")
+    create_ddbj_submission_file(g, {}, ann, fa, verbosity=1)  # include_putative_composite 既定=False
+    text = open(ann).read()
+    assert "putative composite transposon" not in text   # putative composite は除外
+    assert "insertion sequence:ISxx" in text             # mobile_element(IS) は残る
+
+
+def test_ann_includes_putative_composite_when_enabled(tmp_path):
+    from dfc.utils.ddbj_submission import create_ddbj_submission_file
+    g = _mini_genome_with_mge()
+    ann = str(tmp_path / "out.ann"); fa = str(tmp_path / "out.fasta")
+    create_ddbj_submission_file(g, {}, ann, fa, verbosity=1, include_putative_composite=True)
+    text = open(ann).read()
+    assert "putative composite transposon" in text
+
+
 import json
 import os
 from dfc.tools.dfast_mge import parse_mge_results

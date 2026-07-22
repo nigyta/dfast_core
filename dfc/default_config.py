@@ -77,7 +77,11 @@ class Config:
     DDBJ_SUBMISSION = {
         "enabled": True,
         "output_verbosity": 1,
-        "metadata_file": None
+        "metadata_file": None,
+        # MobileElementFinder の putative composite transposon (misc_feature) を
+        # DDBJ 提出ファイル(.ann)に出力するか。overlap/duplicate が多く提出判断が
+        # 難しいため既定で除外。gbk/gff には常に出力される。
+        "include_putative_composite": False,
     }
 
     GENBANK_SUBMISSION = {

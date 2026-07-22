@@ -20,6 +20,7 @@ class DDBJsubmission(object):
         self.output_dir = os.path.join(genome.workDir, "ddbj")
         self.verbosity = config.DDBJ_SUBMISSION.get("output_verbosity", 2)
         self.enabled = config.DDBJ_SUBMISSION.get("enabled", True)
+        self.include_putative_composite = config.DDBJ_SUBMISSION.get("include_putative_composite", False)
         self.logger = getLogger(__name__)
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -68,7 +69,8 @@ class DDBJsubmission(object):
             fasta_file = os.path.join(self.output_dir, prefix + ".fasta").replace(" ", "_").replace("(", "").replace(")", "")
             self.logger.info("Writing a DDBJ annotation file to {}".format(ann_file))
             self.logger.info("Writing a DDBJ sequence file to {}".format(fasta_file))
-            create_ddbj_submission_file(self.genome, self.metadata, ann_file, fasta_file, self.verbosity)
+            create_ddbj_submission_file(self.genome, self.metadata, ann_file, fasta_file, self.verbosity,
+                                        include_putative_composite=self.include_putative_composite)
 
             # experimental implementation to generate dfast_results.json
             from sys import version_info
@@ -178,7 +180,8 @@ def get_seq_rank(genome):
         else:
             return "contig"
 
-def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, verbosity=2):
+def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, verbosity=2,
+                                include_putative_composite=False):
     R = deepcopy(list(genome.seq_records.values()))
     seq_rank = get_seq_rank(genome)  # complete, scaffold, or contig
     metadata = Metadata(dict_metadata)
@@ -192,6 +195,11 @@ def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, ver
         rec_length = len(record)
         entry_buffer = []
         for feature in record.features:
+            # MEF putative composite transposon は既定で提出ファイルから除外
+            # (gbk/gff には残る)。内部マーカーは entry_to_feature() が付与。
+            if not include_putative_composite and \
+                    getattr(feature, "annotations", {}).get("mge_putative_composite"):
+                continue
             feature.assign_hit(verbosity=verbosity)
             if feature.type == "source":
                 entry_buffer += source_feature_to_table(
