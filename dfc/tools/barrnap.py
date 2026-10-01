@@ -2,7 +2,6 @@
 # coding: UTF8
 
 from .base_tools import StructuralAnnotationTool
-from Bio import SeqIO
 # from Bio.SeqFeature import SeqFeature, FeatureLocation
 from ..models.bio_feature import ExtendedFeature
 
@@ -31,6 +30,9 @@ class Barrnap(StructuralAnnotationTool):
 
         super(Barrnap, self).__init__(options, workDir)
         self.cmd_options = options.get("cmd_options", "")
+        # Barrnap's own default differs by version (0.8: 0.5, 0.9: 0.25), so set it explicitly.
+        if "--reject" not in self.cmd_options:
+            self.cmd_options = ("--reject 0.5 " + self.cmd_options).strip()
 
     def getCommand(self):
         """barrnap --threads 1 genome.fna > out.gff 2> out.log"""
@@ -60,32 +62,16 @@ class Barrnap(StructuralAnnotationTool):
 
                     yield sequence, toolName, featureType, left, right, strand, rRNA_type, product, note, partial
 
-        def _getLengthDict(fileName):
-            R = list(SeqIO.parse(open(fileName), "fasta"))
-            return {r.id: len(r) for r in R}
-
-        def _checkPartial(left, right, strand, seqLength):
-            left_flag, right_flag = "0", "0"
-            if int(left) <= 10:
-                left_flag = "1"
-                left = 1
-            if seqLength - int(right) <= 10:
-                right_flag = "1"
-                right = seqLength
-            partial_flag = left_flag + right_flag
-            return left, right, partial_flag
-
-        dict_length = _getLengthDict(self.genomeFasta)
-
         D = {}
         i = 0
         for sequence, toolName, featureType, left, right, strand, rRNA_type, product, note, partial in _parseResult():
-            left, right, partial_flag = _checkPartial(left, right, strand, dict_length[sequence])
-            location = self.getLocation(left, right, strand, partial_flag)
+            # Coordinates are kept as reported. Contig ends and assembly gaps are handled by
+            # FeatureUtil.adjust_rrna_features(), which also treats Barrnap partial hits ("aligned only N percent").
+            location = self.getLocation(left, right, strand)
             i += 1
 
-            annotations = {"partial_flag": partial_flag, "rRNA_type": rRNA_type}
-            if partial or partial_flag != "00":
+            annotations = {"partial_flag": "00", "rRNA_type": rRNA_type}
+            if partial:
                 annotations["partial"] = True
 
             feature = ExtendedFeature(location=location, type="rRNA", id="{0}_{1}".format(self.__class__.__name__, i),

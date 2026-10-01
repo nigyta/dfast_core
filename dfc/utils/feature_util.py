@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # coding: UTF8
 
+import copy
 from Bio.SeqFeature import SeqFeature, FeatureLocation, ExactPosition, BeforePosition, AfterPosition
 from logging import getLogger
 from dfc.models.hit import ProteinHit, Hit, NuclHit, HmmHit, CddHit
@@ -17,6 +18,7 @@ class FeatureUtil(object):
         self.priority_for_overlapping_features = cfg.get("feature_type_priority", ["assembly_gap", "CRISPR", ("tmRNA", "tRNA", "rRNA"), "CDS"])
 
         self.enable_merge_cds = cfg.get("merge_cds", False)
+        self.removed_by_rules = []  # descriptions of features removed by specific overlap rules
         self.priority_for_merge_cds = cfg.get("tool_type_priority", {"MGA": 0, "Prodigal": 1})
         self.show_settings()
 
@@ -43,7 +45,9 @@ class FeatureUtil(object):
                     feature_types = (feature_types,)
                 original_seq = masked_seq
                 for feature in seq_record.features:
-                    if feature.type not in feature_types:
+                    # misc_features converted from partial rRNAs still mask lower-priority features as rRNA
+                    feature_type = "rRNA" if feature.annotations.get("putative_rrna") else feature.type
+                    if feature_type not in feature_types:
                         continue
                     extracted_seq = str(feature.extract(original_seq))
                     #             print(masked_seq)
@@ -56,20 +60,25 @@ class FeatureUtil(object):
                         masked_seq = masked_seq[:feature.location.start] + "x" * len(extracted_seq) + masked_seq[
                                                                                                       feature.location.end:]
 
+            removed_features = [feature for feature in seq_record.features if feature.id in removed]
             seq_record.features = [feature for feature in seq_record.features if feature.id not in removed]
-            for feature_id in removed:
-                feature = self.genome.features[feature_id]
-                self.logger.debug("Removing overlapping feature: {} at {}:{}".format(feature.id, feature.seq_id, str(feature.location)))
-            return len(removed)
+            return [describe_feature(feature, int(feature.location.start), int(feature.location.end), "overlapping")
+                    for feature in removed_features]
 
-        count_removed = 0
+        removed = []
         for seq_record in self.genome.seq_records.values():
-            count_removed += _resolve_overlap(seq_record)
+            removed += _resolve_overlap(seq_record)
         self.genome.set_feature_dictionary()
-        self.logger.info("Removed {} overlapping features.".format(count_removed))
+        for description in removed:
+            self.logger.debug("Removed overlapping feature: {}".format(description))
+        if removed:
+            self.logger.warning("Removed {} overlapping features not handled by specific overlap rules: {}".format(
+                len(removed), "; ".join(removed)))
+        else:
+            self.logger.info("Removed 0 overlapping features.")
 
     def remove_partial_features(self):
-        exempted_features = ["CRISPR", "misc_feature"]
+        exempted_features = ["CRISPR", "misc_feature", "rRNA"]  # partial rRNAs are handled by adjust_rrna_features()
         removed = []
 
         for feature in self.genome.features.values():
@@ -94,6 +103,38 @@ class FeatureUtil(object):
             seq_record.features = [feature for feature in seq_record.features if feature.id not in removed]
         self.genome.set_feature_dictionary()
         self.logger.info("Removed {} partial features.".format(len(removed)))
+
+    def adjust_rrna_features(self):
+        changed, converted = 0, 0
+        for seq_record in self.genome.seq_records.values():
+            gaps = [f for f in seq_record.features if f.type == "assembly_gap"]
+            features = []
+            for feature in seq_record.features:
+                if feature.type != "rRNA":
+                    features.append(feature)
+                    continue
+                location = str(feature.location)
+                pieces, removed = adjust_rrna(feature, len(seq_record.seq), gaps)
+                new_locations = [str(piece.location) for piece in pieces]
+                if new_locations != [location]:
+                    changed += 1
+                    self.logger.debug("Adjusted rRNA {} at {}: {} -> {}".format(feature.id, feature.seq_id, location, ", ".join(new_locations) or "removed"))
+                for description in removed:
+                    self.logger.debug("Removed feature by overlap rule: {}".format(description))
+                self.removed_by_rules += removed
+                converted += sum(piece.type == "misc_feature" for piece in pieces)
+                features += pieces
+            seq_record.features = features
+        self.genome.sort_features()  # split pieces may need reordering
+        self.genome.set_feature_dictionary()
+        self.logger.info("Adjusted locations of {} rRNA features at contig ends or assembly gaps. {} partial rRNA features are annotated as misc_feature.".format(changed, converted))
+
+    def log_removed_by_rules(self):
+        if self.removed_by_rules:
+            self.logger.info("Removed {} features by specific overlap rules: {}".format(
+                len(self.removed_by_rules), "; ".join(self.removed_by_rules)))
+        else:
+            self.logger.info("Removed 0 features by specific overlap rules.")
 
     def merge_cds(self):
         def _have_same_cds_end(one, other):
@@ -181,6 +222,14 @@ class FeatureUtil(object):
         # if self.enable_remove_partial:
         #     self.remove_partial_features()
 
+        # Overlap handling: specific rules run first, in feature type priority order
+        # (assembly_gap > CRISPR > tRNA/tmRNA/rRNA > CDS), so that each rule sees the adjusted
+        # higher-priority features. Add new rules (e.g. CDS vs tRNA) here in that order.
+        # resolve_overlap() then runs as a fallback for overlaps that no specific rule handles.
+        self.removed_by_rules = []
+        self.adjust_rrna_features()
+        self.log_removed_by_rules()
+
         if self.enable_remove_overlapping:
             self.resolve_overlap()
 
@@ -266,6 +315,100 @@ class FeatureUtil(object):
                 _to_misc_feature(feature, hit)
         elif isinstance(hit, NuclHit):
                 _to_misc_feature(feature, hit)
+
+
+CONTIG_END_MARGIN = 10  # a partial rRNA ending within this many bases of a contig end is extended to the end
+MIN_PIECE_LENGTH = 30  # pieces shorter than this after trimming or splitting by an overlap rule are removed
+TRUNCATION_NOTES = {"contig end": "truncated at the contig end", "assembly gap": "truncated at an assembly gap"}
+
+
+def adjust_rrna(feature, seq_len, gaps):
+    """
+    Fit an rRNA feature to the contig and the assembly gaps. The given feature is modified in place,
+    and extra pieces are created when it is split.
+
+    Barrnap partial hits ("aligned only N percent", i.e. < 80% of the expected length) are partial rRNAs:
+    - They are converted to misc_feature ("putative rRNA, aligned only N percent ...").
+    - An end less than CONTIG_END_MARGIN bases from a contig end is extended to that end and shown as partial (< or >).
+    Other rRNAs stay rRNA and are never extended to a contig end.
+    For all rRNAs:
+    - An end overlapping an assembly gap is trimmed to the gap and shown as partial (< or >).
+    - A gap inside the feature splits it into two pieces, each converted to misc_feature
+      ("putative rRNA overlapping an assembly gap").
+    - An end beyond the contig is clamped to the contig end and shown as partial.
+    Truncated features get a note saying why.
+    A feature lying entirely within gaps, and pieces shorter than MIN_PIECE_LENGTH after trimming
+    or splitting, are removed.
+    Returns (kept features, descriptions of removed features or pieces).
+    """
+    loc = feature.location
+    notes = feature.qualifiers.get("note", [])
+    aligned = [note for note in notes if note.startswith("aligned only")]
+    start, end = int(loc.start), int(loc.end)
+    # side value: None (exact) or the reason the side is partial
+    left = "contig end" if isinstance(loc.start, BeforePosition) or start < 0 else None
+    right = "contig end" if isinstance(loc.end, AfterPosition) or end > seq_len else None
+    start, end = max(start, 0), min(end, seq_len)
+    if aligned:
+        if start < CONTIG_END_MARGIN:
+            start, left = 0, "contig end"
+        if seq_len - end < CONTIG_END_MARGIN:
+            end, right = seq_len, "contig end"
+
+    segments = [(start, end, left, right)]
+    for gap in sorted(gaps, key=lambda g: int(g.location.start)):
+        gap_start, gap_end = int(gap.location.start), int(gap.location.end)
+        new_segments = []
+        for s, e, lp, rp in segments:
+            if gap_end <= s or e <= gap_start:
+                new_segments.append((s, e, lp, rp))
+                continue
+            if s < gap_start:
+                new_segments.append((s, gap_start, lp, "assembly gap"))
+            if gap_end < e:
+                new_segments.append((gap_end, e, "assembly gap", rp))
+        segments = new_segments
+    if not segments:
+        return [], [describe_feature(feature, int(loc.start), int(loc.end), "inside an assembly gap")]
+
+    split = len(segments) > 1
+    original = (int(loc.start), int(loc.end))
+
+    def _too_short(s, e):  # only pieces created by trimming or splitting are subject to MIN_PIECE_LENGTH
+        return (split or (s, e) != original) and e - s < MIN_PIECE_LENGTH
+
+    removed = [describe_feature(feature, s, e, "shorter than {} bp after trimming".format(MIN_PIECE_LENGTH))
+               for s, e, _, _ in segments if _too_short(s, e)]
+    segments = [seg for seg in segments if not _too_short(seg[0], seg[1])]
+    other_notes = [note for note in notes if not note.startswith("aligned only")]
+    product = feature.qualifiers.get("product", [""])[0]
+    to_misc = split or bool(aligned)
+
+    results = []
+    for i, (s, e, lp, rp) in enumerate(segments):
+        piece = feature if i == 0 else copy.deepcopy(feature)
+        if i > 0:
+            piece.id = "{}_{}".format(feature.id, i + 1)
+        piece.location = FeatureLocation(BeforePosition(s) if lp else ExactPosition(s),
+                                         AfterPosition(e) if rp else ExactPosition(e), loc.strand)
+        truncation = [TRUNCATION_NOTES[reason] for reason in sorted({lp, rp} - {None})]
+        if to_misc:
+            prefix = "putative rRNA overlapping an assembly gap" if split else "putative rRNA"
+            piece.qualifiers.pop("product", None)
+            piece.qualifiers["note"] = ["{}, {}".format(prefix, aligned[0] if aligned else product)] + truncation + other_notes
+            piece.type = "misc_feature"
+            piece.annotations["putative_rrna"] = True
+        elif truncation:
+            piece.qualifiers["note"] = notes + truncation
+        results.append(piece)
+    return results, removed
+
+
+def describe_feature(feature, start, end, reason):
+    """One-line description of a (removed) feature for logs. start is 0-based, end is exclusive."""
+    strand = "-" if feature.location.strand == -1 else "+"
+    return "{} {} {}:{}..{}({}) [{}]".format(feature.id, feature.type, feature.seq_id, start + 1, end, strand, reason)
+
 
 if __name__ == '__main__':
     pass

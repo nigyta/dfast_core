@@ -148,7 +148,7 @@ class Config:
             "target": "rRNA",
             "enabled": True,
              "options": {
-                 # Currently, Barrnap will run with default settings.
+                 # Barrnap runs with '--reject 0.5' unless --reject is given in cmd_options.
                  # You can set parameters such as --reject and --lencutoff to cmd_options.
                  # "cmd_options": "--reject 0.4 --lencutoff 0.6"
              },
