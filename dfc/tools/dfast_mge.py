@@ -8,7 +8,7 @@ from Bio.SeqFeature import (FeatureLocation, ExactPosition,
 from ..models.bio_feature import ExtendedFeature
 from .base_tools import ContigAnnotationTool
 
-# JSON short type code -> INSDC /mobile_element_type value（mobile_element として登録）
+# JSON short type code -> INSDC /mobile_element_type value (registered as mobile_element)
 _MOBILE_ELEMENT_TYPE = {
     "is": "insertion sequence",
     "mite": "MITE",
@@ -18,10 +18,10 @@ _MOBILE_ELEMENT_TYPE = {
     "retrotransposon": "retrotransposon",
 }
 
-# PredictionEvidence.PUTATIVE の JSON 値（io.py の `r["evidence"] == 2` に対応）
+# JSON value of PredictionEvidence.PUTATIVE (corresponds to `r["evidence"] == 2` in io.py)
 PUTATIVE_EVIDENCE = 2
 
-# JSON short type code -> 読みやすい正式名（report/amr_summary 用）
+# JSON short type code -> human-readable full name (for report/amr_summary)
 _TYPE_NAME = {
     "is": "insertion sequence",
     "mite": "MITE",
@@ -40,11 +40,11 @@ _TYPE_NAME = {
 
 
 def classify_mge(type_code, evidence):
-    """MEF の type 短縮コードと evidence から (feature_key, mobile_element_type, is_putative) を返す。
+    """Return (feature_key, mobile_element_type, is_putative) from a MEF short type code and evidence.
 
-    - putative composite transposon (type=="cn" かつ evidence==2) は misc_feature。
-    - INSDC /mobile_element_type に明確対応する型は mobile_element。
-    - それ以外（ICE/IME/CIME/MIC 等・未知）は misc_feature。
+    - Putative composite transposons (type=="cn" and evidence==2) are misc_feature.
+    - Types with a clear INSDC /mobile_element_type counterpart are mobile_element.
+    - Everything else (ICE/IME/CIME/MIC etc., or unknown) is misc_feature.
     """
     is_putative = (type_code == "cn" and evidence == PUTATIVE_EVIDENCE)
     if is_putative:
@@ -55,7 +55,7 @@ def classify_mge(type_code, evidence):
     return ("misc_feature", None, False)
 
 
-# misc_feature として登録する型の説明ラベル
+# Descriptive labels for types registered as misc_feature
 _MISC_LABEL = {
     "ice": "integrative conjugative element (ICE)",
     "aice": "actinomycete integrative conjugative element (AICE)",
@@ -68,7 +68,7 @@ _MISC_LABEL = {
 
 
 def build_qualifiers(entry):
-    """MEF JSON の result エントリから GenBank qualifiers(dict) を作る。"""
+    """Build GenBank qualifiers (dict) from a result entry of the MEF JSON."""
     name = entry["name"]
     type_code = entry["type"]
     evidence = entry.get("evidence", 1)
@@ -96,58 +96,59 @@ def build_qualifiers(entry):
 
 
 def _zero_based_left(start, end, allele_seq_length):
-    """MEF の start/end から biopython 用の 0-based left を返す。
+    """Return the 0-based left coordinate for biopython from the MEF start/end.
 
-    MobileElementFinder には座標系の不整合がある。putative composite transposon
-    (`cn` evidence=2) は `start` を **0-based** で出力する(内部で配列切り出し用の
-    slice index `flank_IS_start - 1` を start にそのまま保存しているため)。一方、
-    IS 等・DBヒット composite は `start` が **1-based**。このため composite だけ
-    start が 1 小さくなり、contig 先頭では start=0 → `<0` の不正座標になる。
+    MobileElementFinder's coordinate system is inconsistent. Putative composite transposons
+    (`cn` evidence=2) report `start` as **0-based** (internally it stores the slice index
+    `flank_IS_start - 1`, used to cut out the sequence, as start). IS elements and
+    DB-hit composites report `start` as **1-based**. So only composites have a start that is
+    1 too small, and at the beginning of a contig start=0 yields the invalid coordinate `<0`.
 
-    型や evidence でなく、MEF 自身が出す `allele_seq_length`(＝真の 1-based 長
-    `end - start + 1`。バグのある start とは独立に算出される)との整合で判定する:
-        end - start + 1 == allele_seq_length  -> start は 1-based -> left = start - 1
-        end - start     == allele_seq_length  -> start は 0-based -> left = start
-    こうすると将来 MEF が composite を 1-based に修正した場合も、そのエントリは
-    自動的に 1-based 側へ分類され `-1` が適用されるため、二重補正が起きない。
-    長さが無い/どちらにも一致しない場合は文書化された 1-based を仮定する。
+    The coordinate system is decided not by type or evidence but by consistency with
+    `allele_seq_length`, which MEF itself reports (the true 1-based length `end - start + 1`,
+    computed independently of the buggy start):
+        end - start + 1 == allele_seq_length  -> start is 1-based -> left = start - 1
+        end - start     == allele_seq_length  -> start is 0-based -> left = start
+    If MEF later fixes composites to be 1-based, those entries are automatically classified
+    as 1-based and get the `-1`, so no double correction happens.
+    If the length is missing or matches neither, the documented 1-based start is assumed.
     """
     start, end = int(start), int(end)
     if allele_seq_length is not None:
         asl = int(allele_seq_length)
-        if end - start == asl:          # 0-based start (MEF composite の -1 込み)
+        if end - start == asl:          # 0-based start (MEF composite, already -1)
             left = start
-        elif end - start + 1 == asl:    # 1-based start (通常 / 上流修正後)
+        elif end - start + 1 == asl:    # 1-based start (normal / after an upstream fix)
             left = start - 1
         else:
-            left = start - 1            # 不整合 -> 文書化された 1-based を仮定
+            left = start - 1            # inconsistent -> assume the documented 1-based start
     else:
         left = start - 1
     return left
 
 
 def _location(start, end, strand, trunc_5p, trunc_3p, allele_seq_length=None):
-    """MEF の start/end と strand, truncation から FeatureLocation を作る。
+    """Build a FeatureLocation from the MEF start/end, strand and truncation.
 
-    biopython は 0-based half-open。left は _zero_based_left() で座標系差を吸収する。
-    truncation はストランドを考慮して 5'/3' を genomic な左右端の partial
-    (Before/After)に対応させる。
+    biopython uses 0-based half-open coordinates. _zero_based_left() absorbs the coordinate
+    system difference for left. Truncation is mapped, taking the strand into account,
+    from 5'/3' to partial (Before/After) left/right genomic ends.
 
-    MEF の trunc_5p は参照配列のアラインメント開始位置(1-based)で、5' 端まで
-    完全なら 1。trunc_3p は 3' 側の未アラインメント塩基数で、完全なら 0。
-    したがって 5' truncated は trunc_5p > 1、3' truncated は trunc_3p > 0。
+    MEF's trunc_5p is the alignment start position on the reference (1-based), 1 when
+    complete to the 5' end. trunc_3p is the number of unaligned bases on the 3' side,
+    0 when complete. So 5' truncated means trunc_5p > 1 and 3' truncated means trunc_3p > 0.
     """
     left = _zero_based_left(start, end, allele_seq_length)
     right = int(end)
     is_5p_trunc = int(trunc_5p) > 1
     is_3p_trunc = int(trunc_3p) > 0
-    # strand=+1: 左端=5', 右端=3' / strand=-1: 左端=3', 右端=5'
+    # strand=+1: left end=5', right end=3' / strand=-1: left end=3', right end=5'
     if strand == -1:
         left_trunc, right_trunc = is_3p_trunc, is_5p_trunc
     else:
         left_trunc, right_trunc = is_5p_trunc, is_3p_trunc
-    # contig 先頭を越える(left<0)場合は 0 にクランプし partial 扱いにする。
-    # 不正な `<0` を biopython に渡さないための防御(1.83 では location=None 化)。
+    # If it goes past the contig start (left<0), clamp to 0 and treat it as partial.
+    # Guards against passing an invalid `<0` to biopython (1.83 turns it into location=None).
     if left < 0:
         left = 0
         left_trunc = True
@@ -157,7 +158,7 @@ def _location(start, end, strand, trunc_5p, trunc_3p, allele_seq_length=None):
 
 
 def entry_to_feature(entry, index):
-    """MEF JSON の result エントリ1件を (seq_id, ExtendedFeature) に変換する。"""
+    """Convert one result entry of the MEF JSON to (seq_id, ExtendedFeature)."""
     seq_id = entry["contig"].split()[0]
     feature_key, _met, is_putative = classify_mge(entry["type"], entry.get("evidence", 1))
     location = _location(entry["start"], entry["end"], entry["strand"],
@@ -167,14 +168,14 @@ def entry_to_feature(entry, index):
                               id="MGE_{0}".format(index), seq_id=seq_id)
     feature.qualifiers = build_qualifiers(entry)
     if is_putative:
-        # 内部マーカー(出力には出ない)。DDBJ ann では既定で除外する
-        # (overlap/duplicate が多く提出には不適)が、gbk/gff には残す。
+        # Internal marker (not written to output). Excluded from the DDBJ ann by default
+        # (they often overlap/duplicate and are unsuitable for submission), but kept in gbk/gff.
         feature.annotations["mge_putative_composite"] = True
     return seq_id, feature
 
 
 def parse_mge_results(data):
-    """MEF JSON 全体を {seq_id: [ExtendedFeature, ...]} に変換する。"""
+    """Convert the whole MEF JSON to {seq_id: [ExtendedFeature, ...]}."""
     result = {}
     for index, entry in enumerate(data.get("result", []), start=1):
         seq_id, feature = entry_to_feature(entry, index)
@@ -192,9 +193,9 @@ class MobileElementFinder(ContigAnnotationTool):
     version = None
     TYPE = "feature"
     NAME = "MobileElementFinder"
-    # mefinder は pkg_resources の DeprecationWarning を stderr に出す。
-    # base_tools.setVersion() は stderr があると "not found" 扱いするため、
-    # バージョンチェック時のみ stderr を捨てる（実行時は returncode で判定されるため影響なし）。
+    # mefinder prints a pkg_resources DeprecationWarning to stderr.
+    # base_tools.setVersion() treats any stderr output as "not found", so stderr is discarded
+    # only for the version check (no effect on actual runs, which are judged by the return code).
     VERSION_CHECK_CMD = ["mefinder", "--version", "2>/dev/null"]
     VERSION_PATTERN = r"(\d+\.\d+\.\d+)"
 
@@ -224,17 +225,17 @@ class MobileElementFinder(ContigAnnotationTool):
         return cmd
 
     def getFeatures(self):
-        """{seq_id: [ExtendedFeature, ...]} を返す。"""
+        """Return {seq_id: [ExtendedFeature, ...]}."""
         with open(self.result_file) as fh:
             data = json.load(fh)
         return parse_mge_results(data)
 
     def getResult(self):
-        """ContigAnnotationTool 契約: (source_notes, report)。
+        """ContigAnnotationTool contract: (source_notes, report).
 
-        MEF は座標付き feature を getFeatures() で返すため source_notes は空。
-        report には amr_summary.tsv の ## 行用の MGE 要約を入れる（PlasmidFinder 同形式）。
-        type は読みやすい正式名（_TYPE_NAME）に変換して出力する。
+        source_notes is empty because MEF returns located features via getFeatures().
+        report holds the MGE summary for the ## lines of amr_summary.tsv (same format as PlasmidFinder).
+        Types are converted to human-readable full names (_TYPE_NAME).
         """
         source_notes = {}
         report = {}

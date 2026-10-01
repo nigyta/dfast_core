@@ -256,7 +256,7 @@ class FeatureUtil(object):
             elif isinstance(hit, NuclHit):
                 _to_misc_feature(feature, hit)
         elif int(feature.location.end) == len(seq) and feature.strand == -1 and feature.annotations.get("partial_flag", "00") == "01" and len(feature) >= min_length:
-            # case: fix right partial CDS (##..>##)　to intact CDS
+            # case: fix right partial CDS (##..>##) to intact CDS
             first3 =  str(seq[-3:].reverse_complement()).upper()
             if first3 in acceptable_codons and len(feature) % 3 == 0 and hit:
                 _fix_partial(feature, seq)
