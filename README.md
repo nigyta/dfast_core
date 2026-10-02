@@ -54,12 +54,13 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   ```
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.  
 
-* **RPS-BLAST and rpsbproc** (for CDDsearch, i.e. COG assignment)  
-  `rpsblast` (BLAST+ 2.13 or later) and `rpsbproc` (0.5 or later) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), and put them in your `PATH`:
+* **BLAST+, rpsbproc and HMMER**  
+  BLAST+ (2.13 or later; `blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`), `rpsbproc` (0.5 or later, for CDDsearch, i.e. COG assignment) and HMMER (3.x; `hmmscan`, `hmmsearch`, `hmmpress`) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)) and [HMMER](http://hmmer.org/), and put them in your `PATH`:
   ```
-  conda install -c bioconda -c conda-forge blast rpsbproc
+  conda install -c bioconda -c conda-forge blast rpsbproc hmmer
   ```
-  When DFAST is installed with conda, make sure that `rpsbproc` 0.5 or later is installed in the same environment. Use `--no_cdd` to run DFAST without them.
+  When DFAST is installed with conda, make sure that `rpsbproc` 0.5 or later is installed in the same environment.  
+  BLAST+ 2.10 or later creates databases in the BLAST database version 5 format, which older BLAST+ (e.g. 2.6.0, previously bundled) cannot read. Databases in version 4 created by older DFAST can still be used.
 
 * **Perl and Java**  
 Some of the external programs called from DFAST depend on Perl or Java. Basically, they work with the pre-installed versions on your system.  
@@ -102,9 +103,10 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     File downloading and database indexing for GHOSTX and BLASTP will be performed. 
 2. **HMMer and RPS-BLAST databases (this may take time)**
     ```
-    dfast_file_downloader.py --cdd Cog --hmm TIGR
+    dfast_file_downloader.py --cdd Cog --hmm NCBIfam
     ```
     DFAST default workflow requires COG database for RPS-BLAST and TIGRFAM database for hmmerscan.
+    `--hmm NCBIfam` downloads the [NCBI HMM collection](https://ftp.ncbi.nlm.nih.gov/hmm/) (release 20.0; TIGR models maintained by NCBI, NCBIFAM and models derived from PRK clusters) with its attribute table, and makes a TIGR-only subset used by default. `--hmm TIGR` (TIGRFAMs 15.0) is kept for older configurations.
     `--cdd` downloads the database from [NCBI CDD](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/) together with the annotation data for `rpsbproc` from the same CDD release (`cdd/rpsbproc_data`). Run it again when you update DFAST from version 1.4.3 or earlier.
 * **See help for more information.**
     ```
@@ -128,7 +130,7 @@ DFAST executables are added to the `PATH` environmental variable, and the softwa
 
 After installing DFAST, download the reference databases:
 ```
-dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR
+dfast_file_downloader.py --protein dfast --cdd Cog --hmm NCBIfam
 ```
 
 ## <a id="howto"></a>How to run
@@ -194,7 +196,7 @@ Optionally, you can choose Prodigal/GeneMarkS2, RNAmmer, tRNAscan-SE to predict 
 1. OrthoSearch (Optional. Set `--references` option to enable this.)
 2. DBsearch using the Ghostx aligner against the DFAST default database
 3. PseudoGeneDetection (internal stop codons and frameshifts)
-4. HMMscan against the profile HMM database of TIGRFAM
+4. HMMscan against TIGR models of the NCBI HMM collection with trusted cutoffs. CDSs without a hit in step 2 are named by HMMs marked for naming by NCBI (product, gene and EC number). `--hmm_db ncbifam` searches the whole collection instead.
 5. CDDsearch against COG database from NCBI Conserved Domain Database
 
 By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be used optionally. See [FAQ](docs/FAQ.md). (Diamond needs to be installed manually.) 
@@ -293,8 +295,6 @@ This distribution contains following external programs.
 * [CRT](http://www.room220.com/crt/) (Public domain)
 * [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/) (BSD-2-Clause)
 * [GHOSTZ](http://www.bi.cs.titech.ac.jp/ghostz/) (CC BY 4.0)
-* blastp, makeblastdb, blastdbcmd from [NCBI-BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download) package. (Public domain)
-* hmmpress, hmmscan from [HMMer](http://hmmer.org/) package (GPLv3)
 * [LAST](http://last.cbrc.jp/) (GPLv3)
 
 ## Trouble shoot
@@ -305,15 +305,13 @@ If your machine does not have enough memory, decrease the number of CPUs (`--cpu
 If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
 In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
-* libidn-11 on ArchLinux  
-According to the report from users, DFAST fails on ArchLinux due to `libidn-11` required for BLASTP. You may need to install `libidn-133-compat` from the AUR repository.
 
 ## How to run DFAST within a Docker container.
 The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags).  
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```
-docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR --dbroot /dfast_db
+docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --cdd Cog --hmm NCBIfam --dbroot /dfast_db
 ```
 
 Invoke DFAST:

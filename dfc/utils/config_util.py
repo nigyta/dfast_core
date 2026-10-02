@@ -153,6 +153,18 @@ def disable_cdd_search(config):
             setting["enabled"] = False
 
 
+def set_hmm_db(config, hmm_db):
+    """Choose the NCBI HMM collection to search: "tigr" (TIGR models only, default) or "ncbifam" (all models)."""
+    target = {"tigr": "TIGR", "ncbifam": "NCBIfam"}[hmm_db]
+    settings = [setting for setting in config.FUNCTIONAL_ANNOTATION if setting.get("component_name", "") == "HMMscan"
+                and setting.get("options", {}).get("db_name") in ("TIGR", "NCBIfam")]
+    if not any(setting["options"]["db_name"] == target for setting in settings):
+        logger.error("HMMscan with db_name '{}' is not defined in the config file. Aborting...".format(target))
+        exit(1)
+    for setting in settings:
+        setting["enabled"] = setting["options"]["db_name"] == target
+    logger.info("HMMscan will search the {} HMM database.".format(target))
+
 def disable_hmm_scan(config):
     for setting in config.FUNCTIONAL_ANNOTATION:
         if setting.get("component_name", "") == "HMMscan":

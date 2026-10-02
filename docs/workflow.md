@@ -195,15 +195,17 @@ You can download CDD databases using the `prepare_database.py` script:
 
 * HMMscan  
 HMMscan searches for domain structures in query sequences using profile HMM databases. 
-It uses hmmscan of the HMMer software package (ver. 3.1b).  
+It uses hmmscan of the HMMer software package (3.x, installed separately, e.g. from Bioconda).  
 You can search against various kinds of publicly available HMM databases, 
-such as [PFAM](ftp://ftp.ebi.ac.uk//pub/databases/Pfam/) and [TIGRFAM](ftp://ftp.tigr.org//pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.tar.gz).
+such as [PFAM](ftp://ftp.ebi.ac.uk//pub/databases/Pfam/) and the [NCBI HMM collection](https://ftp.ncbi.nlm.nih.gov/hmm/) used by PGAP.
 After downloading the HMM profile data, it must be formatted for hmmscan by using hmmpress.
 You can do it as following:
   ```
-  python $DFAST_APP_ROOT/scripts/file_downloader.py --hmm Pfam TIGR
+  dfast_file_downloader.py --hmm NCBIfam Pfam
   ```
-  DFAST standard pipeline includes HMMscan against TIGRFAM.
+  DFAST standard pipeline searches TIGR models of the NCBI HMM collection (release 20.0) with trusted cutoffs (`--cut_tc`), only for CDSs without a database hit.
+  When the attribute table of the collection (`hmm_PGAP.tsv`) is given as `attributes` in the configuration, a hit to an HMM marked for naming (`for_naming=Y`, not a hypothetical protein) gives the CDS its product name, gene symbol and EC number, with `/inference="protein motif:HMM:<accession>"`. Among such hits, the most specific family type (exception, equivalog, subfamily, ...) and then the highest score wins.
+  `--hmm_db ncbifam` searches the whole collection (TIGR, NCBIFAM and models derived from PRK clusters) instead.
 
 
 

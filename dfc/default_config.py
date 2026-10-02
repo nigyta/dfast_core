@@ -350,16 +350,30 @@ class Config:
         },
         {
             # Search against a profile-HMM database using hmmscan.
-            # In the standard workflow, TIGRFAM HMM library will be searched.
+            # TIGR models of the NCBI HMM collection (release 20.0), with trusted cutoffs.
+            # Hits marked for naming in "attributes" (hmm_PGAP.tsv) give product, gene and EC_number to CDSs without a database hit.
+            # Use "--hmm_db ncbifam" to search the whole collection (the next entry) instead.
             "component_name": "HMMscan",
             "enabled": True,
             "options": {
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
-                "evalue_cutoff": 1e-6,
-                "database": "@@DB_ROOT@@/hmm/TIGRFAMs_15.0_HMM.LIB",
+                "database": "@@DB_ROOT@@/hmm/NCBIfam_20.0_TIGR.LIB",
+                "attributes": "@@DB_ROOT@@/hmm/NCBIfam_20.0.tsv",
                 "db_name": "TIGR",
-                "cmd_options": ""
+                "cmd_options": "--cut_tc"  # evalue_cutoff is ignored when cmd_options is set
+            },
+        },
+        {
+            # Whole NCBI HMM collection (TIGR, NCBIFAM, and models derived from PRK clusters). Enabled by "--hmm_db ncbifam".
+            "component_name": "HMMscan",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": True,
+                "database": "@@DB_ROOT@@/hmm/NCBIfam_20.0.LIB",
+                "attributes": "@@DB_ROOT@@/hmm/NCBIfam_20.0.tsv",
+                "db_name": "NCBIfam",
+                "cmd_options": "--cut_tc"
             },
         },
         {

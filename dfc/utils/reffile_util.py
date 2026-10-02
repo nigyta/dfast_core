@@ -197,6 +197,25 @@ def prepare_blast_database(file_name):
     create_blast_idx(fasta_file, base_name)
 
 
+def extract_hmm_models(input_file, output_file, accession_prefix):
+    """
+    Write the profile HMMs whose ACC starts with accession_prefix from a HMMER3 flat file
+    (records end with "//"), e.g. TIGR models from the NCBI HMM collection. Returns the number of models written.
+    """
+    count = 0
+    with open(input_file) as fr, open(output_file, "w") as fw:
+        record = []
+        for line in fr:
+            record.append(line)
+            if line.startswith("//"):
+                accession = next((x.split()[1] for x in record if x.startswith("ACC ")), "")
+                if accession.startswith(accession_prefix):
+                    fw.writelines(record)
+                    count += 1
+                record = []
+    return count
+
+
 def run_hmmpress(file_name):
     hmmpress = Hmmer_hmmpress()
     logger.info(

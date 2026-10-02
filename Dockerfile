@@ -1,5 +1,4 @@
-# Pin to linux/amd64: the bundled binaries under bin/Linux are x86_64,
-# so the image must be amd64 (also keeps the libidn.so path below valid).
+# Pin to linux/amd64: the bundled binaries under bin/Linux are x86_64, so the image must be amd64.
 FROM --platform=linux/amd64 python:3.13
 
 # Environment variables
@@ -13,7 +12,7 @@ RUN mkdir /work && chmod 777 /work
 # Install dependency
 RUN pip install biopython && \
     apt-get update && \
-    apt install -y default-jre zip prodigal infernal ncbi-blast+ && \
+    apt install -y default-jre zip prodigal infernal ncbi-blast+ hmmer && \
     ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -27,13 +26,8 @@ RUN cd /tmp  && \
     rm -r /tmp/tRNAscan-SE-2.0.12 /tmp/v2.0.12.tar.gz && \
     cd /work
 
-# For compatibility (required for older version of BLAST binaries that link libidn.so.11).
-# Debian 13 (trixie) only ships libidn12, so install it and provide a libidn.so.11 symlink.
-RUN apt-get update && apt-get install -y libidn12 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libidn.so.12 /usr/lib/x86_64-linux-gnu/libidn.so.11 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# rpsblast and rpsbproc 0.5 for CDDsearch. rpsblast comes from ncbi-blast+ above, which Debian installs as "rpsblast+".
+# BLAST+ (blastp, blastn, makeblastdb, blastdbcmd, rpsblast) and HMMER come from ncbi-blast+ and hmmer above; they are no longer bundled.
+# rpsbproc 0.5 for CDDsearch. Debian installs rpsblast as "rpsblast+".
 # The NCBI rpsbproc binary links libdw.so.1 (elfutils).
 RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
     apt-get update && apt-get install -y libdw1t64 && \
@@ -46,7 +40,7 @@ RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
     rpsblast -version && rpsbproc -version
 
 # Prepare reference data (currently disabled)
-# RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
+# RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm NCBIfam
 
 # PlasmidFinder (v3.x) and KMA
 RUN pip install plasmidfinder && \

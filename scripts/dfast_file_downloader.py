@@ -24,7 +24,7 @@ logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
 sys.path.append(app_root)
-from dfc.utils.reffile_util import prepare_database, run_hmmpress
+from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models
 from dfc.utils.path_util import set_binaries_path
 
 set_binaries_path(app_root)
@@ -51,6 +51,9 @@ db_urls = {
     "pylori": host_dfast + "/dfc/distribution/DFAST-Hpylori.ref.gz",
 }
 
+# NCBI HMM collection used by PGAP (TIGR models maintained by NCBI, NCBIFAM, and models derived from PRK clusters).
+ncbifam_release = "20.0"
+ncbifam_url = "https://ftp.ncbi.nlm.nih.gov/hmm/{}/".format(ncbifam_release)
 hmm_urls = {
     "Pfam": "ftp://ftp.ebi.ac.uk//pub/databases/Pfam/releases/Pfam37.0/Pfam-A.hmm.gz",
     "dbCAN": "http://bcb.unl.edu/dbCAN2/download/dbCAN-HMMdb-V12.txt",
@@ -89,7 +92,7 @@ parser.add_argument("--protein", nargs='+', choices=list(db_urls.keys()),
                          help="DFAST reference databases. [{}]".format("|".join(list(db_urls.keys()))), metavar="STR")
 parser.add_argument("--cdd", nargs='+', choices=["Cdd", "Cdd_NCBI", "Cog", "Kog", "Pfam", "Prk", "Smart", "Tigr"],
                          help="Preformatted RPS-BLAST database. [Cdd|Cdd_NCBI|Cog|Kog|Pfam|Prk|Smart|Tigr]", metavar="STR")
-parser.add_argument("--hmm", nargs='+', choices=["Pfam", "TIGR", "dbCAN"],
+parser.add_argument("--hmm", nargs='+', choices=["NCBIfam", "Pfam", "TIGR", "dbCAN"],
                          help="Preformatted RPS-BLAST database. [Pfam|TIGR|dbCAN]", metavar="STR")
 parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
@@ -120,6 +123,22 @@ def retrieve_dfast_reference(db_name, out_dir="."):
     logger.info("\tTarget URL: {}".format(target_url))
     return output_file
 
+
+def retrieve_ncbifam(out_dir=".", no_indexing=False):
+    """
+    Download the NCBI HMM collection (hmm_PGAP.LIB) and its attribute table (hmm_PGAP.tsv), and make
+    a TIGR-only subset. Writes NCBIfam_<release>.LIB, NCBIfam_<release>_TIGR.LIB and NCBIfam_<release>.tsv.
+    """
+    prefix = os.path.join(out_dir, "NCBIfam_{}".format(ncbifam_release))
+    all_models, tigr_models, attributes = prefix + ".LIB", prefix + "_TIGR.LIB", prefix + ".tsv"
+    for file_name, output_file in (("hmm_PGAP.tsv", attributes), ("hmm_PGAP.LIB", all_models)):
+        logger.info("\tDownloading {}".format(ncbifam_url + file_name))
+        request.urlretrieve(ncbifam_url + file_name, output_file)
+    count = extract_hmm_models(all_models, tigr_models, "TIGR")
+    logger.info("\tExtracted {} TIGR models into {}".format(count, tigr_models))
+    if not no_indexing:
+        run_hmmpress(all_models)
+        run_hmmpress(tigr_models)
 
 def retrieve_hmm(db_name, out_dir="."):
     target_url = hmm_urls[db_name]
@@ -464,6 +483,9 @@ if args.hmm:
     logger.info("Ttyring to fetch profile-HMM databases for {0}. Files will be written into '{1}'".format(",".join(args.hmm), out_dir))
     for db_name in args.hmm:
         logger.info("Downloading HMM database for {}...".format(db_name))
+        if db_name == "NCBIfam":
+            retrieve_ncbifam(out_dir, args.no_indexing)
+            continue
         retrieved_file = retrieve_hmm(db_name, out_dir)
         if retrieved_file:
             logger.info("\tDownloaded to {}".format(os.path.abspath(retrieved_file)))
