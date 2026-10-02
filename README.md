@@ -294,7 +294,6 @@ This distribution contains following external programs.
 * [Barrnap](https://github.com/tseemann/barrnap) (GPLv3)
 * [CRT](http://www.room220.com/crt/) (Public domain)
 * [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/) (BSD-2-Clause)
-* [GHOSTZ](http://www.bi.cs.titech.ac.jp/ghostz/) (CC BY 4.0)
 * [LAST](http://last.cbrc.jp/) (GPLv3)
 
 ## Trouble shoot

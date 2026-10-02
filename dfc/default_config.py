@@ -219,7 +219,7 @@ class Config:
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
-                "aligner": "ghostx",  # ghostx, ghostz, or blastp
+                "aligner": "ghostx",  # ghostx, blastp or diamond
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "references": [
                 ]
@@ -291,7 +291,7 @@ class Config:
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
                 "pident_cutoff": 0,
-                "aligner": "ghostx",  # ghostx, ghostz or blastp
+                "aligner": "ghostx",  # ghostx, blastp or diamond
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "",
                 "db_name": "",
@@ -309,7 +309,7 @@ class Config:
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
                 "pident_cutoff": 0,
-                "aligner": "ghostx",  # ghostz, ghostx or blastp
+                "aligner": "ghostx",  # ghostx, blastp or diamond
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "@@DB_ROOT@@/protein/DFAST-default.ref",
                 "db_name": "",
