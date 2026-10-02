@@ -1,3 +1,11 @@
+Ver 1.4.3 (20261002) ---------------------------------------
+Partial rRNAs are now reported as misc_feature. Barrnap hits aligned to less than 80% of the expected length ("aligned only N percent") become misc_feature with note "putative rRNA, aligned only ..." and no product; those less than 10 bp from a contig end are extended to the end and shown as partial (< or >). Barrnap now runs with '--reject 0.5' unless --reject is set in cmd_options, since the default differs between Barrnap 0.8 and 0.9.
+
+rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial, and an rRNA spanning a gap is split into two misc_features. Truncated features get a "truncated at the contig end" or "truncated at an assembly gap" note.
+
+Same-strand overlaps rejected by the DDBJ validator are resolved before locus_tags are assigned: rRNA overlapping a CDS or another rRNA (ANN5310) and tRNA contained in a CDS (ANN5320). A hypothetical CDS is removed; if the CDS has a functional product, the RNA is removed instead; of two overlapping rRNAs the shorter is removed. Overlap removal by feature type priority now runs after these rules as a fallback, and removed features are reported in the log.
+
+
 Ver 1.4.2 (20260722) ---------------------------------------
 Fixed incorrect coordinates for putative composite transposons detected by MobileElementFinder ('--mge'). MobileElementFinder reports the start of putative composite transposons as 0-based while other elements are 1-based, which shifted the feature by 1 bp and produced an invalid '<0' location on contig ends (resulting in a null location under Biopython 1.83+). The coordinate system is now detected per feature from the reported allele length, so the correct start is used and a future upstream fix will not cause a double correction.
 
