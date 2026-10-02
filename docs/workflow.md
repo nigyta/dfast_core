@@ -189,7 +189,7 @@ You can download CDD databases using the `prepare_database.py` script:
   python $DFAST_APP_ROOT/scripts/file_downloader.py --cdd Cdd Cog Pfam
   ```
   DFAST standard pipeline includes assignment of COG functional categories by CDDsearch.
-  DFAST comes with the binaries for RPS-Blast and rpsbproc.
+  RPS-Blast (BLAST+) and rpsbproc are not bundled; install them separately (e.g. from Bioconda).
 
   To learn more, please refer to the READMEs for each program. [[CDD](ftp://ftp.ncbi.nih.gov//pub/mmdb/cdd/README), [rpsbproc](ftp://ftp.ncbi.nih.gov//pub/mmdb/cdd/rpsbproc/README)]
 
@@ -216,7 +216,8 @@ and thus should be placed as the final process of Functional Annotation.
 It first lists candidates of pseudogenes, 
 whose s_cov (subject coverage) in a protein alignment result is less than `scov_cutoff` (default: 85%).
 Then their coding sequences are extended to flanking regions by the length specified by `extension`,
-and re-aligned to their subject protein sequences using [LAST](http://last.cbrc.jp), which allows frameshift alignments.
+and re-aligned to their subject protein sequences using [LAST](https://gitlab.com/mcfrith/last), which allows frameshift alignments.
+The genetic code given by `--gcode` (`transl_table`) is passed to `lastal -G`, so any NCBI genetic code can be used (LAST 1180 or later, installed separately).
 When stop codons or frameshifts are found in the extended regions,
 the query will be marked as possible pseudogenes.  
 This also detects translation exceptions to selenocysteine/pyrrolysine.

@@ -26,10 +26,10 @@ def summarize_pseudo(genome, output_file):
             # print(feature.location.start, feature.location.end, feature.location.strand)
             # print(round(p_hit.q_cov,1), p_hit.s_cov, p_hit.identity)
             strand = "+" if feature.location.strand == 1 else "-"
-            internal_stop = [f"{x[0]+1}..{x[1]}({x[2]})".format(x[0] + 1, x[1], x[2]) for x in pseudogene.stop_codon]
+            internal_stop = [f"{x[0]+1}..{x[1]}({x[2]})" for x in sorted(pseudogene.stop_codon)]
             internal_stop = ",".join(internal_stop)
             # As of 1.2.16, insertion and deletion are integrated as indel
-            indel = ",".join(map(str, pseudogene.indel))
+            indel = ",".join(map(str, sorted(pseudogene.indel)))
             # insertion = ",".join(map(str, pseudogene.insertion))
             # deletion = ",".join(map(str, pseudogene.deletion))
             loc_string = f"{feature.seq_id}:{feature.location.start+1}..{feature.location.end}({strand})"

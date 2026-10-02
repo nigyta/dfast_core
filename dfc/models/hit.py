@@ -238,7 +238,7 @@ class PseudoGene(Hit):
                 feature.qualifiers.setdefault("note", []).append(note)
             if len(self.indel) > 0:
                 note = "frameshifted"
-                note += ", insertion/deletion at around " + ",".join(map(str, self.indel))
+                note += ", insertion/deletion at around " + ",".join(map(str, sorted(self.indel)))
                 # if len(self.insertion) > 0:
                 #     note += ", insertion at around " + ",".join(map(str, self.insertion))
                 # if len(self.deletion) > 0:

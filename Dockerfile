@@ -12,7 +12,7 @@ RUN mkdir /work && chmod 777 /work
 # Install dependency
 RUN pip install biopython && \
     apt-get update && \
-    apt install -y default-jre zip prodigal infernal ncbi-blast+ hmmer && \
+    apt install -y default-jre zip prodigal infernal ncbi-blast+ hmmer last-align && \
     ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -26,7 +26,8 @@ RUN cd /tmp  && \
     rm -r /tmp/tRNAscan-SE-2.0.12 /tmp/v2.0.12.tar.gz && \
     cd /work
 
-# BLAST+ (blastp, blastn, makeblastdb, blastdbcmd, rpsblast) and HMMER come from ncbi-blast+ and hmmer above; they are no longer bundled.
+# BLAST+ (blastp, blastn, makeblastdb, blastdbcmd, rpsblast), HMMER and LAST come from ncbi-blast+, hmmer and last-align above;
+# they are no longer bundled.
 # rpsbproc 0.5 for CDDsearch. Debian installs rpsblast as "rpsblast+".
 # The NCBI rpsbproc binary links libdw.so.1 (elfutils).
 RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
@@ -37,7 +38,7 @@ RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
     tar xfz RpsbProc-x64-linux.tar.gz && \
     install -m 755 RpsbProc-x64-linux/rpsbproc /usr/local/bin/rpsbproc && \
     rm -r RpsbProc-x64-linux RpsbProc-x64-linux.tar.gz && \
-    rpsblast -version && rpsbproc -version
+    rpsblast -version && rpsbproc -version && lastal -V
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm NCBIfam

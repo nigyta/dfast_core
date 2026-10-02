@@ -30,21 +30,25 @@ class Lastal(Tool):
     NAME = "lastal"
     VERSION_CHECK_CMD = ["lastal", "-V"]
     VERSION_PATTERN = r"^lastal (.+)$"
+    # "lastal -G <number>" (NCBI genetic codes) is available in LAST 1180 or later.
+    MIN_VERSION = 1180
 
     def __init__(self, options=None):
         if options is None:
             options = {}
         super(Lastal, self).__init__(options=options)
         self.transl_table = options.get("transl_table", 11)
+        if self.version.isdigit() and int(self.version) < self.MIN_VERSION:
+            self.logger.error("LAST {} or later is required (found {}). Install it from Bioconda (conda install -c bioconda last). Aborting...".format(
+                self.MIN_VERSION, self.version))
+            exit(1)
         # self.genetic_code_file = options.get("genetic_code_file", "")
         # self.evalue_cutoff = options.get("evalue_cutoff", 1e-5)
 
     def get_command(self, query_file, db_name, result_file):
         # ./lastal -f MAF -F15 fd_ref fd_query0.fasta > result.out
-        if self.transl_table == 4 or self.transl_table == 25:
-            return ["lastal4", "-f MAF", "-F 15", db_name, query_file, ">", result_file]
-        else:
-            return ["lastal", "-f MAF", "-F 15", db_name, query_file, ">", result_file]
+        # -G: NCBI genetic code used to translate the DNA query (e.g. 11 for bacteria, 4 for Mycoplasma)
+        return ["lastal", "-G", str(self.transl_table), "-f MAF", "-F 15", db_name, query_file, ">", result_file]
 
 if __name__ == '__main__':
     from logging import getLogger, INFO, DEBUG, StreamHandler
