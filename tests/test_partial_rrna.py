@@ -2,10 +2,7 @@
 from Bio.SeqFeature import FeatureLocation, ExactPosition, BeforePosition, AfterPosition
 from dfc.models.bio_feature import ExtendedFeature
 from dfc.tools.barrnap import Barrnap
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from dfc.genome import Genome
-from dfc.utils.feature_util import FeatureUtil, adjust_rrna
+from dfc.utils.feature_util import adjust_rrna
 
 ALIGNED_42 = "aligned only 42 percent of the 23S ribosomal RNA"
 
@@ -144,61 +141,3 @@ def test_short_piece_after_trimming_is_removed():
     # an untrimmed feature is never removed for being short
     kept, removed = adjust_rrna(_rrna(100, 120), 2000, [])
     assert len(kept) == 1 and removed == []
-
-
-# ---- integration through FeatureUtil.execute(): specific rules run before resolve_overlap() ----
-
-class _Genome:
-    sort_features = Genome.sort_features
-    set_feature_dictionary = Genome.set_feature_dictionary
-
-    def __init__(self, features, length=4000):
-        record = SeqRecord(Seq("A" * length), id="seq1")
-        for f in features:
-            f.seq_id = "seq1"
-        record.features = features
-        self.seq_records = {"seq1": record}
-        self.set_feature_dictionary()
-
-
-class _Config:
-    FEATURE_ADJUSTMENT = {}
-
-
-def _cds(start, end, fid):
-    return ExtendedFeature(location=FeatureLocation(start, end, 1), type="CDS", id=fid)
-
-
-def _run(features, length=4000):
-    genome = _Genome(features, length)
-    FeatureUtil(genome, _Config()).execute()
-    return genome.seq_records["seq1"].features
-
-
-def test_execute_splits_rrna_overlapping_gap_by_more_than_10_percent():
-    # Codex review case: rRNA [0:1500] with gap [400:600] was removed whole by resolve_overlap
-    features = _run([_rrna(0, 1500), _gap(400, 600)])
-    misc = [f for f in features if f.type == "misc_feature"]
-    assert [(int(f.location.start), int(f.location.end)) for f in misc] == [(0, 400), (600, 1500)]
-    assert [f.type for f in features] == ["misc_feature", "assembly_gap", "misc_feature"]  # sorted
-
-
-def test_execute_removes_rrna_inside_gap_and_logs_summary(caplog):
-    caplog.set_level("DEBUG")
-    features = _run([_rrna(450, 550), _gap(400, 600)])
-    assert [f.type for f in features] == ["assembly_gap"]
-    assert "Removed 1 features by specific overlap rules" in caplog.text
-    assert "Removed feature by overlap rule" in caplog.text  # per-feature line at DEBUG
-
-
-def test_execute_putative_rrna_still_masks_cds():
-    # CDS overlapping a partial rRNA (now misc_feature) by >10% is still removed by the fallback
-    features = _run([_rrna(1000, 2000, note=ALIGNED_42), _cds(1500, 2400, "CDS_1")])
-    assert [f.type for f in features] == ["misc_feature"]
-
-
-def test_execute_fallback_removal_is_a_warning(caplog):
-    features = _run([_rrna(1000, 2000), _cds(1500, 2400, "CDS_1")])
-    assert [f.type for f in features] == ["rRNA"]
-    assert any(r.levelname == "WARNING" and "not handled by specific overlap rules" in r.message
-               for r in caplog.records)

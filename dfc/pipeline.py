@@ -53,10 +53,10 @@ class Pipeline():
 
     def execute(self):
         self.sa.execute()  # execute structural annotation
-        self.fu.execute()  # feature adjustment: sort, remove_partial, (merge)
+        self.fu.execute()  # feature adjustment: location-only overlap rules, (merge CDS)
         self.fa.execute()  # functional annotation
         source_notes, dict_features, dict_contig_annotation_report = self.ca.execute()  # contig annotation
-        self.fu.execute_remove_partial()  # feature adjustment remove partial
+        self.fu.execute_after_annotation()  # overlap rules using CDS products, resolve_overlap fallback, remove partial
         self.ltg.execute()  # assigning locus_tags
         self.genome.add_source_features(source_notes)  # set source feature
         self.genome.add_contig_features(dict_features)  # add located MGE features (after locus_tag)

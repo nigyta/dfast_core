@@ -29,10 +29,12 @@ There is no build step and no linter config. The `dfast` script resolves `APP_RO
 
 **Pipeline order** (`dfc/pipeline.py`):
 1. `StructuralAnnotation`: tools run in parallel threads.
-2. `FeatureUtil`: sort features, resolve overlaps.
+2. `FeatureUtil.execute()`: location-only overlap rules (rRNA vs assembly_gap / contig ends, rRNA vs rRNA), optional CDS merge.
 3. `FunctionalAnnotation`: components run sequentially in config order.
 4. `ContigAnnotation`: PlasmidFinder and MobileElementFinder.
-5. Remove partial features, then assign locus tags.
+5. `FeatureUtil.execute_after_annotation()`: overlap rules that need CDS products (rRNA/tRNA vs CDS), then `resolve_overlap()` as the fallback for overlaps no rule handles, then partial-feature removal. Locus tags are assigned after this, so removals never leave gaps in the numbering.
+
+**Overlap rules** (`dfc/utils/feature_util.py`) target the DDBJ validator checks (ANN5310: same-strand rRNA vs CDS/rRNA overlap; ANN5320: tRNA inside a same-strand CDS). Add new rules in feature type priority order (assembly_gap > CRISPR > tRNA/tmRNA/rRNA > CDS), before `resolve_overlap()`. Removals by rules are summarized at INFO, fallback removals at WARNING, and each removal at DEBUG.
 6. Add source and contig features.
 7. Write outputs: GenBank, GFF, FASTA, stats, DDBJ `.ann`/`.fasta`, `pseudogene_summary.tsv`, `amr_summary.tsv`.
 

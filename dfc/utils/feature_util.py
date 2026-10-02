@@ -129,6 +129,58 @@ class FeatureUtil(object):
         self.genome.set_feature_dictionary()
         self.logger.info("Adjusted locations of {} rRNA features at contig ends or assembly gaps. {} partial rRNA features are annotated as misc_feature.".format(changed, converted))
 
+    def resolve_rrna_overlaps(self):
+        """Remove the shorter of two rRNAs that overlap on the same strand (DDBJ validator ANN5310)."""
+        for seq_record in self.genome.seq_records.values():
+            rrnas = [f for f in seq_record.features if f.type == "rRNA"]
+            removed_ids = set()
+            for i, one in enumerate(rrnas):
+                for other in rrnas[i + 1:]:
+                    if one.id in removed_ids or other.id in removed_ids or not overlaps_on_same_strand(one, other):
+                        continue
+                    loser, winner = (other, one) if len(other) <= len(one) else (one, other)
+                    removed_ids.add(loser.id)
+                    self._record_removal(loser, "shorter rRNA overlapping rRNA {} at {}".format(winner.id, format_location(winner)))
+            self._drop(seq_record, removed_ids)
+        self.genome.set_feature_dictionary()
+
+    def resolve_rna_cds_overlaps(self):
+        """
+        Resolve same-strand overlaps between RNAs and CDSs that the DDBJ validator rejects:
+        an rRNA overlapping a CDS by even one base (ANN5310), and a tRNA completely contained
+        in a CDS (ANN5320). Hypothetical CDSs are removed. If a CDS with a functional product is
+        involved, the RNA is removed instead and the CDSs are kept.
+        """
+        for seq_record in self.genome.seq_records.values():
+            cdss = [f for f in seq_record.features if f.type == "CDS"]
+            removed_ids = set()
+            for rna in [f for f in seq_record.features if f.type in ("rRNA", "tRNA")]:
+                conflicts = [cds for cds in cdss if cds.id not in removed_ids and rna_conflicts_with_cds(rna, cds)]
+                if not conflicts:
+                    continue
+                functional = [cds for cds in conflicts if not is_hypothetical_cds(cds)]
+                if functional:
+                    removed_ids.add(rna.id)
+                    hit = functional[0].primary_hit
+                    self._record_removal(rna, "overlapping CDS {} at {} ({})".format(
+                        functional[0].id, format_location(functional[0]), getattr(hit, "description", hit.id)))
+                else:
+                    for cds in conflicts:
+                        removed_ids.add(cds.id)
+                        self._record_removal(cds, "hypothetical CDS overlapping {} {} at {}".format(rna.type, rna.id, format_location(rna)))
+            self._drop(seq_record, removed_ids)
+        self.genome.set_feature_dictionary()
+
+    def _record_removal(self, feature, reason):
+        description = describe_feature(feature, int(feature.location.start), int(feature.location.end), reason)
+        self.logger.debug("Removed feature by overlap rule: {}".format(description))
+        self.removed_by_rules.append(description)
+
+    @staticmethod
+    def _drop(seq_record, removed_ids):
+        if removed_ids:
+            seq_record.features = [f for f in seq_record.features if f.id not in removed_ids]
+
     def log_removed_by_rules(self):
         if self.removed_by_rules:
             self.logger.info("Removed {} features by specific overlap rules: {}".format(
@@ -218,23 +270,30 @@ class FeatureUtil(object):
         self.genome.set_feature_dictionary()
         self.logger.info("Merged CDS features. {} CDSs in total.".format(cnt))
 
-    def execute(self):
-        # if self.enable_remove_partial:
-        #     self.remove_partial_features()
+    # Overlap handling: specific rules run first, in feature type priority order
+    # (assembly_gap > CRISPR > tRNA/tmRNA/rRNA > CDS), so that each rule sees the adjusted
+    # higher-priority features. Rules that need only locations run in execute() (before functional
+    # annotation); rules that need CDS products run in execute_after_annotation().
+    # resolve_overlap() runs last as a fallback for overlaps that no specific rule handles.
 
-        # Overlap handling: specific rules run first, in feature type priority order
-        # (assembly_gap > CRISPR > tRNA/tmRNA/rRNA > CDS), so that each rule sees the adjusted
-        # higher-priority features. Add new rules (e.g. CDS vs tRNA) here in that order.
-        # resolve_overlap() then runs as a fallback for overlaps that no specific rule handles.
+    def execute(self):
+        """Feature adjustment before functional annotation."""
         self.removed_by_rules = []
-        self.adjust_rrna_features()
+        self.adjust_rrna_features()  # rRNA vs assembly_gap / contig ends
+        self.resolve_rrna_overlaps()  # rRNA vs rRNA
+
+        if self.enable_merge_cds:
+            self.merge_cds()
+
+    def execute_after_annotation(self):
+        """Feature adjustment after functional and contig annotation, before locus_tag assignment."""
+        self.resolve_rna_cds_overlaps()  # rRNA/tRNA vs CDS, decided by CDS products
         self.log_removed_by_rules()
 
         if self.enable_remove_overlapping:
             self.resolve_overlap()
 
-        if self.enable_merge_cds:
-            self.merge_cds()
+        self.execute_remove_partial()
 
     def execute_remove_partial(self):
         if self.enable_remove_partial:
@@ -315,6 +374,30 @@ class FeatureUtil(object):
                 _to_misc_feature(feature, hit)
         elif isinstance(hit, NuclHit):
                 _to_misc_feature(feature, hit)
+
+
+HYPOTHETICAL_PRODUCTS = {"hypothetical protein", "conserved protein", "uncharacterized protein", "conserved hypothetical protein"}
+
+
+def overlaps_on_same_strand(one, other):
+    return (one.location.strand == other.location.strand
+            and int(one.location.start) < int(other.location.end) and int(other.location.start) < int(one.location.end))
+
+
+def rna_conflicts_with_cds(rna, cds):
+    """True if the DDBJ validator rejects the pair: rRNA overlapping a CDS (ANN5310) or tRNA inside a CDS (ANN5320)."""
+    if rna.type == "rRNA":
+        return overlaps_on_same_strand(rna, cds)
+    return (rna.location.strand == cds.location.strand
+            and int(cds.location.start) <= int(rna.location.start) and int(rna.location.end) <= int(cds.location.end))
+
+
+def is_hypothetical_cds(cds):
+    """A CDS without a primary hit, or whose primary protein hit is a hypothetical protein."""
+    hit = cds.primary_hit
+    if hit is None:
+        return True
+    return isinstance(hit, ProteinHit) and hit.description.lower() in HYPOTHETICAL_PRODUCTS
 
 
 CONTIG_END_MARGIN = 10  # a partial rRNA ending within this many bases of a contig end is extended to the end
@@ -406,8 +489,14 @@ def adjust_rrna(feature, seq_len, gaps):
 
 def describe_feature(feature, start, end, reason):
     """One-line description of a (removed) feature for logs. start is 0-based, end is exclusive."""
-    strand = "-" if feature.location.strand == -1 else "+"
-    return "{} {} {}:{}..{}({}) [{}]".format(feature.id, feature.type, feature.seq_id, start + 1, end, strand, reason)
+    return "{} {} {}:{} [{}]".format(feature.id, feature.type, feature.seq_id, format_location(feature, start, end), reason)
+
+
+def format_location(feature, start=None, end=None):
+    """1-based location with strand for logs, e.g. 101..200(-)."""
+    start = int(feature.location.start) if start is None else start
+    end = int(feature.location.end) if end is None else end
+    return "{}..{}({})".format(start + 1, end, "-" if feature.location.strand == -1 else "+")
 
 
 if __name__ == '__main__':
