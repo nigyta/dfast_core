@@ -33,6 +33,18 @@ RUN apt-get update && apt-get install -y libidn12 && \
     ln -sf /usr/lib/x86_64-linux-gnu/libidn.so.12 /usr/lib/x86_64-linux-gnu/libidn.so.11 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# rpsblast and rpsbproc 0.5 for CDDsearch. rpsblast comes from ncbi-blast+ above, which Debian installs as "rpsblast+".
+# The NCBI rpsbproc binary links libdw.so.1 (elfutils).
+RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
+    apt-get update && apt-get install -y libdw1t64 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    cd /tmp && \
+    curl -LO https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/RpsbProc-x64-linux.tar.gz && \
+    tar xfz RpsbProc-x64-linux.tar.gz && \
+    install -m 755 RpsbProc-x64-linux/rpsbproc /usr/local/bin/rpsbproc && \
+    rm -r RpsbProc-x64-linux RpsbProc-x64-linux.tar.gz && \
+    rpsblast -version && rpsbproc -version
+
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
 

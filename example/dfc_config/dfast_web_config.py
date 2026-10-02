@@ -370,7 +370,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "@@DB_ROOT@@/cdd/Cog",
-                "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
+                "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
         {
@@ -382,7 +382,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "",  # eg @@APP_ROOT@@/db/cdd/Prk
-                "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
+                "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
 

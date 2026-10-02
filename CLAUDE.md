@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-DFAST (DDBJ Fast Annotation and Submission Tool) is a prokaryotic genome annotation pipeline that also generates DDBJ (MSS) submission files. Pure Python (3.10+, Biopython only) that shells out to bundled binaries in `bin/{Linux,Darwin}/` (MGA, Aragorn, Barrnap, CRT, GHOSTX, BLAST+, HMMER, RPS-BLAST, LAST).
+DFAST (DDBJ Fast Annotation and Submission Tool) is a prokaryotic genome annotation pipeline that also generates DDBJ (MSS) submission files. Pure Python (3.10+, Biopython only) that shells out to bundled binaries in `bin/{Linux,Darwin}/` (MGA, Aragorn, Barrnap, CRT, GHOSTX, BLAST+, HMMER, LAST). `rpsblast` and `rpsbproc` (>= 0.5) are not bundled and must be on `PATH` (Bioconda); the bundled binaries are being phased out in favor of Bioconda.
 
 **Language:** Write everything in tracked files in English: code, comments, docstrings, tests, commit messages and docs. Japanese is allowed only in dedicated locations such as `docs/report_ja/`. Put new Japanese documents in a `*_ja` directory like that, not alongside the English files.
 

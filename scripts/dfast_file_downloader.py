@@ -57,7 +57,12 @@ hmm_urls = {
     "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
-cdd_url = "https://ftp.ncbi.nlm.nih.gov//pub/mmdb/cdd/little_endian/DBNAME_LE.tar.gz"
+cdd_url = "https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/little_endian/DBNAME_LE.tar.gz"
+# Annotation data for rpsbproc. They must come from the same CDD release as the RPS-BLAST databases,
+# because PSSM-IDs are renumbered between releases.
+cdd_annotation_url = "https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/"
+cdd_annotation_files = ["cdd.info", "cddid.tbl.gz", "cdtrack.txt", "family_superfamily_links",
+                        "cddannot.dat.gz", "cddannot_generic.dat.gz", "bitscore_specific.txt"]
 
 description = """\
 DFAST file downloader\n\
@@ -140,18 +145,31 @@ def retrieve_cdd_ftp(db_name, out_dir="."):
     return output_file
 
 def retrieve_cdd(db_name, out_dir="."):
-    if db_name != "Cog":
-        logger.warning("Currently, only 'cog' is supported for CDD database.")
-        exit(1)
-
-    # target_url = cdd_url.replace("DBNAME", db_name)
-    target_url = "https://ddbj.nig.ac.jp/public/software/dfast/cog.tar.gz"
-    logger.warning("Cog reference data will be downloaded from https://ddbj.nig.ac.jp/public/software/dfast/cog.tar.gz")
-    target_file = os.path.basename(target_url)
-    output_file = os.path.join(out_dir, target_file)
-    request.urlretrieve(target_url, output_file)
+    target_url = cdd_url.replace("DBNAME", db_name)
     logger.info("\tDownloading {}".format(target_url))
+    output_file = os.path.join(out_dir, os.path.basename(target_url))
+    request.urlretrieve(target_url, output_file)
     return output_file
+
+def remove_cdd_database_files(db_name, out_dir):
+    """Remove files of an older release (e.g. single-volume Cog.pin) so that they do not shadow the new one."""
+    for file_name in os.listdir(out_dir):
+        if file_name.startswith(db_name + "."):
+            os.remove(os.path.join(out_dir, file_name))
+
+def retrieve_rpsbproc_data(out_dir):
+    """Download the annotation data files that rpsbproc needs (-d option)."""
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    for file_name in cdd_annotation_files:
+        target_url = cdd_annotation_url + file_name
+        logger.info("\tDownloading {}".format(target_url))
+        output_file = os.path.join(out_dir, file_name)
+        request.urlretrieve(target_url, output_file)
+        if file_name.endswith(".gz"):
+            with gzip.open(output_file, "rb") as fr, open(output_file[:-3], "wb") as fw:
+                shutil.copyfileobj(fr, fw)
+            os.remove(output_file)
 
 def retrieve_assembly(accession, out_dir="."):
     def _get_ftp_directory(accession):
@@ -428,8 +446,14 @@ if args.cdd:
         retrieved_file = retrieve_cdd(db_name, out_dir)
         if retrieved_file:
             logger.info("\tDownloaded to {}".format(os.path.abspath(retrieved_file)))
+            remove_cdd_database_files(db_name, out_dir)
             extract_tar_file(retrieved_file, out_dir)
             logger.info("\tUnarchived {}".format(retrieved_file))
+    rpsbproc_data_dir = os.path.join(out_dir, "rpsbproc_data")
+    logger.info("Downloading annotation data for rpsbproc into '{}'".format(rpsbproc_data_dir))
+    retrieve_rpsbproc_data(rpsbproc_data_dir)
+    with open(os.path.join(rpsbproc_data_dir, "cdd.info")) as f:
+        logger.info("\t" + f.readline().strip())  # e.g. "cdd version 3.21"
 
 if args.hmm:
     # print(args.hmm)

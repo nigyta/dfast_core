@@ -16,9 +16,9 @@ class RPSblast(Tool):
         self.evalue_cutoff = options.get("evalue_cutoff", 1e-6)
 
     def get_command(self, query_file, db_name, result_file):
-        return ["rpsblast", "-query", query_file, "-db", db_name, "-out", result_file, "-outfmt 5",
+        # ASN.1 archive (-outfmt 11) is the input format recommended for rpsbproc; XML (-outfmt 5) is deprecated.
+        return ["rpsblast", "-query", query_file, "-db", db_name, "-out", result_file, "-outfmt 11",
                 "-evalue", str(self.evalue_cutoff)]
-        # rpsblast -query query0.fasta -db Cog -out rpsblast.out -outfmt 5 -evalue 1e-5
 
 
 if __name__ == '__main__':

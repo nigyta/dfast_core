@@ -54,6 +54,13 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   ```
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.  
 
+* **RPS-BLAST and rpsbproc** (for CDDsearch, i.e. COG assignment)  
+  `rpsblast` (BLAST+ 2.13 or later) and `rpsbproc` (0.5 or later) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), and put them in your `PATH`:
+  ```
+  conda install -c bioconda -c conda-forge blast rpsbproc
+  ```
+  When DFAST is installed with conda, make sure that `rpsbproc` 0.5 or later is installed in the same environment. Use `--no_cdd` to run DFAST without them.
+
 * **Perl and Java**  
 Some of the external programs called from DFAST depend on Perl or Java. Basically, they work with the pre-installed versions on your system.  
 For **RedHat/CentOS/Fedora**, the Time::Piece module might be required:
@@ -98,6 +105,7 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     dfast_file_downloader.py --cdd Cog --hmm TIGR
     ```
     DFAST default workflow requires COG database for RPS-BLAST and TIGRFAM database for hmmerscan.
+    `--cdd` downloads the database from [NCBI CDD](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/) together with the annotation data for `rpsbproc` from the same CDD release (`cdd/rpsbproc_data`). Run it again when you update DFAST from version 1.4.3 or earlier.
 * **See help for more information.**
     ```
     dfast_file_downloader.py -h
@@ -285,7 +293,7 @@ This distribution contains following external programs.
 * [CRT](http://www.room220.com/crt/) (Public domain)
 * [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/) (BSD-2-Clause)
 * [GHOSTZ](http://www.bi.cs.titech.ac.jp/ghostz/) (CC BY 4.0)
-* blastp, makeblastdb, blastdbcmd, rpsblast, rpsbproc from [NCBI-BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download) package. (Public domain)
+* blastp, makeblastdb, blastdbcmd from [NCBI-BLAST+](https://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download) package. (Public domain)
 * hmmpress, hmmscan from [HMMer](http://hmmer.org/) package (GPLv3)
 * [LAST](http://last.cbrc.jp/) (GPLv3)
 
