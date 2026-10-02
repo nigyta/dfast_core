@@ -173,6 +173,7 @@ DFAST default annotation workflow accepts a genomic FASTA file (draft or complet
 
 ### Structural annotation
 The following tools are run in parallel to predict biological features (e.g. CDSs and RNAs). After that, partial and overlapping features will be cleaned up.
+Partial rRNAs (Barrnap hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
 * CDS prediction (MetaGeneAnnotator)
 * rRNA prediction (Barrnap)
 * tRNA/tmRNA prediction (Aragorn)

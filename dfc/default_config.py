@@ -78,9 +78,9 @@ class Config:
         "enabled": True,
         "output_verbosity": 1,
         "metadata_file": None,
-        # MobileElementFinder の putative composite transposon (misc_feature) を
-        # DDBJ 提出ファイル(.ann)に出力するか。overlap/duplicate が多く提出判断が
-        # 難しいため既定で除外。gbk/gff には常に出力される。
+        # Whether to write MobileElementFinder putative composite transposons (misc_feature)
+        # to the DDBJ submission file (.ann). Excluded by default because they often overlap
+        # or duplicate each other and are hard to curate. They are always written to gbk/gff.
         "include_putative_composite": False,
     }
 
@@ -148,7 +148,7 @@ class Config:
             "target": "rRNA",
             "enabled": True,
              "options": {
-                 # Currently, Barrnap will run with default settings.
+                 # Barrnap runs with '--reject 0.5' unless --reject is given in cmd_options.
                  # You can set parameters such as --reject and --lencutoff to cmd_options.
                  # "cmd_options": "--reject 0.4 --lencutoff 0.6"
              },

@@ -82,24 +82,39 @@ You can also put them in $DFAST_APP_ROOT/bin/Darwin or $DFAST_APP_ROOT/bin/Linux
 which will be automatically added to the PATH variable when running DFAST.
 
 ## Feature optimization
-After structural annotation, DFAST will cleanup unwanted features. 
-This includes three methods below. 
+DFAST cleans up unwanted features in two steps: right after structural annotation, and after functional annotation (just before locus_tags are assigned, so removed features leave no gaps in the numbering).
 You can alter default settings by specifying `FEATURE_ADJUSTMENT` in the configuration file.
-1. Remove partial features  
-Remove partial features predicted at the end of a sequence or abutting a gap.  
-https://www.ncbi.nlm.nih.gov/genbank/genomesubmit_annotation/#partial_CDS  
-2. Remove overlapping features  
-Remove features that overlaps other features according to `feature_type_priority`.  
-By default, it is defined as following:  
-`["assembly_gap", "CRISPR", ("tmRNA", "tRNA", "rRNA"), "CDS"]`  
-"assembly_gap" features have the highest priority, and CDS features has the lowest.
-Thus, CDSs that overlap other types of features are removed. 
-Features enclosed in parentheses have a same priority level.
+
+**After structural annotation**
+1. Adjust rRNA features  
+Barrnap runs with `--reject 0.5` unless `--reject` is set in its `cmd_options`.
+Partial rRNAs (Barrnap hits aligned to less than 80% of the expected length, "aligned only N percent") are converted to `misc_feature` with the note "putative rRNA, aligned only ..." and no product. Their ends less than 10 bp from a contig end are extended to the end and shown as partial (`<`/`>`).
+An rRNA end overlapping an assembly gap is trimmed to the gap and shown as partial. An rRNA spanning a gap is split into two `misc_feature`s ("putative rRNA overlapping an assembly gap"). Complete rRNAs otherwise stay rRNA and are never extended to contig ends.
+Truncated features get the note "truncated at the contig end" or "truncated at an assembly gap". rRNAs entirely inside a gap, and pieces shorter than 30 bp after trimming, are removed.
+2. Remove overlapping rRNAs  
+Of two rRNAs overlapping on the same strand, the shorter one is removed (DDBJ validator ANN5310).
 3. Merge CDS (preliminary implementation)  
 Current version is a preliminary implementation, and is disabled by default.  
 This method merges CDS features predicted by different programs.
 When two CDSs from different programs conflict (usually with different start-codon positions),
 the one from the program with higher priority will be adopted.
+
+**After functional annotation**
+1. Resolve RNA/CDS overlaps  
+Same-strand overlaps rejected by the DDBJ validator are resolved: an rRNA overlapping a CDS by even one base (ANN5310) and a tRNA completely contained in a CDS (ANN5320).
+A hypothetical CDS (no database hit, or a hypothetical product) is removed. If a CDS with a functional product is involved, the RNA is removed instead.
+2. Remove overlapping features (fallback)  
+Remove features that overlap other features according to `feature_type_priority`, for overlaps not handled by the rules above.  
+By default, it is defined as following:  
+`["assembly_gap", "CRISPR", ("tmRNA", "tRNA", "rRNA"), "CDS"]`  
+"assembly_gap" features have the highest priority, and CDS features has the lowest.
+A feature is removed when more than 10% of it overlaps features of higher priority, so CDSs that overlap other types of features are removed.
+Features enclosed in parentheses have a same priority level. Putative rRNAs (`misc_feature`) are treated as rRNA here.
+3. Remove partial features  
+Remove partial features predicted at the end of a sequence or abutting a gap. Partial rRNAs handled above are kept.  
+https://www.ncbi.nlm.nih.gov/genbank/genomesubmit_annotation/#partial_CDS  
+
+Features removed by the overlap rules are summarized in the log at INFO level, and those removed by the fallback at WARNING level. With `--debug`, each removal is logged individually.
 ## Functional Annotation
 The main purpose of the functional annotation process is 
 to infer protein function for each CDS feature by searching against various types of reference databases.

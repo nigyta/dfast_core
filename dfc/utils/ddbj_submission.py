@@ -195,8 +195,8 @@ def create_ddbj_submission_file(genome, dict_metadata, ann_file, fasta_file, ver
         rec_length = len(record)
         entry_buffer = []
         for feature in record.features:
-            # MEF putative composite transposon は既定で提出ファイルから除外
-            # (gbk/gff には残る)。内部マーカーは entry_to_feature() が付与。
+            # MEF putative composite transposons are excluded from the submission file by default
+            # (they remain in gbk/gff). The internal marker is set by entry_to_feature().
             if not include_putative_composite and \
                     getattr(feature, "annotations", {}).get("mge_putative_composite"):
                 continue

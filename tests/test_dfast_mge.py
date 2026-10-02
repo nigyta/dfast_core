@@ -8,7 +8,7 @@ from dfc.tools.dfast_mge import classify_mge
     ("is", 1, ("mobile_element", "insertion sequence", False)),
     ("mite", 1, ("mobile_element", "MITE", False)),
     ("tn", 1, ("mobile_element", "transposon", False)),
-    ("cn", 1, ("mobile_element", "transposon", False)),       # DB ヒット
+    ("cn", 1, ("mobile_element", "transposon", False)),       # DB hit
     ("cn", 2, ("misc_feature", None, True)),                  # putative
     ("integron", 1, ("mobile_element", "integron", False)),
     ("retrotransposon", 1, ("mobile_element", "retrotransposon", False)),
@@ -16,7 +16,7 @@ from dfc.tools.dfast_mge import classify_mge
     ("ime", 1, ("misc_feature", None, False)),
     ("cime", 1, ("misc_feature", None, False)),
     ("mic", 1, ("misc_feature", None, False)),
-    ("unknown_code", 1, ("misc_feature", None, False)),       # 未知コードは misc_feature
+    ("unknown_code", 1, ("misc_feature", None, False)),       # unknown codes are misc_feature
 ])
 def test_classify_mge(type_code, evidence, expected):
     assert classify_mge(type_code, evidence) == expected
@@ -54,7 +54,7 @@ def test_qualifiers_misc_ice():
 
 
 def test_qualifiers_omit_empty_accession():
-    # accession が空のときは "similar to  (MGEdb)" の空欄を出さない
+    # When accession is empty, do not output an empty "similar to  (MGEdb)"
     q = build_qualifiers(_entry(template={"accession": ""}))
     assert all("similar to" not in n for n in q["note"])
     assert all("(MGEdb)" not in n for n in q["note"])
@@ -75,7 +75,7 @@ def _full_entry(**kw):
 
 def test_entry_to_feature_basic():
     seq_id, feat = entry_to_feature(_full_entry(), index=1)
-    assert seq_id == "JN626286.1"                      # defline 先頭トークン
+    assert seq_id == "JN626286.1"                      # first token of the defline
     assert feat.type == "mobile_element"
     assert int(feat.location.start) == 2291            # 1-based 2292 -> 0-based 2291
     assert int(feat.location.end) == 8429
@@ -91,44 +91,44 @@ def test_entry_to_feature_putative_is_misc():
 
 
 def test_entry_to_feature_complete_not_partial():
-    # trunc_5p=1 は 1-based の alignment 開始位置 = 5' 端まで完全。partial にしない。
+    # trunc_5p=1 is the 1-based alignment start = complete to the 5' end. Not partial.
     seq_id, feat = entry_to_feature(_full_entry(strand=1, trunc_5p=1, trunc_3p=0), index=1)
     assert isinstance(feat.location.start, ExactPosition)
     assert isinstance(feat.location.end, ExactPosition)
 
 
 def test_entry_to_feature_truncation_partial():
-    # trunc_5p>1 で 5' truncated。strand=+1 なら左端(start)が BeforePosition、右端は Exact。
+    # trunc_5p>1 means 5' truncated. On strand=+1 the left end (start) is BeforePosition, the right end Exact.
     seq_id, feat = entry_to_feature(_full_entry(strand=1, trunc_5p=50, trunc_3p=0), index=1)
     assert isinstance(feat.location.start, BeforePosition)
     assert isinstance(feat.location.end, ExactPosition)
 
 
 def test_entry_to_feature_truncation_complement():
-    # strand=-1 で trunc_5p>1 なら 5' は右端 -> AfterPosition、左端は Exact。
+    # On strand=-1 with trunc_5p>1, 5' is the right end -> AfterPosition, the left end Exact.
     seq_id, feat = entry_to_feature(_full_entry(strand=-1, trunc_5p=50, trunc_3p=0), index=1)
     assert isinstance(feat.location.end, AfterPosition)
     assert isinstance(feat.location.start, ExactPosition)
 
 
-# ---- 座標系判定 (_zero_based_left) : MEF composite の off-by-one 吸収 ----
+# ---- Coordinate system detection (_zero_based_left): absorbs the MEF composite off-by-one ----
 from dfc.tools.dfast_mge import _zero_based_left, _location
 
 
 @pytest.mark.parametrize("start,end,asl,expected", [
-    # IS など 1-based: end-start+1 == allele_seq_length -> left = start-1
+    # IS etc. are 1-based: end-start+1 == allele_seq_length -> left = start-1
     (6350896, 6353278, 2383, 6350895),
-    # DBヒット composite (cn evidence=1) も 1-based (pOXA48 Tn1999 実データ)
+    # DB-hit composites (cn evidence=1) are also 1-based (real pOXA48 Tn1999 data)
     (2292, 8429, 6138, 2291),
-    # putative composite (cn evidence=2) は 0-based: end-start == asl -> left = start (無補正)
+    # Putative composites (cn evidence=2) are 0-based: end-start == asl -> left = start (no correction)
     (2979776, 2986173, 6397, 2979776),
-    # contig 先頭にかかる putative composite: start=0 -> left=0 (<0 にしない)
+    # Putative composite at the contig start: start=0 -> left=0 (never <0)
     (0, 1811, 1811, 0),
-    # 将来 MEF が composite を 1-based に修正した場合: end-start+1==asl -> -1 が復活し二重補正なし
+    # If MEF later fixes composites to 1-based: end-start+1==asl -> the -1 applies again, no double correction
     (100, 200, 101, 99),
-    # allele_seq_length 無し -> 文書化された 1-based を仮定
+    # No allele_seq_length -> assume the documented 1-based start
     (500, 600, None, 499),
-    # どちらにも一致しない不整合 -> 1-based 仮定
+    # Inconsistent, matches neither -> assume 1-based
     (500, 600, 55, 499),
 ])
 def test_zero_based_left(start, end, asl, expected):
@@ -136,17 +136,17 @@ def test_zero_based_left(start, end, asl, expected):
 
 
 def test_putative_composite_zero_based_not_shifted():
-    # putative composite の 0-based start はシフトされず IS と同じ基準に揃う
+    # The 0-based start of a putative composite is not shifted and aligns with IS coordinates
     e = _full_entry(evidence=2, start=2979776, end=2986173, allele_seq_length=6397,
                     trunc_5p=1, trunc_3p=0)
     _seq_id, feat = entry_to_feature(e, index=1)
     assert feat.type == "misc_feature"
-    assert int(feat.location.start) == 2979776   # start-1 されない
+    assert int(feat.location.start) == 2979776   # not shifted by start-1
     assert int(feat.location.end) == 2986173
 
 
 def test_boundary_composite_not_negative():
-    # contig 先頭の putative composite: <0 でなく <1 (BeforePosition(0)) になり None 化しない
+    # Putative composite at the contig start: becomes <1 (BeforePosition(0)), not <0, and never None
     e = _full_entry(evidence=2, strand=1, start=0, end=1811, allele_seq_length=1811,
                     trunc_5p=50, trunc_3p=0, contig="sequence129")
     _seq_id, feat = entry_to_feature(e, index=33)
@@ -156,13 +156,13 @@ def test_boundary_composite_not_negative():
 
 
 def test_clamp_guards_negative_left_without_length():
-    # allele_seq_length 欠落 + start=0 では left=-1 になるが 0 にクランプされる (防御)
+    # Missing allele_seq_length + start=0 gives left=-1, which is clamped to 0 (guard)
     loc = _location(0, 500, 1, trunc_5p=1, trunc_3p=0, allele_seq_length=None)
     assert int(loc.start) == 0
     assert isinstance(loc.start, BeforePosition)
 
 
-# ---- putative composite の内部マーカーと DDBJ ann からの除外 ----
+# ---- Internal marker of putative composites and exclusion from the DDBJ ann ----
 
 def test_entry_to_feature_marks_putative_composite():
     _sid, feat = entry_to_feature(
@@ -172,7 +172,7 @@ def test_entry_to_feature_marks_putative_composite():
 
 
 def test_entry_to_feature_no_marker_for_mobile_element():
-    # cn evidence=1 (DBヒット) は mobile_element でマーカー無し
+    # cn evidence=1 (DB hit) is mobile_element without the marker
     _sid, feat = entry_to_feature(
         _full_entry(evidence=1, start=2292, end=8429, allele_seq_length=6138), index=1)
     assert feat.type == "mobile_element"
@@ -216,10 +216,10 @@ def test_ann_excludes_putative_composite_by_default(tmp_path):
     from dfc.utils.ddbj_submission import create_ddbj_submission_file
     g = _mini_genome_with_mge()
     ann = str(tmp_path / "out.ann"); fa = str(tmp_path / "out.fasta")
-    create_ddbj_submission_file(g, {}, ann, fa, verbosity=1)  # include_putative_composite 既定=False
+    create_ddbj_submission_file(g, {}, ann, fa, verbosity=1)  # include_putative_composite defaults to False
     text = open(ann).read()
-    assert "putative composite transposon" not in text   # putative composite は除外
-    assert "insertion sequence:ISxx" in text             # mobile_element(IS) は残る
+    assert "putative composite transposon" not in text   # putative composites are excluded
+    assert "insertion sequence:ISxx" in text             # mobile_element (IS) remains
 
 
 def test_ann_includes_putative_composite_when_enabled(tmp_path):
@@ -241,7 +241,7 @@ _FIXTURE = os.path.join(os.path.dirname(__file__), "data", "mge_pOXA48.json")
 def test_parse_mge_results_fixture():
     data = json.load(open(_FIXTURE))
     result = parse_mge_results(data)
-    # seq_id 別 dict
+    # dict keyed by seq_id
     assert "JN626286.1" in result
     feats = result["JN626286.1"]
     assert len(feats) == 1
@@ -268,9 +268,9 @@ def test_getcommand_includes_cmd_options(tmp_path):
     assert "find" in cmd
     assert "-c" in cmd
     assert "--json" in cmd
-    # cmd_options が分割されて含まれる
+    # cmd_options are split and included
     assert "--min-coverage" in cmd and "0.95" in cmd
-    # temp-dir が contig_annotation/mge_finder 配下
+    # temp-dir is under contig_annotation/mge_finder
     ti = cmd.index("--temp-dir")
     assert cmd[ti + 1].endswith(os.path.join("contig_annotation", "mge_finder"))
 
@@ -290,7 +290,7 @@ def test_getcommand_no_db_path_when_unset(tmp_path):
 
 
 def test_getfeatures_reads_json(tmp_path):
-    # 出力先に フィクスチャ JSON を置いて getFeatures が読めること
+    # getFeatures can read the fixture JSON placed in the output directory
     tool = MobileElementFinder(options={}, workDir=str(tmp_path))
     os.makedirs(tool.output_directory, exist_ok=True)
     import shutil
@@ -301,8 +301,8 @@ def test_getfeatures_reads_json(tmp_path):
 
 
 def test_getresult_source_notes_empty_report_populated(tmp_path):
-    # MEF は座標付き feature を getFeatures() で返すため source_notes は空。
-    # report には amr_summary.tsv の ## 行用の MGE 要約を入れる（PlasmidFinder 同形式）。
+    # source_notes is empty because MEF returns located features via getFeatures().
+    # report holds the MGE summary for the ## lines of amr_summary.tsv (same format as PlasmidFinder).
     tool = MobileElementFinder(options={}, workDir=str(tmp_path))
     os.makedirs(tool.output_directory, exist_ok=True)
     import shutil
@@ -334,7 +334,7 @@ def test_add_contig_features_appends_and_sorts():
     from dfc.models.bio_feature import ExtendedFeature
     from Bio.SeqFeature import FeatureLocation
 
-    # genome.add_contig_features を単体で叩くため、最小の擬似 genome を作る
+    # Build a minimal fake genome to call genome.add_contig_features on its own
     import dfc.genome as genome_mod
 
     class FakeGenome:
@@ -342,7 +342,7 @@ def test_add_contig_features_appends_and_sorts():
             rec = SeqRecord(Seq("A" * 10000), id="JN626286.1")
             self.seq_records = OrderedDict({"JN626286.1": rec})
             self.features = OrderedDict()
-        # 実装をバインド
+        # bind the implementation
         add_contig_features = genome_mod.Genome.add_contig_features
         sort_features = genome_mod.Genome.sort_features
         set_feature_dictionary = genome_mod.Genome.set_feature_dictionary
