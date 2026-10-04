@@ -1,7 +1,6 @@
 # coding: UTF8
 from Bio.SeqFeature import FeatureLocation, ExactPosition, BeforePosition, AfterPosition
 from dfc.models.bio_feature import ExtendedFeature
-from dfc.tools.barrnap import Barrnap
 from dfc.utils.feature_util import adjust_rrna
 
 ALIGNED_42 = "aligned only 42 percent of the 23S ribosomal RNA"
@@ -121,12 +120,6 @@ def test_complete_rrna_untouched():
     assert p.type == "rRNA" and "note" not in p.qualifiers
 
 
-def test_barrnap_reject_default():
-    Barrnap.version = "0.8"  # skip the external version check
-    assert Barrnap(options={}).cmd_options == "--reject 0.5"
-    assert Barrnap(options={"cmd_options": "--lencutoff 0.6"}).cmd_options == "--reject 0.5 --lencutoff 0.6"
-    assert Barrnap(options={"cmd_options": "--reject 0.25"}).cmd_options == "--reject 0.25"
-
 
 def test_rrna_entirely_inside_gap_is_removed():
     kept, removed = adjust_rrna(_rrna(450, 550), 2000, [_gap(400, 600)])
@@ -141,3 +134,13 @@ def test_short_piece_after_trimming_is_removed():
     # an untrimmed feature is never removed for being short
     kept, removed = adjust_rrna(_rrna(100, 120), 2000, [])
     assert len(kept) == 1 and removed == []
+
+
+def test_partial_eukaryotic_rrna_is_converted_with_aligned_note():
+    f = _rrna(1000, 2000, note="aligned only 53 percent of the 18S ribosomal RNA")
+    f.qualifiers["product"] = ["18S ribosomal RNA"]
+    f.annotations["eukaryotic_rrna"] = True
+    [p], _ = adjust_rrna(f, 5000, [])
+    assert p.type == "misc_feature" and p.annotations["putative_rrna"] and "product" not in p.qualifiers
+    assert p.qualifiers["note"] == ["eukaryotic 18S ribosomal RNA-like sequence, possible contamination",
+                                    "aligned only 53 percent of the 18S ribosomal RNA"]

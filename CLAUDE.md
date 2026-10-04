@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-DFAST (DDBJ Fast Annotation and Submission Tool) is a prokaryotic genome annotation pipeline that also generates DDBJ (MSS) submission files. Pure Python (3.10+, Biopython only) that shells out to bundled binaries in `bin/{Linux,Darwin}/` (MGA, Aragorn, Barrnap, CRT, GHOSTX, BLAST+, HMMER, RPS-BLAST, LAST).
+DFAST (DDBJ Fast Annotation and Submission Tool) is a prokaryotic genome annotation pipeline that also generates DDBJ (MSS) submission files. Pure Python (3.10+, Biopython only) that shells out to bundled binaries in `bin/{Linux,Darwin}/` (MGA, CRT). BLAST+ (`blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`, >= 2.13), `rpsbproc` (>= 0.5), HMMER 3 (also `nhmmer` for rRNA: `dfc/tools/barrnap.py` reimplements Barrnap on rRNA HMMs from `dfast_file_downloader.py --rrna`; bac/arc models from `--rrna_kingdom` compete with euk models, always searched as a contamination check), LAST (>= 1180; `lastal -G <transl_table>`), Aragorn and GHOSTX (default aligner; DIAMOND for `--aligner diamond`) are not bundled and must be on `PATH` (Bioconda); the bundled binaries are being phased out in favor of Bioconda. BLAST+ creates version 5 databases; existing version 4 databases remain readable.
 
 **Language:** Write everything in tracked files in English: code, comments, docstrings, tests, commit messages and docs. Japanese is allowed only in dedicated locations such as `docs/report_ja/`. Put new Japanese documents in a `*_ja` directory like that, not alongside the English files.
 
@@ -14,7 +14,7 @@ python -m pytest -q tests
 python -m pytest -q tests/test_mag.py::test_boolean_render_true
 # 5 tests in tests/test_dfast_mge.py fail unless `mefinder` (MobileElementFinder) is on PATH.
 
-# Smoke run (needs the default protein DB: scripts/dfast_file_downloader.py --protein dfast)
+# Smoke run (needs the default protein DB: scripts/dfast_file_downloader.py --protein dfast --rrna barrnap)
 ./dfast --config example/test_config.py          # writes RESULT_TEST/
 ./dfast -g example/sample.genome.fna -o OUT --force
 ./dfast -g genome.fna --show_config               # print the resolved config and exit

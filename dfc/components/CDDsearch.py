@@ -24,14 +24,14 @@ class CDDsearch(BaseAnnotationComponent):
 
     def create_rpsblast_commands(self):
         for i, query in self.query_files.items():
-            result_file = os.path.join(self.workDir, "alignment{0}.xml".format(i))
+            result_file = os.path.join(self.workDir, "alignment{0}.asn".format(i))
 
             cmd = self.rpsblast.get_command(query, self.database, result_file)
             self.commands.append(cmd)
 
     def create_rpsbproc_commands(self):
         for i in range(len(self.query_files)):
-            rpsblast_result_file = os.path.join(self.workDir, "alignment{0}.xml".format(i))
+            rpsblast_result_file = os.path.join(self.workDir, "alignment{0}.asn".format(i))
             result_file = os.path.join(self.workDir, "rpsbproc{0}.out".format(i))
 
             cmd = self.rpsbproc.get_command(rpsblast_result_file, result_file)
@@ -62,8 +62,7 @@ class CDDsearch(BaseAnnotationComponent):
             for line in open(file_name):
                 line = line.strip()
                 if line == "":
-                    return  # Bug fix for Python 3.7
-                    # raise StopIteration  # the end of data
+                    continue  # rpsbproc 0.5 writes a blank line after the header
                 elif line.startswith("END") or line.startswith("#") or line.startswith("SESSION") or line.startswith(
                         "DATA"):
                     continue
@@ -97,6 +96,10 @@ class CDDsearch(BaseAnnotationComponent):
                  short_name, incomplete) in _read_rpsbproc_result(result_file):
 
                 cdd = cdd_definitions.get(pssm_id)
+                if cdd is None:
+                    # e.g. superfamily clusters reported with PSSM-ID 0, which are not in cddid.tbl
+                    self.logger.debug("Skipped a CDD hit not found in cddid.tbl: {} {} (PSSM-ID {})".format(query_id, accession, pssm_id))
+                    continue
                 cdd_description = cdd.description.replace('"', "'")
                 cdd_hit = CddHit(result_type, hit_type, pssm_id, from_, to_, evalue, score, accession, short_name, incomplete, cdd_description)
                 feature = self.genome.features[query_id]

@@ -24,7 +24,8 @@ logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
 sys.path.append(app_root)
-from dfc.utils.reffile_util import prepare_database, run_hmmpress
+from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models, build_rrna_hmm
+from dfc.tools.barrnap import RRNA_MODELS, RFAM_RELEASE, RFAM_FAMILIES, KINGDOMS
 from dfc.utils.path_util import set_binaries_path
 
 set_binaries_path(app_root)
@@ -51,18 +52,32 @@ db_urls = {
     "pylori": host_dfast + "/dfc/distribution/DFAST-Hpylori.ref.gz",
 }
 
+# NCBI HMM collection used by PGAP (TIGR models maintained by NCBI, NCBIFAM, and models derived from PRK clusters).
+ncbifam_release = "20.0"
+ncbifam_url = "https://ftp.ncbi.nlm.nih.gov/hmm/{}/".format(ncbifam_release)
 hmm_urls = {
     "Pfam": "ftp://ftp.ebi.ac.uk//pub/databases/Pfam/releases/Pfam37.0/Pfam-A.hmm.gz",
     "dbCAN": "http://bcb.unl.edu/dbCAN2/download/dbCAN-HMMdb-V12.txt",
     "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
-cdd_url = "https://ftp.ncbi.nlm.nih.gov//pub/mmdb/cdd/little_endian/DBNAME_LE.tar.gz"
+# rRNA profile HMMs for Barrnap-style rRNA prediction (--rrna_model of dfast)
+rrna_urls = {
+    "barrnap": "https://raw.githubusercontent.com/tseemann/barrnap/0.9/db/{}.hmm",  # bac, arc, euk
+    "rfam": "https://ftp.ebi.ac.uk/pub/databases/Rfam/{}/Rfam.seed.gz".format(RFAM_RELEASE),
+}
+
+cdd_url = "https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/little_endian/DBNAME_LE.tar.gz"
+# Annotation data for rpsbproc. They must come from the same CDD release as the RPS-BLAST databases,
+# because PSSM-IDs are renumbered between releases.
+cdd_annotation_url = "https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/"
+cdd_annotation_files = ["cdd.info", "cddid.tbl.gz", "cdtrack.txt", "family_superfamily_links",
+                        "cddannot.dat.gz", "cddannot_generic.dat.gz", "bitscore_specific.txt"]
 
 description = """\
 DFAST file downloader\n\
 
-    --protein, --cdd, --hmm: For DFAST reference libraries. 
+    --protein, --rrna, --cdd, --hmm: For DFAST reference libraries. 
         Files will be downloaded to DB root directory by default.
         DB root can be specified with "--dbroot" option.
 
@@ -84,8 +99,11 @@ parser.add_argument("--protein", nargs='+', choices=list(db_urls.keys()),
                          help="DFAST reference databases. [{}]".format("|".join(list(db_urls.keys()))), metavar="STR")
 parser.add_argument("--cdd", nargs='+', choices=["Cdd", "Cdd_NCBI", "Cog", "Kog", "Pfam", "Prk", "Smart", "Tigr"],
                          help="Preformatted RPS-BLAST database. [Cdd|Cdd_NCBI|Cog|Kog|Pfam|Prk|Smart|Tigr]", metavar="STR")
-parser.add_argument("--hmm", nargs='+', choices=["Pfam", "TIGR", "dbCAN"],
+parser.add_argument("--hmm", nargs='+', choices=["NCBIfam", "Pfam", "TIGR", "dbCAN"],
                          help="Preformatted RPS-BLAST database. [Pfam|TIGR|dbCAN]", metavar="STR")
+parser.add_argument("--rrna", nargs='+', choices=list(rrna_urls.keys()),
+                    help="rRNA profile HMMs (bac, arc and euk) for rRNA prediction. 'barrnap' (default model of DFAST) downloads\n"
+                         "the Barrnap 0.9 models; 'rfam' builds models from Rfam {} seed alignments with hmmbuild.".format(RFAM_RELEASE))
 parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
@@ -103,7 +121,7 @@ group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_R
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not args.mefinder:
+if all(x is None for x in [args.protein, args.rrna, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not args.mefinder:
     parser.print_help()
     exit()
 
@@ -115,6 +133,39 @@ def retrieve_dfast_reference(db_name, out_dir="."):
     logger.info("\tTarget URL: {}".format(target_url))
     return output_file
 
+
+def retrieve_rrna_model(model, out_dir="."):
+    """Write one model file per kingdom and return their paths."""
+    output_files = [os.path.join(out_dir, RRNA_MODELS[model][0].format(kingdom)) for kingdom in KINGDOMS]
+    if model == "barrnap":
+        for kingdom, output_file in zip(KINGDOMS, output_files):
+            logger.info("\tDownloading {}".format(rrna_urls[model].format(kingdom)))
+            request.urlretrieve(rrna_urls[model].format(kingdom), output_file)
+    else:
+        logger.info("\tDownloading {}".format(rrna_urls[model]))
+        seed_file = os.path.join(out_dir, "Rfam_{}.seed.gz".format(RFAM_RELEASE))
+        request.urlretrieve(rrna_urls[model], seed_file)
+        for kingdom, output_file in zip(KINGDOMS, output_files):
+            build_rrna_hmm(seed_file, output_file, RFAM_FAMILIES[kingdom])
+        os.remove(seed_file)
+    return output_files
+
+
+def retrieve_ncbifam(out_dir=".", no_indexing=False):
+    """
+    Download the NCBI HMM collection (hmm_PGAP.LIB) and its attribute table (hmm_PGAP.tsv), and make
+    a TIGR-only subset. Writes NCBIfam_<release>.LIB, NCBIfam_<release>_TIGR.LIB and NCBIfam_<release>.tsv.
+    """
+    prefix = os.path.join(out_dir, "NCBIfam_{}".format(ncbifam_release))
+    all_models, tigr_models, attributes = prefix + ".LIB", prefix + "_TIGR.LIB", prefix + ".tsv"
+    for file_name, output_file in (("hmm_PGAP.tsv", attributes), ("hmm_PGAP.LIB", all_models)):
+        logger.info("\tDownloading {}".format(ncbifam_url + file_name))
+        request.urlretrieve(ncbifam_url + file_name, output_file)
+    count = extract_hmm_models(all_models, tigr_models, "TIGR")
+    logger.info("\tExtracted {} TIGR models into {}".format(count, tigr_models))
+    if not no_indexing:
+        run_hmmpress(all_models)
+        run_hmmpress(tigr_models)
 
 def retrieve_hmm(db_name, out_dir="."):
     target_url = hmm_urls[db_name]
@@ -140,18 +191,31 @@ def retrieve_cdd_ftp(db_name, out_dir="."):
     return output_file
 
 def retrieve_cdd(db_name, out_dir="."):
-    if db_name != "Cog":
-        logger.warning("Currently, only 'cog' is supported for CDD database.")
-        exit(1)
-
-    # target_url = cdd_url.replace("DBNAME", db_name)
-    target_url = "https://ddbj.nig.ac.jp/public/software/dfast/cog.tar.gz"
-    logger.warning("Cog reference data will be downloaded from https://ddbj.nig.ac.jp/public/software/dfast/cog.tar.gz")
-    target_file = os.path.basename(target_url)
-    output_file = os.path.join(out_dir, target_file)
-    request.urlretrieve(target_url, output_file)
+    target_url = cdd_url.replace("DBNAME", db_name)
     logger.info("\tDownloading {}".format(target_url))
+    output_file = os.path.join(out_dir, os.path.basename(target_url))
+    request.urlretrieve(target_url, output_file)
     return output_file
+
+def remove_cdd_database_files(db_name, out_dir):
+    """Remove files of an older release (e.g. single-volume Cog.pin) so that they do not shadow the new one."""
+    for file_name in os.listdir(out_dir):
+        if file_name.startswith(db_name + "."):
+            os.remove(os.path.join(out_dir, file_name))
+
+def retrieve_rpsbproc_data(out_dir):
+    """Download the annotation data files that rpsbproc needs (-d option)."""
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    for file_name in cdd_annotation_files:
+        target_url = cdd_annotation_url + file_name
+        logger.info("\tDownloading {}".format(target_url))
+        output_file = os.path.join(out_dir, file_name)
+        request.urlretrieve(target_url, output_file)
+        if file_name.endswith(".gz"):
+            with gzip.open(output_file, "rb") as fr, open(output_file[:-3], "wb") as fw:
+                shutil.copyfileobj(fr, fw)
+            os.remove(output_file)
 
 def retrieve_assembly(accession, out_dir="."):
     def _get_ftp_directory(accession):
@@ -417,6 +481,15 @@ if args.protein:
             if not args.no_indexing:
                 prepare_database(output_file)
 
+if args.rrna:
+    db_root = get_db_root(args)
+    out_dir = os.path.join(db_root, "rrna")
+    os.makedirs(out_dir, exist_ok=True)
+    logger.info("Preparing rRNA profile HMMs. Files will be written into '{}'".format(out_dir))
+    for model in args.rrna:
+        for output_file in retrieve_rrna_model(model, out_dir):
+            logger.info("\tWritten to {}".format(os.path.abspath(output_file)))
+
 if args.cdd:
     db_root = get_db_root(args)
     out_dir = os.path.join(db_root, "cdd")
@@ -428,8 +501,14 @@ if args.cdd:
         retrieved_file = retrieve_cdd(db_name, out_dir)
         if retrieved_file:
             logger.info("\tDownloaded to {}".format(os.path.abspath(retrieved_file)))
+            remove_cdd_database_files(db_name, out_dir)
             extract_tar_file(retrieved_file, out_dir)
             logger.info("\tUnarchived {}".format(retrieved_file))
+    rpsbproc_data_dir = os.path.join(out_dir, "rpsbproc_data")
+    logger.info("Downloading annotation data for rpsbproc into '{}'".format(rpsbproc_data_dir))
+    retrieve_rpsbproc_data(rpsbproc_data_dir)
+    with open(os.path.join(rpsbproc_data_dir, "cdd.info")) as f:
+        logger.info("\t" + f.readline().strip())  # e.g. "cdd version 3.21"
 
 if args.hmm:
     # print(args.hmm)
@@ -440,6 +519,9 @@ if args.hmm:
     logger.info("Ttyring to fetch profile-HMM databases for {0}. Files will be written into '{1}'".format(",".join(args.hmm), out_dir))
     for db_name in args.hmm:
         logger.info("Downloading HMM database for {}...".format(db_name))
+        if db_name == "NCBIfam":
+            retrieve_ncbifam(out_dir, args.no_indexing)
+            continue
         retrieved_file = retrieve_hmm(db_name, out_dir)
         if retrieved_file:
             logger.info("\tDownloaded to {}".format(os.path.abspath(retrieved_file)))

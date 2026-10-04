@@ -140,7 +140,7 @@ class MBGDsearch(BaseAnnotationComponent):
             self.logger.warning("Fasta file for hit proteins does not exist or is empty. blastdbcmd might have failed.")
 
     def run(self):
-        self.prepareQueries()
+        self.prepareAlignerQueries()
         self.createCommands() # inherited from DBsearch
         self.executeCommands(shell=True)
         self.set_ref_info()

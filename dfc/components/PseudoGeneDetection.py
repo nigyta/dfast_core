@@ -18,7 +18,7 @@ Alignment = namedtuple("Alignment", ["id", "start", "aligned_length", "strand", 
 
 class PseudoGeneDetection(BaseAnnotationComponent):
     instances = 0
-    PAT_SCORE = re.compile(r"a score=(\d+) EG2=(.+) E=(.+)")
+    PAT_SCORE = re.compile(r"a score=(\d+) EG2?=(.+) E=(.+)")  # LAST 1648 or later writes "EG=" instead of "EG2="
 
     def __init__(self, genome, options, workDir, CPU):
         super(PseudoGeneDetection, self).__init__(genome, options, workDir, CPU)
@@ -269,9 +269,9 @@ class PseudoGeneDetection(BaseAnnotationComponent):
                     self.trans_except.append((query_alignment.id, stop_codon_location))  # region = N-term or C-term
                 if D["stop_codon"]:
                     note = "Stop codon at " + ", ".join(
-                        ["[{0}:{1}]({2})".format(x[0]+1, x[1], x[2]) for x in list(D["stop_codon"])]) + "."
+                        ["[{0}:{1}]({2})".format(x[0]+1, x[1], x[2]) for x in sorted(D["stop_codon"])]) + "."
                 if D["indel"]:
-                    note = "Frameshift due to insertion/deletion at around " + ", ".join(map(str, D["indel"])) + "."
+                    note = "Frameshift due to insertion/deletion at around " + ", ".join(map(str, sorted(D["indel"]))) + "."
                 # As of 1.2.16, insertion and deletion are integrated as indel.
                 # if D["insertion"]:
                 #     note = "Frameshift due to the insertion at around " + ", ".join(map(str, D["insertion"])) + "."

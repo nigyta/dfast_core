@@ -148,8 +148,18 @@ class Config:
             "target": "rRNA",
             "enabled": True,
              "options": {
-                 # Barrnap runs with '--reject 0.5' unless --reject is given in cmd_options.
-                 # You can set parameters such as --reject and --lencutoff to cmd_options.
+                 # nhmmer searches rRNA profile HMMs in db_dir with the Barrnap method (dfast_file_downloader.py --rrna).
+                 # model: "barrnap" (Barrnap 0.9 models, default) or "rfam" (built from Rfam seed alignments).
+                 "model": "barrnap",
+                 # kingdoms: prokaryotic models to search, "bac" and/or "arc" (--rrna_kingdom). With both,
+                 # overlapping hits compete by bit score.
+                 "kingdoms": ["bac"],
+                 # check_eukaryotic: also search the euk models as a contamination check. 18S/28S hits that
+                 # outscore the prokaryotic models become misc_feature ("possible contamination").
+                 "check_eukaryotic": True,
+                 "db_dir": "@@DB_ROOT@@/rrna",
+                 # Rejects hits shorter than 50% of the expected length unless --reject is given in cmd_options.
+                 # You can set --reject, --lencutoff and --evalue to cmd_options.
                  # "cmd_options": "--reject 0.4 --lencutoff 0.6"
              },
         },
@@ -219,7 +229,7 @@ class Config:
                 "evalue_cutoff": 1e-6,
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
-                "aligner": "ghostx",  # ghostx, ghostz, or blastp
+                "aligner": "ghostx",  # ghostx, blastp or diamond
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "references": [
                 ]
@@ -291,7 +301,7 @@ class Config:
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
                 "pident_cutoff": 0,
-                "aligner": "ghostx",  # ghostx, ghostz or blastp
+                "aligner": "ghostx",  # ghostx, blastp or diamond
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "",
                 "db_name": "",
@@ -309,7 +319,7 @@ class Config:
                 "qcov_cutoff": 75,
                 "scov_cutoff": 75,
                 "pident_cutoff": 0,
-                "aligner": "ghostx",  # ghostz, ghostx or blastp
+                "aligner": "ghostx",  # ghostx, blastp or diamond
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "@@DB_ROOT@@/protein/DFAST-default.ref",
                 "db_name": "",
@@ -350,16 +360,30 @@ class Config:
         },
         {
             # Search against a profile-HMM database using hmmscan.
-            # In the standard workflow, TIGRFAM HMM library will be searched.
+            # TIGR models of the NCBI HMM collection (release 20.0), with trusted cutoffs.
+            # Hits marked for naming in "attributes" (hmm_PGAP.tsv) give product, gene and EC_number to CDSs without a database hit.
+            # Use "--hmm_db ncbifam" to search the whole collection (the next entry) instead.
             "component_name": "HMMscan",
             "enabled": True,
             "options": {
                 # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
                 "skipAnnotatedFeatures": True,
-                "evalue_cutoff": 1e-6,
-                "database": "@@DB_ROOT@@/hmm/TIGRFAMs_15.0_HMM.LIB",
+                "database": "@@DB_ROOT@@/hmm/NCBIfam_20.0_TIGR.LIB",
+                "attributes": "@@DB_ROOT@@/hmm/NCBIfam_20.0.tsv",
                 "db_name": "TIGR",
-                "cmd_options": ""
+                "cmd_options": "--cut_tc"  # evalue_cutoff is ignored when cmd_options is set
+            },
+        },
+        {
+            # Whole NCBI HMM collection (TIGR, NCBIFAM, and models derived from PRK clusters). Enabled by "--hmm_db ncbifam".
+            "component_name": "HMMscan",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": True,
+                "database": "@@DB_ROOT@@/hmm/NCBIfam_20.0.LIB",
+                "attributes": "@@DB_ROOT@@/hmm/NCBIfam_20.0.tsv",
+                "db_name": "NCBIfam",
+                "cmd_options": "--cut_tc"
             },
         },
         {
@@ -385,7 +409,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "@@DB_ROOT@@/cdd/Cog",
-                "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
+                "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
         {
@@ -397,7 +421,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "",  # eg @@DB_ROOT@@/cdd/Prk
-                "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
+                "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
 

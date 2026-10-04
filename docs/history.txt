@@ -1,3 +1,34 @@
+Ver 1.5.0 (20261004) ---------------------------------------
+DFAST stops bundling executables so that its dependencies can be installed from Bioconda or apt and maintained more easily. Together with Ver 1.6, this will let DFAST run on linux-aarch64 and osx-arm64 as well. Ver 1.5 keeps the results compatible with earlier versions as far as possible; MGA and CRT are still bundled and will be replaced in Ver 1.6 (see Roadmap below).
+
+The following programs are no longer bundled and must be on PATH (e.g. conda install -c bioconda -c conda-forge blast rpsbproc hmmer last aragorn ghostx diamond):
+  - BLAST+ 2.13 or later (blastp, blastn, makeblastdb, blastdbcmd, rpsblast). Databases are created in the BLAST database version 5 format; version 4 databases created by older DFAST can still be used.
+  - rpsbproc 0.5 or later for CDDsearch.
+  - HMMER 3 (hmmscan, hmmsearch, hmmpress, and nhmmer and hmmbuild for rRNA prediction).
+  - LAST 1180 or later. PseudoGeneDetection passes the genetic code with 'lastal -G <transl_table>' instead of the custom lastal4 binary.
+  - Aragorn for tRNA/tmRNA prediction.
+  - GHOSTX, still the default aligner. DIAMOND is needed only for '--aligner diamond'. The bundled GHOSTZ has been removed.
+Perl is no longer required for the default workflow. Java is still required for CRT until Ver 1.6.
+
+rRNA prediction: Barrnap (Perl) has been reimplemented in Python, with reference to the source code of Barrnap by Torsten Seemann. DFAST runs nhmmer directly against rRNA profile HMMs and applies the Barrnap 0.8 rules; with the Barrnap models the rRNA results are identical to the bundled Barrnap 0.8. The models are no longer bundled: run 'dfast_file_downloader.py --rrna barrnap' (Barrnap 0.9 models). The inference qualifier changes to "COORDINATES:profile:BarrnapHmm:0.9". New options:
+  - '--rrna_model rfam' uses models built from Rfam 15.1 seed alignments ('dfast_file_downloader.py --rrna rfam'). Planned to become the default in a future version.
+  - '--rrna_kingdom bac arc' searches the bacterial and archaeal models; overlapping hits compete and the best-scoring model wins.
+  - Eukaryotic rRNA models are always searched as a contamination check (check_eukaryotic in the config). Eukaryotic 18S/28S rRNAs that outscore the prokaryotic models (e.g. host contamination in MAGs) become misc_feature ("eukaryotic 18S ribosomal RNA-like sequence, possible contamination"), and hypothetical CDSs overlapping them on either strand are removed.
+
+The COG reference data for RPS-BLAST (CDDsearch) has been updated from COG v1.0 (2020, equivalent to CDD 3.18, distributed from the DFAST server) to COG v2.0 in NCBI CDD 3.21 (5,137 PSSMs). 'dfast_file_downloader.py --cdd Cog' now downloads it from NCBI together with the annotation data for rpsbproc from the same CDD release (cdd/rpsbproc_data). The old pair of COG data and rpsbproc data did not match, so some hits were reported only as superfamilies and no COG was assigned; COG assignments increase with the new data.
+
+HMMscan uses the NCBI HMM collection 20.0 used by PGAP instead of TIGRFAMs 15.0. Run 'dfast_file_downloader.py --hmm NCBIfam'. By default its TIGR models are searched with trusted cutoffs ('--hmm_db ncbifam' searches the whole collection), and CDSs without a database hit are named by HMMs marked for naming (product, gene, EC_number and /inference="protein motif:HMM:<accession>"). This reduces hypothetical proteins and changes such CDSs from earlier versions.
+
+DIAMOND ('--aligner diamond') runs in the --very-sensitive mode as one process with multiple threads, which is faster and uses less memory than one process per CPU.
+
+To update the reference data from Ver 1.4.x: dfast_file_downloader.py --rrna barrnap --cdd Cog --hmm NCBIfam
+
+Roadmap:
+  - Ver 1.6 (next): replace the last bundled programs to complete the switch. MGA will be replaced by Prodigal for CDS prediction, and CRT by Diced (a reimplementation of MinCED) for CRISPR detection with the CRT parameters, which also removes the Java dependency. DFAST will then contain no bundled executables. CDS predictions will change with Prodigal.
+  - GHOSTX will run as one process with multiple threads once the Bioconda package is built with OpenMP.
+  - '--use_rnammer' is deprecated and will be removed in Ver 1.6 (RNAmmer needs HMMER 2). Use the default rRNA prediction instead.
+
+
 Ver 1.4.3 (20261002) ---------------------------------------
 Partial rRNAs are now reported as misc_feature. Barrnap hits aligned to less than 80% of the expected length ("aligned only N percent") become misc_feature with note "putative rRNA, aligned only ..." and no product; those less than 10 bp from a contig end are extended to the end and shown as partial (< or >). Barrnap now runs with '--reject 0.5' unless --reject is set in cmd_options, since the default differs between Barrnap 0.8 and 0.9.
 

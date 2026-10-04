@@ -150,10 +150,18 @@ class FeatureUtil(object):
         an rRNA overlapping a CDS by even one base (ANN5310), and a tRNA completely contained
         in a CDS (ANN5320). Hypothetical CDSs are removed. If a CDS with a functional product is
         involved, the RNA is removed instead and the CDSs are kept.
+        Hypothetical CDSs overlapping a eukaryotic rRNA-like misc_feature (possible contamination) on either
+        strand are also removed. CDSs with a functional product are kept with it (the validator accepts this).
         """
         for seq_record in self.genome.seq_records.values():
             cdss = [f for f in seq_record.features if f.type == "CDS"]
             removed_ids = set()
+            for misc in [f for f in seq_record.features if f.annotations.get("eukaryotic_rrna")]:
+                for cds in cdss:
+                    if cds.id not in removed_ids and overlaps(misc, cds) and is_hypothetical_cds(cds):
+                        removed_ids.add(cds.id)
+                        self._record_removal(cds, "hypothetical CDS overlapping eukaryotic rRNA-like {} at {}".format(
+                            misc.id, format_location(misc)))
             for rna in [f for f in seq_record.features if f.type in ("rRNA", "tRNA")]:
                 conflicts = [cds for cds in cdss if cds.id not in removed_ids and rna_conflicts_with_cds(rna, cds)]
                 if not conflicts:
@@ -379,9 +387,12 @@ class FeatureUtil(object):
 HYPOTHETICAL_PRODUCTS = {"hypothetical protein", "conserved protein", "uncharacterized protein", "conserved hypothetical protein"}
 
 
+def overlaps(one, other):
+    return int(one.location.start) < int(other.location.end) and int(other.location.start) < int(one.location.end)
+
+
 def overlaps_on_same_strand(one, other):
-    return (one.location.strand == other.location.strand
-            and int(one.location.start) < int(other.location.end) and int(other.location.start) < int(one.location.end))
+    return one.location.strand == other.location.strand and overlaps(one, other)
 
 
 def rna_conflicts_with_cds(rna, cds):
@@ -414,6 +425,8 @@ def adjust_rrna(feature, seq_len, gaps):
     - They are converted to misc_feature ("putative rRNA, aligned only N percent ...").
     - An end less than CONTIG_END_MARGIN bases from a contig end is extended to that end and shown as partial (< or >).
     Other rRNAs stay rRNA and are never extended to a contig end.
+    Eukaryotic rRNAs (annotations["eukaryotic_rrna"], from Barrnap with the euk models) are converted to
+    misc_feature ("eukaryotic 18S ribosomal RNA-like sequence, possible contamination").
     For all rRNAs:
     - An end overlapping an assembly gap is trimmed to the gap and shown as partial (< or >).
     - A gap inside the feature splits it into two pieces, each converted to misc_feature
@@ -465,7 +478,8 @@ def adjust_rrna(feature, seq_len, gaps):
     segments = [seg for seg in segments if not _too_short(seg[0], seg[1])]
     other_notes = [note for note in notes if not note.startswith("aligned only")]
     product = feature.qualifiers.get("product", [""])[0]
-    to_misc = split or bool(aligned)
+    eukaryotic = feature.annotations.get("eukaryotic_rrna", False)
+    to_misc = split or bool(aligned) or eukaryotic
 
     results = []
     for i, (s, e, lp, rp) in enumerate(segments):
@@ -476,9 +490,14 @@ def adjust_rrna(feature, seq_len, gaps):
                                          AfterPosition(e) if rp else ExactPosition(e), loc.strand)
         truncation = [TRUNCATION_NOTES[reason] for reason in sorted({lp, rp} - {None})]
         if to_misc:
-            prefix = "putative rRNA overlapping an assembly gap" if split else "putative rRNA"
+            if eukaryotic:
+                head = ["eukaryotic {}-like sequence, possible contamination".format(product)] + aligned
+                head += ["overlapping an assembly gap"] if split else []
+            else:
+                prefix = "putative rRNA overlapping an assembly gap" if split else "putative rRNA"
+                head = ["{}, {}".format(prefix, aligned[0] if aligned else product)]
             piece.qualifiers.pop("product", None)
-            piece.qualifiers["note"] = ["{}, {}".format(prefix, aligned[0] if aligned else product)] + truncation + other_notes
+            piece.qualifiers["note"] = head + truncation + other_notes
             piece.type = "misc_feature"
             piece.annotations["putative_rrna"] = True
         elif truncation:

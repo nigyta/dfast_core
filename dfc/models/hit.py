@@ -84,20 +84,33 @@ class ProteinHit(Hit):
 
 class HmmHit(Hit):
 
-    def __init__(self, accession, name, description, evalue, score, bias, db_name):
+    def __init__(self, accession, name, description, evalue, score, bias, db_name, attributes=None):
         self.accession, self.name, self.description, self.evalue, self.score, self.bias, self.db_name = \
             accession, name, description, float(evalue), float(score), float(bias), db_name
+        # Attributes of the HMM from the NCBI HMM collection (hmm_PGAP.tsv), used to name the protein.
+        self.attributes = attributes
 
     def __repr__(self):
         return "{hmm.db_name}:{hmm.accession}; {hmm.description} [Name:{hmm.name}, Eval:{hmm.evalue:.1e}, score:{hmm.score:.1f}, bias:{hmm.bias:.1f}]".format(
             hmm=self)
 
     def assign(self, feature, verbosity=2):
+        """As the primary hit, an HMM with naming attributes gives the CDS its product, gene and EC_number."""
+        if feature.type == "CDS" and self.attributes:
+            feature.qualifiers["product"] = [self.attributes["product_name"]]
+            if self.attributes["gene_symbol"]:
+                feature.qualifiers["gene"] = [self.attributes["gene_symbol"]]
+            if self.attributes["ec_number"]:
+                feature.qualifiers["EC_number"] = [x.strip() for x in self.attributes["ec_number"].split(",")]
+            feature.qualifiers.setdefault("inference", []).append(self.get_inference())
         self.assign_as_note(feature, verbosity=verbosity)
 
     def assign_as_note(self, feature, verbosity=2):
         if verbosity >= 2:
             feature.qualifiers.setdefault("note", []).append(str(self))
+
+    def get_inference(self):
+        return "protein motif:HMM:{}".format(self.accession)
 
 class CddHit(Hit):
     def __init__(self, result_type, hit_type, pssm_id, from_, to_, evalue, score, accession, short_name, incomplete, description):
@@ -225,7 +238,7 @@ class PseudoGene(Hit):
                 feature.qualifiers.setdefault("note", []).append(note)
             if len(self.indel) > 0:
                 note = "frameshifted"
-                note += ", insertion/deletion at around " + ",".join(map(str, self.indel))
+                note += ", insertion/deletion at around " + ",".join(map(str, sorted(self.indel)))
                 # if len(self.insertion) > 0:
                 #     note += ", insertion at around " + ",".join(map(str, self.insertion))
                 # if len(self.deletion) > 0:

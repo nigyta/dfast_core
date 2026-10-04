@@ -9,27 +9,31 @@ class Diamond(Aligner):
     Diamond
 
     Tool type: Protein-protein alignment
-    URL: 
-    REF: 
+    URL: https://github.com/bbuchfink/diamond
+    REF: https://doi.org/10.1038/s41592-021-01101-x
 
     diamond makedb --in DFAST-default.faa --db DFAST-default
     # Will output the Diamond's database file "DFAST-default.dmnd"
     
     diamond blastp --db DFAST-default.dmnd --query protein.faa -o dmnd.out.tsv --threads 1 --max-hsps 1 --max-target-seqs 1 --evalue 1e-5 
+
+    --very-sensitive: the default (fast) mode misses more hits than GHOSTX; very-sensitive annotates
+    as many CDSs as blastp within about 1 point, and is faster than --sensitive.
     """
     version = None
     NAME = "Diamond"
     VERSION_CHECK_CMD = ["diamond", "version"]
     VERSION_PATTERN = r"diamond version (.+)"
+    MULTITHREAD = True  # 1 process x N threads: 2-5 times faster with 1/N memory than N processes x 1 thread
 
     def format_db_command(self, db_fasta_file, db_name):
         return ["diamond", "makedb", "--in", db_fasta_file, "--db", db_name]
 
     def get_command(self, query_file, db_name, result_file):
-        return ["diamond", "blastp", "--query", query_file, "--db", db_name, "--out", result_file, "--threads 1 --max-hsps 1 --max-target-seqs 1"]
+        return ["diamond", "blastp", "--query", query_file, "--db", db_name, "--out", result_file, "--very-sensitive --threads", str(self.threads), "--max-hsps 1 --max-target-seqs 1"]
 
     def get_self_alignment_command(self, query_file, db_name, result_file):
-        return ["diamond", "blastp", "--query", query_file, "--db", db_name, "--out", result_file, "--threads 1 --max-hsps 1 --max-target-seqs 100"]
+        return ["diamond", "blastp", "--query", query_file, "--db", db_name, "--out", result_file, "--very-sensitive --threads", str(self.threads), "--max-hsps 1 --max-target-seqs 100"]
 
 if __name__ == '__main__':
     from logging import getLogger, INFO, DEBUG, StreamHandler

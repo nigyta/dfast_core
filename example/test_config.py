@@ -114,8 +114,18 @@ class Config:
             "tool_name": "Barrnap",
              "enabled": False,
              "options": {
-                 # Currently, Barrnap will run with default settings.
-                 # You can set parameters such as --reject and --lencutoff to cmd_options.
+                 # nhmmer searches rRNA profile HMMs in db_dir with the Barrnap method (dfast_file_downloader.py --rrna).
+                 # model: "barrnap" (Barrnap 0.9 models, default) or "rfam" (built from Rfam seed alignments).
+                 "model": "barrnap",
+                 # kingdoms: prokaryotic models to search, "bac" and/or "arc" (--rrna_kingdom). With both,
+                 # overlapping hits compete by bit score.
+                 "kingdoms": ["bac"],
+                 # check_eukaryotic: also search the euk models as a contamination check. 18S/28S hits that
+                 # outscore the prokaryotic models become misc_feature ("possible contamination").
+                 "check_eukaryotic": True,
+                 "db_dir": "@@DB_ROOT@@/rrna",
+                 # Rejects hits shorter than 50% of the expected length unless --reject is given in cmd_options.
+                 # You can set --reject, --lencutoff and --evalue to cmd_options.
                  # "cmd_options": "--reject 0.4 --lencutoff 0.6"
              },
         },
@@ -235,15 +245,28 @@ class Config:
             },
         },
         {
-            # Search against a profile-HMM database using hmmscan.
-            # In the standard workflow, TIGRFAM HMM library will be searched.
+            # Search against a profile-HMM database using hmmscan: TIGR models of the NCBI HMM collection (release 20.0),
+            # with trusted cutoffs. Hits marked for naming give product, gene and EC_number to CDSs without a database hit.
             "component_name": "HMMscan",
             "enabled": False,
             "options": {
                 "skipAnnotatedFeatures": True,
-                "evalue_cutoff": 1e-6,
-                "database": "@@APP_ROOT@@/db/hmm/TIGRFAMs_15.0_HMM.LIB",
+                "database": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0_TIGR.LIB",
+                "attributes": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0.tsv",
                 "db_name": "TIGR",
+                "cmd_options": "--cut_tc",
+            },
+        },
+        {
+            # Whole NCBI HMM collection (TIGR, NCBIFAM, and models derived from PRK clusters). Enabled by "--hmm_db ncbifam".
+            "component_name": "HMMscan",
+            "enabled": False,
+            "options": {
+                "skipAnnotatedFeatures": True,
+                "database": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0.LIB",
+                "attributes": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0.tsv",
+                "db_name": "NCBIfam",
+                "cmd_options": "--cut_tc",
             },
         },
         {
@@ -266,7 +289,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "@@APP_ROOT@@/db/cdd/Cog",
-                "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
+                "rpsbproc_data": "@@APP_ROOT@@/db/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
         {
@@ -277,7 +300,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "database": "",  # eg @@APP_ROOT@@/db/cdd/Prk
-                "rpsbproc_data": "@@APP_ROOT@@/bin/common/rpsbproc_data",  # Do not change this.
+                "rpsbproc_data": "@@APP_ROOT@@/db/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
 

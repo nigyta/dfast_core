@@ -96,6 +96,15 @@ class BaseAnnotationComponent(object):
             with open(fasta_file, "w") as f:
                 f.write(fasta_buffer)
 
+    def prepareAlignerQueries(self):
+        """
+        Queries for self.aligner: one file per CPU for single-threaded aligners (run as CPU processes),
+        or one file searched with CPU threads for aligners with MULTITHREAD.
+        """
+        if self.aligner.MULTITHREAD:
+            self.aligner.threads = self.CPU
+        self.prepareQueries(split_query=not self.aligner.MULTITHREAD)
+
     @staticmethod
     def get_coverage(start, end, length):
         return 100.0 * (int(end) - int(start) + 1) / int(length)

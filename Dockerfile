@@ -1,5 +1,4 @@
-# Pin to linux/amd64: the bundled binaries under bin/Linux are x86_64,
-# so the image must be amd64 (also keeps the libidn.so path below valid).
+# Pin to linux/amd64: the bundled binaries under bin/Linux (MGA) are x86_64, so the image must be amd64.
 FROM --platform=linux/amd64 python:3.13
 
 # Environment variables
@@ -13,7 +12,7 @@ RUN mkdir /work && chmod 777 /work
 # Install dependency
 RUN pip install biopython && \
     apt-get update && \
-    apt install -y default-jre zip prodigal infernal ncbi-blast+ && \
+    apt install -y default-jre zip prodigal infernal ncbi-blast+ hmmer last-align aragorn && \
     ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -27,14 +26,34 @@ RUN cd /tmp  && \
     rm -r /tmp/tRNAscan-SE-2.0.12 /tmp/v2.0.12.tar.gz && \
     cd /work
 
-# For compatibility (required for older version of BLAST binaries that link libidn.so.11).
-# Debian 13 (trixie) only ships libidn12, so install it and provide a libidn.so.11 symlink.
-RUN apt-get update && apt-get install -y libidn12 && \
-    ln -sf /usr/lib/x86_64-linux-gnu/libidn.so.12 /usr/lib/x86_64-linux-gnu/libidn.so.11 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# BLAST+ (blastp, blastn, makeblastdb, blastdbcmd, rpsblast), HMMER, LAST and Aragorn come from ncbi-blast+, hmmer, last-align
+# and aragorn above; they are no longer bundled.
+# rpsbproc 0.5 for CDDsearch. Debian installs rpsblast as "rpsblast+".
+# The NCBI rpsbproc binary links libdw.so.1 (elfutils).
+RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
+    apt-get update && apt-get install -y libdw1t64 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    cd /tmp && \
+    curl -LO https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/RpsbProc-x64-linux.tar.gz && \
+    tar xfz RpsbProc-x64-linux.tar.gz && \
+    install -m 755 RpsbProc-x64-linux/rpsbproc /usr/local/bin/rpsbproc && \
+    rm -r RpsbProc-x64-linux RpsbProc-x64-linux.tar.gz && \
+    rpsblast -version && rpsbproc -version && lastal -V && aragorn -h | grep ARAGORN
+
+# Protein aligners: GHOSTX (default) is built from source, as Bioconda does (the C++ sources need -std=c++14).
+# DIAMOND (--aligner diamond) is the official static binary; Debian's diamond-aligner is older.
+RUN cd /tmp && \
+    curl -LO http://www.bi.cs.titech.ac.jp/ghostx/releases/ghostx-1.3.7.tar.gz && \
+    echo "c2bd846e2d7c648931601578501db3aea89c4c5af8fa5f3fa79680c8fe0755bf  ghostx-1.3.7.tar.gz" | sha256sum -c && \
+    tar xfz ghostx-1.3.7.tar.gz && \
+    make -C ghostx-1.3.7/src -j"$(nproc)" CXX="g++ -std=c++14" && \
+    install -m 755 ghostx-1.3.7/src/ghostx /usr/local/bin/ghostx && \
+    rm -r ghostx-1.3.7 ghostx-1.3.7.tar.gz && \
+    curl -L https://github.com/bbuchfink/diamond/releases/download/v2.2.8/diamond-linux64.tar.gz | tar xz -C /usr/local/bin diamond && \
+    ghostx -h | grep "homology search tool" && diamond version
 
 # Prepare reference data (currently disabled)
-# RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm TIGR
+# RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm NCBIfam
 
 # PlasmidFinder (v3.x) and KMA
 RUN pip install plasmidfinder && \
