@@ -213,6 +213,15 @@ def enable_rnammer(config, model):
             setting["enabled"] = False
 
 
+def set_rrna_model(config, model):
+    """Choose the rRNA profile HMMs for Barrnap: "barrnap" (Barrnap 0.9 models, default) or "rfam"."""
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") == "Barrnap":
+            setting.setdefault("options", {})["model"] = model
+    logger.info("Barrnap will use the {} rRNA models.".format(model))
+
+
+
 def _select_CDS_prediction_tool(config, tool_name):
     for setting in config.STRUCTURAL_ANNOTATION:
         if setting.get("target", "") == "CDS":

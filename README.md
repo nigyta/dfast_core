@@ -55,19 +55,15 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.  
 
 * **BLAST+, rpsbproc, HMMER, LAST and Aragorn**  
-  BLAST+ (2.13 or later; `blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`), `rpsbproc` (0.5 or later, for CDDsearch, i.e. COG assignment), HMMER (3.x; `hmmscan`, `hmmsearch`, `hmmpress`), LAST (1180 or later; `lastdb`, `lastal`, for PseudoGeneDetection) and Aragorn (1.2.x, for tRNA/tmRNA prediction) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), [HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last) and [Aragorn](https://www.trna.se/ARAGORN/), and put them in your `PATH`:
+  BLAST+ (2.13 or later; `blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`), `rpsbproc` (0.5 or later, for CDDsearch, i.e. COG assignment), HMMER (3.x; `hmmscan`, `hmmsearch`, `hmmpress`, and `nhmmer` and `hmmbuild` for rRNA prediction), LAST (1180 or later; `lastdb`, `lastal`, for PseudoGeneDetection) and Aragorn (1.2.x, for tRNA/tmRNA prediction) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), [HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last) and [Aragorn](https://www.trna.se/ARAGORN/), and put them in your `PATH`:
   ```
   conda install -c bioconda -c conda-forge blast rpsbproc hmmer last aragorn
   ```
   When DFAST is installed with conda, make sure that `rpsbproc` 0.5 or later is installed in the same environment.  
   BLAST+ 2.10 or later creates databases in the BLAST database version 5 format, which older BLAST+ (e.g. 2.6.0, previously bundled) cannot read. Databases in version 4 created by older DFAST can still be used.
 
-* **Perl and Java**  
-Some of the external programs called from DFAST depend on Perl or Java. Basically, they work with the pre-installed versions on your system.  
-For **RedHat/CentOS/Fedora**, the Time::Piece module might be required:
-  ```
-  sudo yum install perl-Time-Piece
-  ```
+* **Java**  
+CRT (CRISPR prediction) depends on Java. Basically, it works with the pre-installed version on your system. Perl is no longer required for the default workflow (optional tools such as tRNAscan-SE and RNAmmer need it).
 
 ### Source code
 Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigyta/dfast_core).
@@ -96,11 +92,12 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
 ### Reference databases
   After downloading the source code, prepare reference databases using the bundled utility script.  
   By default, database files will be generated into the directory under $DFAST_APP_ROOT/db/. You can also change the location of the directory by specifying either `--dbroot` option or `DFAST_DB_ROOT` environmental variable.
-1. **Default protein database**
+1. **Default protein database and rRNA models**
     ```
-    dfast_file_downloader.py --protein dfast
+    dfast_file_downloader.py --protein dfast --rrna barrnap
     ```
     File downloading and database indexing for GHOSTX and BLASTP will be performed. 
+    `--rrna barrnap` downloads the rRNA profile HMMs of [Barrnap](https://github.com/tseemann/barrnap) 0.9, which DFAST searches with `nhmmer` by the Barrnap method. `--rrna rfam` builds models from [Rfam](https://rfam.org/) 15.1 seed alignments with `hmmbuild`, used with `dfast --rrna_model rfam`. Barrnap is no longer bundled; run `--rrna barrnap` when you update DFAST from version 1.4.3 or earlier.
 2. **HMMer and RPS-BLAST databases (this may take time)**
     ```
     dfast_file_downloader.py --cdd Cog --hmm NCBIfam
@@ -130,7 +127,7 @@ DFAST executables are added to the `PATH` environmental variable, and the softwa
 
 After installing DFAST, download the reference databases:
 ```
-dfast_file_downloader.py --protein dfast --cdd Cog --hmm NCBIfam
+dfast_file_downloader.py --protein dfast --rrna barrnap --cdd Cog --hmm NCBIfam
 ```
 
 ## <a id="howto"></a>How to run
@@ -183,9 +180,9 @@ DFAST default annotation workflow accepts a genomic FASTA file (draft or complet
 
 ### Structural annotation
 The following tools are run in parallel to predict biological features (e.g. CDSs and RNAs). After that, partial and overlapping features will be cleaned up.
-Partial rRNAs (Barrnap hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
+Partial rRNAs (hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
 * CDS prediction (MetaGeneAnnotator)
-* rRNA prediction (Barrnap)
+* rRNA prediction (Barrnap method with nhmmer; Barrnap or Rfam models)
 * tRNA/tmRNA prediction (Aragorn)
 * CRISPR prediction (CRT)
 * Assembly gaps within sequences
@@ -247,6 +244,7 @@ Workflow options:
   --use_prodigal        Use Prodigal to predict CDS instead of MGA
   --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
   --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
+  --rrna_model STR      rRNA profile HMMs for Barrnap [barrnap(=default)|rfam]. 'rfam' uses models built from Rfam seed alignments
   --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
   --no_func_anno        Disable all functional annotation steps
@@ -290,7 +288,6 @@ DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](
 This distribution contains following external programs.
 * [MetaGeneAnnotator](http://metagene.cb.k.u-tokyo.ac.jp/) (© Hideki Noguchi)  
  Redistributed by courtesy of Hideki Noguchi at National Institute of Genetics.
-* [Barrnap](https://github.com/tseemann/barrnap) (GPLv3)
 * [CRT](http://www.room220.com/crt/) (Public domain)
 * [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/) (BSD-2-Clause)
 
@@ -308,7 +305,7 @@ The Docker container image is available from [Dockerhub:nigyta/dtast_core](https
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```
-docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --cdd Cog --hmm NCBIfam --dbroot /dfast_db
+docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --rrna barrnap --cdd Cog --hmm NCBIfam --dbroot /dfast_db
 ```
 
 Invoke DFAST:

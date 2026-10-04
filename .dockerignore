@@ -25,9 +25,6 @@ docs/
 
 # ---- Mac-only binaries (image は linux/amd64; 114M 削減) ----
 bin/Darwin/
-# bin/Linux/barrnap is a symlink to the platform-independent Perl script in bin/Darwin, so keep it.
-!bin/Darwin/barrnap
-!bin/Darwin/barrnap-0.8/
 
 # ---- 旧 docker dir（移動後は削除されるが念のため） ----
 dfc_docker/

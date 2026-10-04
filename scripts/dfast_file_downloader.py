@@ -24,7 +24,8 @@ logger.setLevel(INFO)
 logger.addHandler(StreamHandler())
 
 sys.path.append(app_root)
-from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models
+from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models, build_rrna_hmm
+from dfc.tools.barrnap import RRNA_MODELS, RFAM_RELEASE, RFAM_FAMILIES
 from dfc.utils.path_util import set_binaries_path
 
 set_binaries_path(app_root)
@@ -60,6 +61,12 @@ hmm_urls = {
     "TIGR": "https://ftp.ncbi.nlm.nih.gov/hmm/TIGRFAMs/release_15.0/TIGRFAMs_15.0_HMM.LIB.gz"
 }
 
+# rRNA profile HMMs for Barrnap-style rRNA prediction (--rrna_model of dfast)
+rrna_urls = {
+    "barrnap": "https://raw.githubusercontent.com/tseemann/barrnap/0.9/db/bac.hmm",
+    "rfam": "https://ftp.ebi.ac.uk/pub/databases/Rfam/{}/Rfam.seed.gz".format(RFAM_RELEASE),
+}
+
 cdd_url = "https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/little_endian/DBNAME_LE.tar.gz"
 # Annotation data for rpsbproc. They must come from the same CDD release as the RPS-BLAST databases,
 # because PSSM-IDs are renumbered between releases.
@@ -70,7 +77,7 @@ cdd_annotation_files = ["cdd.info", "cddid.tbl.gz", "cdtrack.txt", "family_super
 description = """\
 DFAST file downloader\n\
 
-    --protein, --cdd, --hmm: For DFAST reference libraries. 
+    --protein, --rrna, --cdd, --hmm: For DFAST reference libraries. 
         Files will be downloaded to DB root directory by default.
         DB root can be specified with "--dbroot" option.
 
@@ -94,6 +101,9 @@ parser.add_argument("--cdd", nargs='+', choices=["Cdd", "Cdd_NCBI", "Cog", "Kog"
                          help="Preformatted RPS-BLAST database. [Cdd|Cdd_NCBI|Cog|Kog|Pfam|Prk|Smart|Tigr]", metavar="STR")
 parser.add_argument("--hmm", nargs='+', choices=["NCBIfam", "Pfam", "TIGR", "dbCAN"],
                          help="Preformatted RPS-BLAST database. [Pfam|TIGR|dbCAN]", metavar="STR")
+parser.add_argument("--rrna", nargs='+', choices=list(rrna_urls.keys()),
+                    help="rRNA profile HMMs for rRNA prediction. 'barrnap' (default model of DFAST) downloads the Barrnap 0.9 models;\n"
+                         "'rfam' builds models from Rfam {} seed alignments with hmmbuild.".format(RFAM_RELEASE))
 parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
@@ -111,7 +121,7 @@ group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_R
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not args.mefinder:
+if all(x is None for x in [args.protein, args.rrna, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not args.mefinder:
     parser.print_help()
     exit()
 
@@ -121,6 +131,19 @@ def retrieve_dfast_reference(db_name, out_dir="."):
     output_file = os.path.join(out_dir, target_file)
     request.urlretrieve(target_url, output_file)
     logger.info("\tTarget URL: {}".format(target_url))
+    return output_file
+
+
+def retrieve_rrna_model(model, out_dir="."):
+    output_file = os.path.join(out_dir, RRNA_MODELS[model][0])
+    logger.info("\tDownloading {}".format(rrna_urls[model]))
+    if model == "barrnap":
+        request.urlretrieve(rrna_urls[model], output_file)
+    else:
+        seed_file = os.path.join(out_dir, "Rfam_{}.seed.gz".format(RFAM_RELEASE))
+        request.urlretrieve(rrna_urls[model], seed_file)
+        build_rrna_hmm(seed_file, output_file, RFAM_FAMILIES)
+        os.remove(seed_file)
     return output_file
 
 
@@ -453,6 +476,15 @@ if args.protein:
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_file)))
             if not args.no_indexing:
                 prepare_database(output_file)
+
+if args.rrna:
+    db_root = get_db_root(args)
+    out_dir = os.path.join(db_root, "rrna")
+    os.makedirs(out_dir, exist_ok=True)
+    logger.info("Preparing rRNA profile HMMs. Files will be written into '{}'".format(out_dir))
+    for model in args.rrna:
+        output_file = retrieve_rrna_model(model, out_dir)
+        logger.info("\tWritten to {}".format(os.path.abspath(output_file)))
 
 if args.cdd:
     db_root = get_db_root(args)

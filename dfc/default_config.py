@@ -148,8 +148,12 @@ class Config:
             "target": "rRNA",
             "enabled": True,
              "options": {
-                 # Barrnap runs with '--reject 0.5' unless --reject is given in cmd_options.
-                 # You can set parameters such as --reject and --lencutoff to cmd_options.
+                 # nhmmer searches rRNA profile HMMs in db_dir with the Barrnap method (dfast_file_downloader.py --rrna).
+                 # model: "barrnap" (Barrnap 0.9 models, default) or "rfam" (built from Rfam seed alignments).
+                 "model": "barrnap",
+                 "db_dir": "@@DB_ROOT@@/rrna",
+                 # Rejects hits shorter than 50% of the expected length unless --reject is given in cmd_options.
+                 # You can set --reject, --lencutoff and --evalue to cmd_options.
                  # "cmd_options": "--reject 0.4 --lencutoff 0.6"
              },
         },

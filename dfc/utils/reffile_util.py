@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # coding: UTF8
 
+import gzip
 import os
+import subprocess
 import sys
 import re
+import tempfile
 from logging import getLogger, DEBUG, INFO, StreamHandler
 
 from ..tools.ghostx import Ghostx
@@ -214,6 +217,34 @@ def extract_hmm_models(input_file, output_file, accession_prefix):
                     count += 1
                 record = []
     return count
+
+
+def build_rrna_hmm(rfam_seed_gz, output_file, families):
+    """
+    Build rRNA profile HMMs like Barrnap does: take the Rfam seed alignments of the families and run
+    "hmmbuild --rna -n <name>" on each. families is a list of (model name, Rfam accession), e.g. ("16S_rRNA", "RF00177").
+    """
+    names = {acc: name for name, acc in families}
+    alignments, record = {}, []
+    with gzip.open(rfam_seed_gz, "rt", encoding="latin-1") as fr:  # Stockholm records end with "//"
+        for line in fr:
+            record.append(line)
+            if line.startswith("//"):
+                accession = next((x.split()[2] for x in record if x.startswith("#=GF AC")), "")
+                if accession in names:
+                    alignments[accession] = "".join(record)
+                record = []
+    missing = set(names) - set(alignments)
+    if missing:
+        raise ValueError("Rfam families not found in {0}: {1}".format(rfam_seed_gz, ", ".join(sorted(missing))))
+    with tempfile.TemporaryDirectory() as tmp_dir, open(output_file, "w") as fw:
+        for name, accession in families:
+            alignment, hmm = os.path.join(tmp_dir, accession + ".sto"), os.path.join(tmp_dir, accession + ".hmm")
+            with open(alignment, "w") as f:
+                f.write(alignments[accession])
+            subprocess.run(["hmmbuild", "--rna", "-n", name, hmm, alignment], check=True, stdout=subprocess.DEVNULL)
+            with open(hmm) as f:
+                fw.write(f.read())
 
 
 def run_hmmpress(file_name):

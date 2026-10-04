@@ -1,7 +1,6 @@
 # coding: UTF8
 from Bio.SeqFeature import FeatureLocation, ExactPosition, BeforePosition, AfterPosition
 from dfc.models.bio_feature import ExtendedFeature
-from dfc.tools.barrnap import Barrnap
 from dfc.utils.feature_util import adjust_rrna
 
 ALIGNED_42 = "aligned only 42 percent of the 23S ribosomal RNA"
@@ -120,12 +119,6 @@ def test_complete_rrna_untouched():
     assert _coords(p) == (101, 1600) and isinstance(p.location.start, ExactPosition)
     assert p.type == "rRNA" and "note" not in p.qualifiers
 
-
-def test_barrnap_reject_default():
-    Barrnap.version = "0.8"  # skip the external version check
-    assert Barrnap(options={}).cmd_options == "--reject 0.5"
-    assert Barrnap(options={"cmd_options": "--lencutoff 0.6"}).cmd_options == "--reject 0.5 --lencutoff 0.6"
-    assert Barrnap(options={"cmd_options": "--reject 0.25"}).cmd_options == "--reject 0.25"
 
 
 def test_rrna_entirely_inside_gap_is_removed():

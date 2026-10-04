@@ -47,9 +47,11 @@ http://metagene.nig.ac.jp
 2. Prodigal  
 CDS prediction tool.  
 http://prodigal.ornl.gov
-3. Barrnap*  
-rRNA prediction tool.  
-http://www.vicbioinformatics.com/software.barrnap.shtml
+3. Barrnap**  
+rRNA prediction by the method of Barrnap: DFAST runs `nhmmer` (HMMER) against rRNA profile HMMs and applies Barrnap's length rules.
+The models are not bundled. `dfast_file_downloader.py --rrna barrnap` downloads the Barrnap 0.9 models (default),
+and `--rrna rfam` builds models from Rfam seed alignments (`dfast --rrna_model rfam`).  
+https://github.com/tseemann/barrnap
 4. RNAmmer  
 rRNA prediction tool. RNAmmer requires the hmmscan program version 2.3, which is not included in the DFAST distibution. 
 To install RNAmmer, follow the [instruction](https://blog.karinlag.no/2013/10/rnammer-install/) by original authors.  
@@ -88,7 +90,7 @@ You can alter default settings by specifying `FEATURE_ADJUSTMENT` in the configu
 
 **After structural annotation**
 1. Adjust rRNA features  
-Barrnap runs with `--reject 0.5` unless `--reject` is set in its `cmd_options`.
+Barrnap rejects hits shorter than 50% of the expected length (`--reject 0.5`) unless `--reject` is set in its `cmd_options`.
 Partial rRNAs (Barrnap hits aligned to less than 80% of the expected length, "aligned only N percent") are converted to `misc_feature` with the note "putative rRNA, aligned only ..." and no product. Their ends less than 10 bp from a contig end are extended to the end and shown as partial (`<`/`>`).
 An rRNA end overlapping an assembly gap is trimmed to the gap and shown as partial. An rRNA spanning a gap is split into two `misc_feature`s ("putative rRNA overlapping an assembly gap"). Complete rRNAs otherwise stay rRNA and are never extended to contig ends.
 Truncated features get the note "truncated at the contig end" or "truncated at an assembly gap". rRNAs entirely inside a gap, and pieces shorter than 30 bp after trimming, are removed.
