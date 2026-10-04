@@ -342,7 +342,11 @@ Images on Docker Hub are built automatically: pushing a version tag (e.g. `1.4.0
 
 ## Experimental work
 ### Annotation for antibiotic registance genes and virulence fators  
-`blastn` and `PlasmidFinder` are required. Please install it by yourself.  
+`blastn` (BLAST+) and PlasmidFinder 3.x are required. PlasmidFinder 3.x is not available from Bioconda (which has 2.x), so install it from PyPI into the Python environment of DFAST:
+```
+pip install plasmidfinder
+```
+DFAST runs it as `python -m plasmidfinder`, or uses a `plasmidfinder.py` command if one is on `PATH` (as in the Docker image).  
 __Usage__
 1. Prepare [CARD](https://card.mcmaster.ca), [VFDB](http://www.mgc.ac.cn/VFs/), and [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/) reference data.
 ```

@@ -100,7 +100,7 @@ parser.add_argument("--protein", nargs='+', choices=list(db_urls.keys()),
 parser.add_argument("--cdd", nargs='+', choices=["Cdd", "Cdd_NCBI", "Cog", "Kog", "Pfam", "Prk", "Smart", "Tigr"],
                          help="Preformatted RPS-BLAST database. [Cdd|Cdd_NCBI|Cog|Kog|Pfam|Prk|Smart|Tigr]", metavar="STR")
 parser.add_argument("--hmm", nargs='+', choices=["NCBIfam", "Pfam", "TIGR", "dbCAN"],
-                         help="Preformatted RPS-BLAST database. [Pfam|TIGR|dbCAN]", metavar="STR")
+                         help="Profile HMM databases. [NCBIfam|Pfam|TIGR|dbCAN]", metavar="STR")
 parser.add_argument("--rrna", nargs='+', choices=list(rrna_urls.keys()),
                     help="rRNA profile HMMs (bac, arc and euk) for rRNA prediction. 'barrnap' (default model of DFAST) downloads\n"
                          "the Barrnap 0.9 models; 'rfam' builds models from Rfam {} seed alignments with hmmbuild.".format(RFAM_RELEASE))
@@ -332,10 +332,13 @@ def retrieve_plasmidfinder_reference(out_dir="."):
 def retrieve_mefinder_reference(out_dir=".", no_indexing=False):
     mefinder_db_dir = os.path.join(out_dir, "mefinder_db")
 
+    def _mefinder():
+        # pip installs the command next to this Python, which may not be on PATH
+        local = os.path.join(os.path.dirname(sys.executable), "mefinder")
+        return shutil.which("mefinder") or (local if os.path.exists(local) else None)
+
     # 1. Install MobileElementFinder if not already available
-    check = subprocess.run(["mefinder", "--version"],
-                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if check.returncode == 0:
+    if _mefinder():
         logger.info("MobileElementFinder is already installed.")
     else:
         logger.info("Installing MobileElementFinder (clone, relax biopython pin, pip install)...")
@@ -372,7 +375,7 @@ def retrieve_mefinder_reference(out_dir=".", no_indexing=False):
     if not os.path.exists(mefinder_db_dir):
         os.makedirs(mefinder_db_dir)
     logger.info(f"Building MGEdb BLAST index into: {mefinder_db_dir}")
-    if subprocess.run(["mefinder", "index", "--db-path", mefinder_db_dir]).returncode != 0:
+    if subprocess.run([_mefinder(), "index", "--db-path", mefinder_db_dir]).returncode != 0:
         logger.error("Failed to build MobileElementFinder BLAST index!")
         exit(1)
 
