@@ -145,3 +145,20 @@ def test_putative_rrna_misc_feature_still_masks_cds_in_fallback():
     # partial rRNA -> misc_feature is not checked by ANN5310 but still masks CDS as rRNA in resolve_overlap
     ids, _ = _run([_rrna(1000, 2000, note=ALIGNED_42), _cds(1500, 2400)])
     assert ids == ["Barrnap_1"]
+
+
+# ---- eukaryotic rRNA (possible contamination) vs CDS ----
+
+def _euk18s(start, end, fid="Barrnap_1", strand=1):
+    f = _feature("rRNA", start, end, fid, strand, {"product": ["18S ribosomal RNA"]})
+    f.annotations["eukaryotic_rrna"] = True
+    return f
+
+
+def test_eukaryotic_rrna_becomes_misc_and_removes_hypothetical_cds_on_both_strands():
+    ids, genome = _run([_euk18s(100, 1970), _cds(200, 434, "MGA_1"), _cds(1000, 1234, "MGA_2", strand=-1),
+                        _cds(1950, 2500, "MGA_3", product="DNA polymerase"), _cds(3000, 3300, "MGA_4")])
+    assert ids == ["Barrnap_1", "MGA_3", "MGA_4"]  # a functional CDS is kept (overlap < 10%, else resolve_overlap removes it)
+    misc = genome.seq_records["seq1"].features[0]
+    assert misc.type == "misc_feature"
+    assert misc.qualifiers["note"] == ["eukaryotic 18S ribosomal RNA-like sequence, possible contamination"]

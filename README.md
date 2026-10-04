@@ -97,7 +97,7 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
     dfast_file_downloader.py --protein dfast --rrna barrnap
     ```
     File downloading and database indexing for GHOSTX and BLASTP will be performed. 
-    `--rrna barrnap` downloads the rRNA profile HMMs of [Barrnap](https://github.com/tseemann/barrnap) 0.9, which DFAST searches with `nhmmer` by the Barrnap method. `--rrna rfam` builds models from [Rfam](https://rfam.org/) 15.1 seed alignments with `hmmbuild`, used with `dfast --rrna_model rfam`. Barrnap is no longer bundled; run `--rrna barrnap` when you update DFAST from version 1.4.3 or earlier.
+    `--rrna barrnap` downloads the rRNA profile HMMs (bacteria, archaea and eukaryotes) of [Barrnap](https://github.com/tseemann/barrnap) 0.9, which DFAST searches with `nhmmer` by the Barrnap method. `--rrna rfam` builds models from [Rfam](https://rfam.org/) 15.1 seed alignments with `hmmbuild`, used with `dfast --rrna_model rfam`. Barrnap is no longer bundled; run `--rrna barrnap` when you update DFAST from version 1.4.3 or earlier.
 2. **HMMer and RPS-BLAST databases (this may take time)**
     ```
     dfast_file_downloader.py --cdd Cog --hmm NCBIfam
@@ -180,7 +180,7 @@ DFAST default annotation workflow accepts a genomic FASTA file (draft or complet
 
 ### Structural annotation
 The following tools are run in parallel to predict biological features (e.g. CDSs and RNAs). After that, partial and overlapping features will be cleaned up.
-Partial rRNAs (hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
+Partial rRNAs (hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Eukaryotic rRNA models are always searched as a contamination check: they compete with the bacterial (and, with `--rrna_kingdom bac arc`, archaeal) models and the best-scoring one is kept; eukaryotic 18S/28S rRNAs (e.g. host contamination in MAGs) become `misc_feature` ("eukaryotic 18S ribosomal RNA-like sequence, possible contamination") and hypothetical CDSs overlapping them on either strand are removed. Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
 * CDS prediction (MetaGeneAnnotator)
 * rRNA prediction (Barrnap method with nhmmer; Barrnap or Rfam models)
 * tRNA/tmRNA prediction (Aragorn)
@@ -245,6 +245,8 @@ Workflow options:
   --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
   --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
   --rrna_model STR      rRNA profile HMMs for Barrnap [barrnap(=default)|rfam]. 'rfam' uses models built from Rfam seed alignments
+  --rrna_kingdom STR [STR ...]
+                        Prokaryotic rRNA models for Barrnap [bac(=default) arc]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac arc
   --use_rnammer STR     Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
   --no_func_anno        Disable all functional annotation steps

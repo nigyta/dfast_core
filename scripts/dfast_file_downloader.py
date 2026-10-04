@@ -25,7 +25,7 @@ logger.addHandler(StreamHandler())
 
 sys.path.append(app_root)
 from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models, build_rrna_hmm
-from dfc.tools.barrnap import RRNA_MODELS, RFAM_RELEASE, RFAM_FAMILIES
+from dfc.tools.barrnap import RRNA_MODELS, RFAM_RELEASE, RFAM_FAMILIES, KINGDOMS
 from dfc.utils.path_util import set_binaries_path
 
 set_binaries_path(app_root)
@@ -63,7 +63,7 @@ hmm_urls = {
 
 # rRNA profile HMMs for Barrnap-style rRNA prediction (--rrna_model of dfast)
 rrna_urls = {
-    "barrnap": "https://raw.githubusercontent.com/tseemann/barrnap/0.9/db/bac.hmm",
+    "barrnap": "https://raw.githubusercontent.com/tseemann/barrnap/0.9/db/{}.hmm",  # bac, arc, euk
     "rfam": "https://ftp.ebi.ac.uk/pub/databases/Rfam/{}/Rfam.seed.gz".format(RFAM_RELEASE),
 }
 
@@ -102,8 +102,8 @@ parser.add_argument("--cdd", nargs='+', choices=["Cdd", "Cdd_NCBI", "Cog", "Kog"
 parser.add_argument("--hmm", nargs='+', choices=["NCBIfam", "Pfam", "TIGR", "dbCAN"],
                          help="Preformatted RPS-BLAST database. [Pfam|TIGR|dbCAN]", metavar="STR")
 parser.add_argument("--rrna", nargs='+', choices=list(rrna_urls.keys()),
-                    help="rRNA profile HMMs for rRNA prediction. 'barrnap' (default model of DFAST) downloads the Barrnap 0.9 models;\n"
-                         "'rfam' builds models from Rfam {} seed alignments with hmmbuild.".format(RFAM_RELEASE))
+                    help="rRNA profile HMMs (bac, arc and euk) for rRNA prediction. 'barrnap' (default model of DFAST) downloads\n"
+                         "the Barrnap 0.9 models; 'rfam' builds models from Rfam {} seed alignments with hmmbuild.".format(RFAM_RELEASE))
 parser.add_argument("--assembly", nargs='*', metavar="ACCESSION",
                          help="Accession(s) for NCBI Assembly DB. eg. GCF_000091005.1 GCA_000008865.1")
 parser.add_argument("--assembly_fasta", nargs='*', metavar="ACCESSION",
@@ -135,16 +135,20 @@ def retrieve_dfast_reference(db_name, out_dir="."):
 
 
 def retrieve_rrna_model(model, out_dir="."):
-    output_file = os.path.join(out_dir, RRNA_MODELS[model][0])
-    logger.info("\tDownloading {}".format(rrna_urls[model]))
+    """Write one model file per kingdom and return their paths."""
+    output_files = [os.path.join(out_dir, RRNA_MODELS[model][0].format(kingdom)) for kingdom in KINGDOMS]
     if model == "barrnap":
-        request.urlretrieve(rrna_urls[model], output_file)
+        for kingdom, output_file in zip(KINGDOMS, output_files):
+            logger.info("\tDownloading {}".format(rrna_urls[model].format(kingdom)))
+            request.urlretrieve(rrna_urls[model].format(kingdom), output_file)
     else:
+        logger.info("\tDownloading {}".format(rrna_urls[model]))
         seed_file = os.path.join(out_dir, "Rfam_{}.seed.gz".format(RFAM_RELEASE))
         request.urlretrieve(rrna_urls[model], seed_file)
-        build_rrna_hmm(seed_file, output_file, RFAM_FAMILIES)
+        for kingdom, output_file in zip(KINGDOMS, output_files):
+            build_rrna_hmm(seed_file, output_file, RFAM_FAMILIES[kingdom])
         os.remove(seed_file)
-    return output_file
+    return output_files
 
 
 def retrieve_ncbifam(out_dir=".", no_indexing=False):
@@ -483,8 +487,8 @@ if args.rrna:
     os.makedirs(out_dir, exist_ok=True)
     logger.info("Preparing rRNA profile HMMs. Files will be written into '{}'".format(out_dir))
     for model in args.rrna:
-        output_file = retrieve_rrna_model(model, out_dir)
-        logger.info("\tWritten to {}".format(os.path.abspath(output_file)))
+        for output_file in retrieve_rrna_model(model, out_dir):
+            logger.info("\tWritten to {}".format(os.path.abspath(output_file)))
 
 if args.cdd:
     db_root = get_db_root(args)

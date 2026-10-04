@@ -221,6 +221,13 @@ def set_rrna_model(config, model):
     logger.info("Barrnap will use the {} rRNA models.".format(model))
 
 
+def set_rrna_kingdoms(config, kingdoms):
+    """Choose the prokaryotic rRNA models for Barrnap: ["bac"] (default), ["arc"] or ["bac", "arc"]."""
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("tool_name", "") == "Barrnap":
+            setting.setdefault("options", {})["kingdoms"] = list(kingdoms)
+    logger.info("Barrnap will search rRNA models of {}.".format(", ".join(kingdoms)))
+
 
 def _select_CDS_prediction_tool(config, tool_name):
     for setting in config.STRUCTURAL_ANNOTATION:

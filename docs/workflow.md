@@ -50,7 +50,10 @@ http://prodigal.ornl.gov
 3. Barrnap**  
 rRNA prediction by the method of Barrnap: DFAST runs `nhmmer` (HMMER) against rRNA profile HMMs and applies Barrnap's length rules.
 The models are not bundled. `dfast_file_downloader.py --rrna barrnap` downloads the Barrnap 0.9 models (default),
-and `--rrna rfam` builds models from Rfam seed alignments (`dfast --rrna_model rfam`).  
+and `--rrna rfam` builds models from Rfam seed alignments (`dfast --rrna_model rfam`). Models for bacteria (bac, default), archaea (arc)
+and eukaryotes (euk) are prepared. `--rrna_kingdom` chooses the prokaryotic models (bac and/or arc). The euk models are always searched as a contamination check
+(`check_eukaryotic` in the configuration). Overlapping hits of the same subunit from different kingdoms compete and the best bit score wins
+(as in the clan competition of Rfam); eukaryotic 18S/28S rRNAs that win are reported as possible contamination (see Feature optimization).  
 https://github.com/tseemann/barrnap
 4. RNAmmer  
 rRNA prediction tool. RNAmmer requires the hmmscan program version 2.3, which is not included in the DFAST distibution. 
@@ -93,6 +96,7 @@ You can alter default settings by specifying `FEATURE_ADJUSTMENT` in the configu
 Barrnap rejects hits shorter than 50% of the expected length (`--reject 0.5`) unless `--reject` is set in its `cmd_options`.
 Partial rRNAs (Barrnap hits aligned to less than 80% of the expected length, "aligned only N percent") are converted to `misc_feature` with the note "putative rRNA, aligned only ..." and no product. Their ends less than 10 bp from a contig end are extended to the end and shown as partial (`<`/`>`).
 An rRNA end overlapping an assembly gap is trimmed to the gap and shown as partial. An rRNA spanning a gap is split into two `misc_feature`s ("putative rRNA overlapping an assembly gap"). Complete rRNAs otherwise stay rRNA and are never extended to contig ends.
+Eukaryotic 18S/28S rRNAs (contamination check) are converted to `misc_feature` with the note "eukaryotic 18S ribosomal RNA-like sequence, possible contamination".
 Truncated features get the note "truncated at the contig end" or "truncated at an assembly gap". rRNAs entirely inside a gap, and pieces shorter than 30 bp after trimming, are removed.
 2. Remove overlapping rRNAs  
 Of two rRNAs overlapping on the same strand, the shorter one is removed (DDBJ validator ANN5310).
@@ -106,6 +110,7 @@ the one from the program with higher priority will be adopted.
 1. Resolve RNA/CDS overlaps  
 Same-strand overlaps rejected by the DDBJ validator are resolved: an rRNA overlapping a CDS by even one base (ANN5310) and a tRNA completely contained in a CDS (ANN5320).
 A hypothetical CDS (no database hit, or a hypothetical product) is removed. If a CDS with a functional product is involved, the RNA is removed instead.
+Hypothetical CDSs overlapping a eukaryotic rRNA-like `misc_feature` (possible contamination) on either strand are also removed.
 2. Remove overlapping features (fallback)  
 Remove features that overlap other features according to `feature_type_priority`, for overlaps not handled by the rules above.  
 By default, it is defined as following:  
