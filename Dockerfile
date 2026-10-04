@@ -1,4 +1,4 @@
-# Pin to linux/amd64: the bundled binaries under bin/Linux are x86_64, so the image must be amd64.
+# Pin to linux/amd64: the bundled binaries under bin/Linux (MGA) are x86_64, so the image must be amd64.
 FROM --platform=linux/amd64 python:3.13
 
 # Environment variables
@@ -39,6 +39,18 @@ RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
     install -m 755 RpsbProc-x64-linux/rpsbproc /usr/local/bin/rpsbproc && \
     rm -r RpsbProc-x64-linux RpsbProc-x64-linux.tar.gz && \
     rpsblast -version && rpsbproc -version && lastal -V && aragorn -h | grep ARAGORN
+
+# Protein aligners: GHOSTX (default) is built from source, as Bioconda does (the C++ sources need -std=c++14).
+# DIAMOND (--aligner diamond) is the official static binary; Debian's diamond-aligner is older.
+RUN cd /tmp && \
+    curl -LO http://www.bi.cs.titech.ac.jp/ghostx/releases/ghostx-1.3.7.tar.gz && \
+    echo "c2bd846e2d7c648931601578501db3aea89c4c5af8fa5f3fa79680c8fe0755bf  ghostx-1.3.7.tar.gz" | sha256sum -c && \
+    tar xfz ghostx-1.3.7.tar.gz && \
+    make -C ghostx-1.3.7/src -j"$(nproc)" CXX="g++ -std=c++14" && \
+    install -m 755 ghostx-1.3.7/src/ghostx /usr/local/bin/ghostx && \
+    rm -r ghostx-1.3.7 ghostx-1.3.7.tar.gz && \
+    curl -L https://github.com/bbuchfink/diamond/releases/download/v2.2.8/diamond-linux64.tar.gz | tar xz -C /usr/local/bin diamond && \
+    ghostx -h | grep "homology search tool" && diamond version
 
 # Prepare reference data (currently disabled)
 # RUN dfast_file_downloader.py --protein dfast bifido cyanobase ecoli lab --cdd Cog --hmm NCBIfam
