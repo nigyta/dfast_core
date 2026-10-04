@@ -1,3 +1,11 @@
+Ver 1.5.1 (20261004) ---------------------------------------
+'--amr' works with PlasmidFinder 3.x installed with 'pip install plasmidfinder' only. DFAST runs it as 'python -m plasmidfinder' when no plasmidfinder.py command is on PATH, and aborts with an install hint when PlasmidFinder 3.x is missing. Bioconda provides only PlasmidFinder 2.x, which DFAST cannot use, so the Bioconda package of DFAST no longer depends on plasmidfinder; install PlasmidFinder 3.x from PyPI to use '--amr'.
+
+'dfast_file_downloader.py --mefinder' now installs MobileElementFinder when it is not installed yet (it stopped with FileNotFoundError).
+
+The configuration for the MBGD version of the web service (example/dfc_config/dfast_web_config_mbgd.py) has been removed.
+
+
 Ver 1.5.0 (20261004) ---------------------------------------
 DFAST stops bundling executables so that its dependencies can be installed from Bioconda or apt and maintained more easily. Together with Ver 1.6, this will let DFAST run on linux-aarch64 and osx-arm64 as well. Ver 1.5 keeps the results compatible with earlier versions as far as possible; MGA and CRT are still bundled and will be replaced in Ver 1.6 (see Roadmap below).
 
