@@ -34,7 +34,8 @@ DFAST first detects biological features such as CDS, rRNA, and tRNA.
 DFAST calls external programs for this, and they are executed in parallel.  
 Currently, programs listed below are incorporated. 
 The programs marked with * asterisk are used in the default workflow and 
-their executables are bundled in the DFAST distribution.  
+their executables are bundled in the DFAST distribution. Programs marked with ** are used in the default workflow
+but are not bundled; install them separately (e.g. from Bioconda).  
 
 The workflow is defined by the `STRUCTURAL_ANNOTATION` attribute in the configuration file,
 in which options for each setting is specified as a dictionary. 
@@ -53,9 +54,9 @@ http://www.vicbioinformatics.com/software.barrnap.shtml
 rRNA prediction tool. RNAmmer requires the hmmscan program version 2.3, which is not included in the DFAST distibution. 
 To install RNAmmer, follow the [instruction](https://blog.karinlag.no/2013/10/rnammer-install/) by original authors.  
 http://www.cbs.dtu.dk/services/RNAmmer/
-5. Aragorn*  
+5. Aragorn**  
 tRNA prediction tool.  
-http://mbio-serv2.mbioekol.lu.se/ARAGORN/Downloads/
+https://www.trna.se/ARAGORN/
 6. tRNAscan-SE  
 tRNA prediction tool.  
 http://eddylab.org/software.html

@@ -54,10 +54,10 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   ```
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.  
 
-* **BLAST+, rpsbproc, HMMER and LAST**  
-  BLAST+ (2.13 or later; `blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`), `rpsbproc` (0.5 or later, for CDDsearch, i.e. COG assignment), HMMER (3.x; `hmmscan`, `hmmsearch`, `hmmpress`) and LAST (1180 or later; `lastdb`, `lastal`, for PseudoGeneDetection) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), [HMMER](http://hmmer.org/) and [LAST](https://gitlab.com/mcfrith/last), and put them in your `PATH`:
+* **BLAST+, rpsbproc, HMMER, LAST and Aragorn**  
+  BLAST+ (2.13 or later; `blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`), `rpsbproc` (0.5 or later, for CDDsearch, i.e. COG assignment), HMMER (3.x; `hmmscan`, `hmmsearch`, `hmmpress`), LAST (1180 or later; `lastdb`, `lastal`, for PseudoGeneDetection) and Aragorn (1.2.x, for tRNA/tmRNA prediction) are no longer bundled. Install them from Bioconda, or from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), [HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last) and [Aragorn](https://www.trna.se/ARAGORN/), and put them in your `PATH`:
   ```
-  conda install -c bioconda -c conda-forge blast rpsbproc hmmer last
+  conda install -c bioconda -c conda-forge blast rpsbproc hmmer last aragorn
   ```
   When DFAST is installed with conda, make sure that `rpsbproc` 0.5 or later is installed in the same environment.  
   BLAST+ 2.10 or later creates databases in the BLAST database version 5 format, which older BLAST+ (e.g. 2.6.0, previously bundled) cannot read. Databases in version 4 created by older DFAST can still be used.
@@ -290,7 +290,6 @@ DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](
 This distribution contains following external programs.
 * [MetaGeneAnnotator](http://metagene.cb.k.u-tokyo.ac.jp/) (© Hideki Noguchi)  
  Redistributed by courtesy of Hideki Noguchi at National Institute of Genetics.
-* [Aragorn](http://mbio-serv2.mbioekol.lu.se/ARAGORN/) (GPLv3)
 * [Barrnap](https://github.com/tseemann/barrnap) (GPLv3)
 * [CRT](http://www.room220.com/crt/) (Public domain)
 * [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/) (BSD-2-Clause)
