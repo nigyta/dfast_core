@@ -196,7 +196,7 @@ Optionally, you can choose Prodigal/GeneMarkS2, RNAmmer, tRNAscan-SE to predict 
 4. HMMscan against TIGR models of the NCBI HMM collection with trusted cutoffs. CDSs without a hit in step 2 are named by HMMs marked for naming by NCBI (product, gene and EC number). `--hmm_db ncbifam` searches the whole collection instead.
 5. CDDsearch against COG database from NCBI Conserved Domain Database
 
-By default, GHOSTX is used to align protein sequences. Diamond/BLASTP can be used optionally. See [FAQ](docs/FAQ.md). (Diamond needs to be installed manually.) 
+By default, GHOSTX is used to align protein sequences. DIAMOND (`--very-sensitive` mode) or BLASTP can be used optionally with `--aligner diamond` or `--aligner blastp`. See [FAQ](docs/FAQ.md). 
 
 ### Output
 * Sequence and annotation data in GFF3 and GenBank format

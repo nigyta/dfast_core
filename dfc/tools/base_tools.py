@@ -116,6 +116,10 @@ class StructuralAnnotationTool(Tool):
 
 class Aligner(Tool):
     NAME = "AbstractAlignerClass"  # Should be overridden in child classes.
+    # True: searches run as one process with `threads` threads instead of one single-threaded process
+    # per CPU (BaseAnnotationComponent.prepareAlignerQueries). Faster with less memory for DIAMOND.
+    MULTITHREAD = False
+    threads = 1
     VERSION_CHECK_CMD = ["echo",
                          "version 1.0.0"]  # Command to get the tool version. Should be overridden in child classes.
     VERSION_PATTERN = r"version (.+)"  # Regex pattern that matches the tool version. Should be overridden in child classes.

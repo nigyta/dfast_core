@@ -48,7 +48,7 @@ Note that tRNAscan-SE is not bundled in the DFAST distribution. Please install i
 2. Set the option `--aligner diamond`.  
 
 If an index file for Diamond (.dmnd) does not exist, DFAST attempts to build it. You can build it manually by `scripts/reference_util.py formatdb-dmnd`.
-Note that Diamond is not bundled in the DFAST distribution. Please install it by yourself. 
+DFAST runs Diamond in the `--very-sensitive` mode. Diamond is not bundled in the DFAST distribution; install it, e.g. `conda install -c bioconda diamond`. 
 
 
 

@@ -101,7 +101,7 @@ class DBsearch(BaseAnnotationComponent):
     def run(self):
         # if not self.enabled:
         #     self.logger.warning("[Warning] {} is disabled. Skip execution.".format(self.__class__.__name__))
-        self.prepareQueries()
+        self.prepareAlignerQueries()
         self.createCommands()
         self.executeCommands(shell=True)
         self.set_results()
