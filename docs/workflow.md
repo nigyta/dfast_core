@@ -34,21 +34,23 @@ DFAST first detects biological features such as CDS, rRNA, and tRNA.
 DFAST calls external programs for this, and they are executed in parallel.  
 Currently, programs listed below are incorporated. 
 The programs marked with * asterisk are used in the default workflow and 
-their executables are bundled in the DFAST distribution. Programs marked with ** are used in the default workflow
-but are not bundled; install them separately (e.g. from Bioconda).  
+their executables are bundled in the DFAST distribution (MGA and CRT; they will be replaced by Prodigal and Diced in Ver 1.6).
+Programs marked with ** are used in the default workflow but are no longer bundled from Ver 1.5; install them separately (e.g. from Bioconda or apt).  
 
 The workflow is defined by the `STRUCTURAL_ANNOTATION` attribute in the configuration file,
 in which options for each setting is specified as a dictionary. 
 You can switch enabled/disabled and set options passed to each prorgam.
 
 1. MGA* (MetaGeneAnnotator)  
-CDS prediction tool.  
+CDS prediction tool. Default in Ver 1.5; Prodigal will be the default in Ver 1.6.  
 http://metagene.nig.ac.jp
 2. Prodigal  
 CDS prediction tool.  
 http://prodigal.ornl.gov
 3. Barrnap**  
 rRNA prediction by the method of Barrnap: DFAST runs `nhmmer` (HMMER) against rRNA profile HMMs and applies Barrnap's length rules.
+From Ver 1.5, Barrnap itself is no longer needed: DFAST reimplements it in Python (`dfc/tools/barrnap.py`), written with reference to
+the source code of Barrnap 0.8 by Torsten Seemann (GPL-3.0). We are grateful to the author; please also acknowledge Barrnap when you use the rRNA predictions.
 The models are not bundled. `dfast_file_downloader.py --rrna barrnap` downloads the Barrnap 0.9 models (default),
 and `--rrna rfam` builds models from Rfam seed alignments (`dfast --rrna_model rfam`). Models for bacteria (bac, default), archaea (arc)
 and eukaryotes (euk) are prepared. `--rrna_kingdom` chooses the prokaryotic models (bac and/or arc). The euk models are always searched as a contamination check
@@ -56,7 +58,7 @@ and eukaryotes (euk) are prepared. `--rrna_kingdom` chooses the prokaryotic mode
 (as in the clan competition of Rfam); eukaryotic 18S/28S rRNAs that win are reported as possible contamination (see Feature optimization).  
 https://github.com/tseemann/barrnap
 4. RNAmmer  
-rRNA prediction tool. RNAmmer requires the hmmscan program version 2.3, which is not included in the DFAST distibution. 
+rRNA prediction tool (deprecated; `--use_rnammer` will be removed in Ver 1.6). RNAmmer requires the hmmscan program version 2.3, which is not included in the DFAST distibution. 
 To install RNAmmer, follow the [instruction](https://blog.karinlag.no/2013/10/rnammer-install/) by original authors.  
 http://www.cbs.dtu.dk/services/RNAmmer/
 5. Aragorn**  
@@ -66,7 +68,7 @@ https://www.trna.se/ARAGORN/
 tRNA prediction tool.  
 http://eddylab.org/software.html
 7. CRT* (Crisper Recognition Tool)  
-CRISPR prediction tool.
+CRISPR prediction tool. CRT will be replaced by Diced (a reimplementation of MinCED, run with the CRT parameters) in Ver 1.6, which removes the Java dependency.
 CRT requires Java Runtime Environment (JRE). Type "java" in your console to check if Java is installed.  
 Depending on your system, you may need to configure options to launch Java.
 If not working properly, set `java_options` in the configuration file to "-Xmx256m", for example. 
@@ -150,7 +152,7 @@ You can prepare your own database following this format.
 Before running the pipeline, index files for BLASTP and GHOSTX must be created.
 This can be done as following:
   ```
-  python $DFAST_APP_ROOT/scripts/ref_util.py format your_database.ref
+  python $DFAST_APP_ROOT/scripts/reference_util.py formatdb -i your_database.ref
   ```
   DBsearch expects a small-sized curated database, as it loads all data in the reference file into memory.
   If you want to search against a large database use BlastSearch instead.
@@ -158,7 +160,7 @@ This can be done as following:
 * BlastSearch  
 This is meant for protein homology search against a large-sized reference database,
 such as pre-formatted Blast databases like RefSeq Protein and SwissProt available at the NCBI FTP site.  
-BlastSearch uses "blastp" and "blastdbcmd" executables, which are bundled in the DFAST distribution.  
+BlastSearch uses the "blastp" and "blastdbcmd" executables of BLAST+ (2.13 or later, installed separately).  
 DFAST can parse NCBI- and SwissProt-style Fasta descriptions.
 If you want to use your custom-made database, 
 format it using the `makeblastdb` command with `-parse_seqids` option.
@@ -181,7 +183,7 @@ in reducing the running time especially when using Blastp as an aligner.
   The recommended format of the reference file is a GenBank flat file format containing annotated CDS features.
   We have a helper script to download a GenBank-formatted file from the Assembly Database of NCBI.
   ```
-  python $DFAST_APP_ROOT/scripts/file_downloader.py --assembly GCF_000091005.1 GCA_000008865.1
+  python $DFAST_APP_ROOT/scripts/dfast_file_downloader.py --assembly GCF_000091005.1 GCA_000008865.1
   ```
   A FASTA-formatted file containing all protein sequences in a genome and a DFAST-format reference file are also acceptable as a reference. The file format is automatically recognized.
 
@@ -189,14 +191,16 @@ in reducing the running time especially when using Blastp as an aligner.
 * CDDsearch  
 CDDsearch uses RPS-Blast and rpsbproc (post-processing utility for RPS-Blast) 
 to search against the [Conserved Domain Database](https://www.ncbi.nlm.nih.gov/cdd/),
-which is a collection of domain models curated by NCBI. roS 
-Precompiled databases are available at the [CDD FTP site](ftp://ftp.ncbi.nih.gov//pub/mmdb/cdd/little_endian),
+which is a collection of domain models curated by NCBI.
+Precompiled databases are available at the [CDD FTP site](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/little_endian/),
 which includes CDD, Pfam, Smart, COG, PRK, TIGRFAM, and Kog.
-You can download CDD databases using the `prepare_database.py` script:
+You can download CDD databases using the `dfast_file_downloader.py` script:
   ```
-  python $DFAST_APP_ROOT/scripts/file_downloader.py --cdd Cdd Cog Pfam
+  python $DFAST_APP_ROOT/scripts/dfast_file_downloader.py --cdd Cdd Cog Pfam
   ```
-  DFAST standard pipeline includes assignment of COG functional categories by CDDsearch.
+  The annotation data for rpsbproc from the same CDD release are downloaded into `cdd/rpsbproc_data` at the same time.
+  DFAST standard pipeline includes assignment of COG functional categories by CDDsearch, using COG v2.0 in CDD 3.21
+  (Ver 1.4 and earlier used COG v1.0 distributed from the DFAST server; run `--cdd Cog` again when updating).
   RPS-Blast (BLAST+) and rpsbproc are not bundled; install them separately (e.g. from Bioconda).
 
   To learn more, please refer to the READMEs for each program. [[CDD](ftp://ftp.ncbi.nih.gov//pub/mmdb/cdd/README), [rpsbproc](ftp://ftp.ncbi.nih.gov//pub/mmdb/cdd/rpsbproc/README)]

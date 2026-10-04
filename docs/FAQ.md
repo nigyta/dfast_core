@@ -23,6 +23,8 @@ Note that GeneMarkS2 is not bundled in the DFAST distribution. Please install it
 
 
 ## 3. How to use RNAmmer to predict rRNAs
+**Deprecated:** `--use_rnammer` will be removed in Ver 1.6. RNAmmer requires HMMER 2, which is no longer maintained. The default rRNA prediction (`--rrna_model rfam`, `--rrna_kingdom bac arc`) covers bacteria and archaea.
+
 1. Make sure that 'RNAmmer' is in your `PATH`, e.g. create a symbolic link for the 'rnammer' executable in '/usr/local/bin'.  
 2. Set the option `--use_rnammer [bact|arch]`.  
     `--use_rnammer bact` for bacterial genome, `--use_rnammer arch` for archaeal genome.  

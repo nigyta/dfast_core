@@ -85,6 +85,8 @@ def apply_barrnap_rules(hits, reject=0.5, lencutoff=0.8):
 class Barrnap(StructuralAnnotationTool):
     """
     rRNA prediction with the Barrnap method: nhmmer (HMMER) is run directly against rRNA profile HMMs.
+    This is a Python reimplementation of Barrnap by Torsten Seemann (GPL-3.0), written with reference to
+    the source code of Barrnap 0.8, and the default models are those of Barrnap 0.9.
 
     Tool type: rRNA prediction
     URL: https://github.com/tseemann/barrnap

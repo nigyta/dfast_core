@@ -77,7 +77,7 @@ group_workflow.add_argument("--rrna_model", help="rRNA profile HMMs for Barrnap 
                             choices=["barrnap", "rfam"], metavar="STR")
 group_workflow.add_argument("--rrna_kingdom", help="Prokaryotic rRNA models for Barrnap [bac(=default) arc]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac arc",
                             nargs="+", choices=["bac", "arc"], metavar="STR")
-group_workflow.add_argument("--use_rnammer", help="Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]", choices=["bact", "arch"], metavar="STR")
+group_workflow.add_argument("--use_rnammer", help="[Deprecated; will be removed in Ver 1.6] Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]", choices=["bact", "arch"], metavar="STR")
 group_workflow.add_argument("--gcode", help="Genetic code [11(=default),4(=Mycoplasma)]", metavar="INT", type=int, default=11)
 group_workflow.add_argument("--no_func_anno", help="Disable all functional annotation steps", action="store_true")
 group_workflow.add_argument("--hmm_db", help="HMM database for HMMscan [tigr(=default)|ncbifam]. 'ncbifam' searches the whole NCBI HMM collection (TIGR, NCBIFAM and PRK-derived models)",
@@ -255,7 +255,8 @@ if args.rrna_model:  # --rrna_model
 if args.rrna_kingdom:  # --rrna_kingdom
     set_rrna_kingdoms(config, args.rrna_kingdom)
 
-if args.use_rnammer:  # --use_trnascan
+if args.use_rnammer:  # --use_rnammer
+    logger.warning("--use_rnammer is deprecated and will be removed in Ver 1.6. RNAmmer needs HMMER 2; use the default rRNA prediction (--rrna_model, --rrna_kingdom) instead.")
     enable_rnammer(config, args.use_rnammer)
 
 if args.no_func_anno:
