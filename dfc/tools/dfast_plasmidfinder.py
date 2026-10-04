@@ -2,9 +2,18 @@
 # coding: UTF8
 
 import os
+import re
+import shutil
+import subprocess
+import sys
 from .base_tools import ContigAnnotationTool
 from ..models.bio_feature import ExtendedFeature
 import json
+
+# PlasmidFinder 3.x from PyPI (pip install plasmidfinder) installs no command, so it is run as a module of
+# this Python unless a plasmidfinder.py command (e.g. a wrapper script, as in the Docker image) is on PATH.
+PLASMIDFINDER = ["plasmidfinder.py"] if shutil.which("plasmidfinder.py") else [sys.executable, "-m", "plasmidfinder"]
+
 
 class Plasmidfinder(ContigAnnotationTool):
     """
@@ -18,9 +27,21 @@ class Plasmidfinder(ContigAnnotationTool):
     version = None
     TYPE = "source"
     NAME = "Plasmidfinder"
-    VERSION_CHECK_CMD = ["plasmidfinder.py", "-v"]
+    VERSION_CHECK_CMD = PLASMIDFINDER + ["-v"]
     VERSION_PATTERN = r"(\d+\.\d+\.\d+)"
 
+
+    def setVersion(self):
+        """PlasmidFinder 3.x is required. Give an install hint instead of a usage error (2.x) or a missing module."""
+        self.logger.info("Checking {0} version... ".format(self.NAME))
+        p = subprocess.run(self.VERSION_CHECK_CMD, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        m = re.search(self.VERSION_PATTERN, p.stdout)
+        if p.returncode != 0 or not m or int(m.group(1).split(".")[0]) < 3:
+            self.logger.error("PlasmidFinder 3.x is required for --amr. Install it with 'pip install plasmidfinder'. [{0}]".format(
+                " ".join((p.stdout + p.stderr).strip().splitlines()[-1:])))
+            exit(1)
+        self.__class__.version = m.group(1)
+        self.logger.info("{0} initialized. (Version {1})".format(self.NAME, self.version))
 
     def __init__(self, options=None, workDir="OUT"):
         if options is None:
@@ -35,7 +56,7 @@ class Plasmidfinder(ContigAnnotationTool):
             os.makedirs(self.output_directory)
 
     def getCommand(self):
-        cmd = ["plasmidfinder.py", "--infile", self.genomeFasta,
+        cmd = PLASMIDFINDER + ["--infile", self.genomeFasta,
                "--outputPath", self.output_directory,
                "--tmp_dir", self.output_directory,
                "--databasePath", self.db_path,
