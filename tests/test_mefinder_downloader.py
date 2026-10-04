@@ -84,3 +84,19 @@ def test_mefinder_incomplete_index_fails(tmp_path):
     proc = _run_downloader(bindir, dbroot)
     assert proc.returncode != 0
     assert "incomplete" in (proc.stdout + proc.stderr).lower()
+
+
+def test_mefinder_not_installed_goes_to_install(tmp_path):
+    # Without `mefinder` on PATH, the downloader must try to install it (here a fake `git` fails
+    # the clone) instead of crashing with FileNotFoundError.
+    bindir = str(tmp_path / "bin")
+    os.makedirs(bindir)
+    git = os.path.join(bindir, "git")
+    with open(git, "w") as f:
+        f.write("#!/bin/sh\nexit 1\n")
+    os.chmod(git, 0o755)
+    env = dict(os.environ, PATH=bindir)
+    cmd = [sys.executable, DOWNLOADER, "--mefinder", "-d", str(tmp_path / "db")]
+    proc = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    assert proc.returncode == 1
+    assert "Failed to clone MobileElementFinder" in proc.stderr and "FileNotFoundError" not in proc.stderr
