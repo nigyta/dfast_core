@@ -142,7 +142,8 @@ similar to Prokka, and reduce running time.
 * DBsearch (Database search)  
 This is a method for a conventional homology search against reference databases.  
 By default, it uses GHOSTX as a sequence aligner, which is about 100 times more efficient than BLAST. 
-You can choose an aligner from GHOSTX/DIAMOND/BLASTP (`--aligner`). DIAMOND runs in the `--very-sensitive` mode.  
+You can choose an aligner from GHOSTX/DIAMOND/BLASTP (`--aligner`). DIAMOND runs in the `--very-sensitive` mode.
+GHOSTX and DIAMOND run as one process with the given number of threads; BLASTP runs as one single-threaded process per CPU.  
 You can specify thresholds for E-value (`evalue_cutoff`), 
 query coverage % (`qcov_cutoff`), and subject coverage % (`scov_cutoff`).  
 The reference database is specified by `database`. 

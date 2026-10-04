@@ -18,15 +18,18 @@ class Ghostx(Aligner):
     NAME = "GHOSTX"
     VERSION_CHECK_CMD = ["ghostx", "-h"]
     VERSION_PATTERN = r"GHOSTX \- homology search tool\. version (.+)"
+    # 1 process x N threads (-a): as fast as N processes x 1 thread with 1/N of the memory (1.8 GB per process).
+    # Needs a build with OpenMP (Bioconda ghostx 1.3.7 build 3 or later); older builds ignore -a.
+    MULTITHREAD = True
 
     def format_db_command(self, db_fasta_file, db_name):
         return ["ghostx", "db", "-i", db_fasta_file, "-o", db_name]
 
     def get_command(self, query_file, db_name, result_file):
-        return ["ghostx", "aln", "-i", query_file, "-d", db_name, "-o", result_file, "-b 1 -v 1"]
+        return ["ghostx", "aln", "-i", query_file, "-d", db_name, "-o", result_file, "-b 1 -v 1 -a", str(self.threads)]
 
     def get_self_alignment_command(self, query_file, db_name, result_file):
-        return ["ghostx", "aln", "-i", query_file, "-d", db_name, "-o", result_file, "-b 100 -v 1"]
+        return ["ghostx", "aln", "-i", query_file, "-d", db_name, "-o", result_file, "-b 100 -v 1 -a", str(self.threads)]
 
 if __name__ == '__main__':
     from logging import getLogger, INFO, DEBUG, StreamHandler

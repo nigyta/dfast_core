@@ -309,8 +309,8 @@ rRNA prediction reimplements [Barrnap](https://github.com/tseemann/barrnap) by T
 
 ## Trouble shoot
 * DBsearch is slow  
-The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
-If your machine does not have enough memory, decrease the number of CPUs (`--cpu 2` or `--cpu 1`) or use BLASTP instead (`--aligner blastp`). 
+The default aligner GHOSTX is fast but requires about 1.8 Gbyte of memory. From Ver 1.6, GHOSTX and DIAMOND run as one process with `--cpu` threads, so the memory does not grow with the number of CPUs. This requires a GHOSTX built with OpenMP (Bioconda `ghostx` 1.3.7 build 3 or later); older builds ignore the thread option and run slower.  
+If your machine does not have enough memory, use DIAMOND (`--aligner diamond`, about 1.2 Gbyte) or BLASTP (`--aligner blastp`). 
 * GLIBCXX not found error on Linux system  
 If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
 In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  
