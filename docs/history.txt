@@ -1,3 +1,7 @@
+Ver 1.5.2 (20261006) ---------------------------------------
+The PlasmidFinder reference databases PseudomonasRepDB and WHRepDB have been updated to v1.1 ('dfast_file_downloader.py --plasmidfinder'). Their FASTA headers now carry a serial number per group, so PlasmidFinder reports the accession of the matched reference, which was empty with v1.0. WHRepDB v1.1 is limited to the WH domain sequences. Run 'dfast_file_downloader.py --plasmidfinder' again to update an existing database.
+
+
 Ver 1.5.1 (20261004) ---------------------------------------
 '--amr' works with PlasmidFinder 3.x installed with 'pip install plasmidfinder' only. DFAST runs it as 'python -m plasmidfinder' when no plasmidfinder.py command is on PATH, and aborts with an install hint when PlasmidFinder 3.x is missing. Bioconda provides only PlasmidFinder 2.x, which DFAST cannot use, so the Bioconda package of DFAST no longer depends on plasmidfinder; install PlasmidFinder 3.x from PyPI to use '--amr'.
 
