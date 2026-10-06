@@ -274,21 +274,21 @@ plasmidfinder_extra_databases = [
     #     "fix_headers": False,
     # },
     {
-        # figshare dataset: https://figshare.com/articles/dataset/repP_database_fsa/26778175
-        "url": "https://ndownloader.figshare.com/files/63270934",
-        "filename": "PseudomonasRepDB_v1.fsa",
-        "db_prefix": "PseudomonasRepDB_v1",
+        # figshare dataset: https://doi.org/10.6084/m9.figshare.26778175 (v1.1)
+        "url": "https://ndownloader.figshare.com/files/69670398",
+        "filename": "PseudomonasRepDB_v1.1.fsa",
+        "db_prefix": "PseudomonasRepDB_v1.1",
         "name": "PseudomonasRepDB",
-        "description": "PseudomonasRepDB database v1.0",
+        "description": "PseudomonasRepDB database v1.1",
         "fix_headers": False,
     },
     {
-        # figshare dataset: https://figshare.com/articles/dataset/WHRepDB_database_v1_0/31883887
-        "url": "https://ndownloader.figshare.com/files/63271000",
-        "filename": "WHRepDB_v1.fsa",
-        "db_prefix": "WHRepDB_v1",
+        # figshare dataset: https://doi.org/10.6084/m9.figshare.31883887 (v1.1)
+        "url": "https://ndownloader.figshare.com/files/69662724",
+        "filename": "WHRepDB_v1.1.fsa",
+        "db_prefix": "WHRepDB_v1.1",
         "name": "WHRepDB",
-        "description": "WHRepDB database v1.0",
+        "description": "WHRepDB database v1.1",
         "fix_headers": False,
     },
     {
