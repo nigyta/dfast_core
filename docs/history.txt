@@ -1,3 +1,7 @@
+Ver 1.5.3 (20261007) ---------------------------------------
+'--complete' with one sequence and no '--seq_names' stopped in rRNA prediction (nhmmer: "Unable to guess alphabet"), because the sequence was given an empty name. Without '--seq_names', the sequences of a complete genome are now named sequence1, sequence2, ... as in a draft genome.
+
+
 Ver 1.5.2 (20261006) ---------------------------------------
 The PlasmidFinder reference databases PseudomonasRepDB and WHRepDB have been updated to v1.1 ('dfast_file_downloader.py --plasmidfinder'). Their FASTA headers now carry a serial number per group, so PlasmidFinder reports the accession of the matched reference, which was empty with v1.0. WHRepDB v1.1 is limited to the WH domain sequences. Run 'dfast_file_downloader.py --plasmidfinder' again to update an existing database.
 
