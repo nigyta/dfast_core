@@ -8,10 +8,12 @@ from concurrent import futures
 from Bio.SeqFeature import ExactPosition, FeatureLocation
 from .tools.dfast_plasmidfinder import Plasmidfinder
 from .tools.dfast_mge import MobileElementFinder
+from .tools.integron_finder import IntegronFinder
 
 TOOLS = {
     "Plasmidfinder": Plasmidfinder,
     "MobileElementFinder": MobileElementFinder,
+    "IntegronFinder": IntegronFinder,
 }
 
 

@@ -338,12 +338,14 @@ def set_values_from_metadata(config):
 
 
 def enable_amr(config):
-    logger.info("AMR/VFG annotation and Plasmid identification enabled.")
+    logger.info("AMR/VFG annotation, Plasmid identification and defense system detection enabled.")
     for setting in config.FUNCTIONAL_ANNOTATION:
         if setting.get("component_name", "") == "NuclSearch":
             db_name = setting.get("options", {}).get("db_name", "")
             if db_name in ["CARD", "VFDB"]:
                 setting["enabled"] = True
+        elif setting.get("component_name", "") == "DefenseFinder":
+            setting["enabled"] = True
 
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
@@ -351,9 +353,9 @@ def enable_amr(config):
 
 
 def enable_mge(config):
-    logger.info("Mobile genetic element detection (MobileElementFinder) enabled.")
+    logger.info("Mobile genetic element detection (MobileElementFinder, IntegronFinder) enabled.")
     for setting in config.CONTIG_ANNOTATION:
-        if setting.get("tool_name", "") == "MobileElementFinder":
+        if setting.get("tool_name", "") in ("MobileElementFinder", "IntegronFinder"):
             setting["enabled"] = True
 
 

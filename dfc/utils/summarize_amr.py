@@ -2,6 +2,7 @@ import os.path
 import glob
 import json
 from Bio.SeqIO.InsdcIO import _insdc_location_string
+from ..models.hit import defense_system_label
 
 def summarize_amr(genome, work_dir, contig_annotation_report, output_file):
 
@@ -22,8 +23,16 @@ def summarize_amr(genome, work_dir, contig_annotation_report, output_file):
             features_with_hits.setdefault(seq_id, []).append(feature_id)
             nucl_hits.setdefault(feature_id, []).append(hit)
 
-    # print(contig_annotation_report)
-    # print()
+    # Defense systems found by DefenseFinder: one ## line per system on the sequence of its genes
+    for json_file in glob.glob(os.path.join(work_dir, "DefenseFinder*", "systems.json")):
+        for system in json.load(open(json_file)).values():
+            features = [genome.features[fid] for fid in system["features"] if fid in genome.features]
+            if not features:
+                continue
+            label = defense_system_label(system["type"], system["subtype"], system["activity"])
+            genes = ", ".join(f.qualifiers.get("locus_tag", [f.id])[0] for f in features)
+            contig_annotation_report.setdefault(features[0].seq_id, []).append(f"DefenseFinder: {label}, genes: {genes}")
+
     header = ["locus", "location", "hit_accession", "gene", "product", "identity", "q_cov", "s_cov", "e_value", "note"]
     output_buffer = ""
 
