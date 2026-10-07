@@ -51,7 +51,7 @@ class Genome(object):
         self.isolate = config.GENOME_SOURCE_INFORMATION.get("isolate", "")
 
         seq_names = config.GENOME_SOURCE_INFORMATION.get("seq_names", "").replace(",", ";").strip("; \t\n\r")
-        self.seq_names = [x.strip().replace(" ", "_") for x in seq_names.strip().split(";")]
+        self.seq_names = [x.strip().replace(" ", "_") for x in seq_names.split(";")] if seq_names else []
 
         seq_types = config.GENOME_SOURCE_INFORMATION.get("seq_types", "").replace(",", ";")
         self.seq_types = ["plasmid" if x.strip() == "plasmid" or x.strip() == "p" else ""
@@ -121,12 +121,17 @@ class Genome(object):
                 logger.error("The numbers of sequences and seq_types do not match. Aborting...")
                 logger.error("seq_types: {}".format(self.seq_types))
                 exit(1)
-            elif len(R) != len(self.seq_names) and not use_original_name:
+            elif self.seq_names and len(R) != len(self.seq_names) and not use_original_name:
                 logger.error("The numbers of sequences and seq_names do not match. Aborting...")
                 logger.error("seq_names: {}".format(self.seq_names))
                 exit(1)
             if use_original_name:
                 self.seq_names = []
+            elif not self.seq_names:
+                # Without seq_names, name the sequences as in a draft genome (an empty name breaks the FASTA header).
+                digit = int(math.log10(len(R))) + 1
+                self.seq_names = ["sequence" + str(i).zfill(digit) for i in range(1, len(R) + 1)]
+                logger.info("Sequences will be renamed as {0}... (no seq_names given)".format(self.seq_names[0]))
             for i, r in enumerate(R):
                 if use_original_name:
                     name = r.id
