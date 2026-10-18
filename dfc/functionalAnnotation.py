@@ -15,6 +15,7 @@ from .components.BlastSearch import BlastSearch
 from .components.MBGDsearch import MBGDsearch
 from .components.DnaAfinder import DnaAfinder
 from .components.NuclSearch import NuclSearch
+from .components.NuclMapping import NuclMapping
 
 COMPONENTS = {
     "BASE": BaseAnnotationComponent,
@@ -27,6 +28,7 @@ COMPONENTS = {
     "MBGDsearch": MBGDsearch,
     "DnaAfinder": DnaAfinder,
     "NuclSearch": NuclSearch,
+    "NuclMapping": NuclMapping,
 }
 
 
