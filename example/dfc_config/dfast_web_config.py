@@ -224,6 +224,36 @@ class Config:
         },
         {
             # preliminary implementation
+            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the NuclSearch entries below).
+            "component_name": "NuclMapping",
+            "enabled": False,
+            "options": {
+                "database": "@@DB_ROOT@@/card/CARD",
+                "db_name": "CARD",
+                "pident_cutoff": 90,
+                "evalue_cutoff": 1e-10,
+                "overlap_tolerance": 30,
+                "transl_table": 11,
+                "aligner_options": "",
+            },
+        },
+        {
+            # preliminary implementation
+            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the NuclSearch entries below).
+            "component_name": "NuclMapping",
+            "enabled": False,
+            "options": {
+                "database": "@@DB_ROOT@@/vfdb/VFDB",
+                "db_name": "VFDB",
+                "pident_cutoff": 90,
+                "evalue_cutoff": 1e-10,
+                "overlap_tolerance": 30,
+                "transl_table": 11,
+                "aligner_options": "",
+            },
+        },
+        {
+            # preliminary implementation
             "component_name": "NuclSearch",
             "enabled": False,
             "options": {

@@ -298,7 +298,7 @@ def set_genetic_code(config, value):
             if "transl_table" in setting["options"]:
                 setting["options"]["transl_table"] = value
         for setting in config.FUNCTIONAL_ANNOTATION:
-            if setting.get("component_name", "") == "PseudoGeneDetection":
+            if setting.get("component_name", "") in ["PseudoGeneDetection", "NuclMapping"]:
                 setting["options"]["transl_table"] = value
 
 
@@ -348,6 +348,18 @@ def enable_amr(config):
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
             setting["enabled"] = True
+
+
+def enable_amr_map(config):
+    enable_amr(config)
+    logger.info("CARD/VFDB references will be mapped onto the genome (NuclMapping) instead of NuclSearch.")
+    for setting in config.FUNCTIONAL_ANNOTATION:
+        component = setting.get("component_name", "")
+        if component == "NuclMapping":
+            setting["enabled"] = True
+        elif component == "NuclSearch" and setting["enabled"]:
+            logger.warning("NuclSearch ({}) is disabled because --amr_map is specified.".format(setting["options"].get("db_name", "")))
+            setting["enabled"] = False
 
 
 def enable_mge(config):
