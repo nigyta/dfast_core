@@ -219,3 +219,18 @@ def resolve_region(record_seq: Seq, hit: MappingHit, transl_table: int, ref_has_
         translation = "M" + translation[1:]
     region.translation = translation
     return region
+
+
+def classify_cds(cds, region: MappedRegion, tolerance: int) -> str | None:
+    """Relate a predicted CDS on the same contig to a mapped region.
+
+    Returns "same_gene" (same strand and same stop coordinate), "overlapping" (overlap longer than tolerance),
+    "neighbour" (overlap of 1..tolerance bases) or None (no overlap).
+    """
+    start, end = int(cds.location.start), int(cds.location.end)
+    if cds.location.strand == region.strand and (end == region.right if region.strand == 1 else start == region.left0):
+        return "same_gene"
+    overlap = min(end, region.right) - max(start, region.left0)
+    if overlap <= 0:
+        return None
+    return "overlapping" if overlap > tolerance else "neighbour"

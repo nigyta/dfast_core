@@ -1,6 +1,9 @@
 from dfc.utils.mapping_util import (MappingHit, read_blast_table, is_full_length, indel_analysis,
-                                    group_by_locus, is_valid_reference, resolve_region)
+                                    group_by_locus, is_valid_reference, resolve_region,
+                                    MappedRegion, classify_cds)
 from Bio.Seq import Seq
+from Bio.SeqFeature import FeatureLocation
+from dfc.models.bio_feature import ExtendedFeature
 
 
 def _hit(**kw):
@@ -220,3 +223,25 @@ def test_tail_stop_in_reference_without_stop_ignores_downstream_stop():
     seq, hit = _region(gene, ref_len=len(GENE) - 3)
     r = resolve_region(seq, hit, 11, False)
     assert r.kind == "valid" and r.right == 100 + len(GENE) - 6 and r.notes == ["2 codon(s) shorter than the reference"]
+
+
+REGION = MappedRegion("sequence1", 1000, 1300, 1, "valid", "M", [], set(), set())
+
+
+def _cds(start, end, strand=1):
+    return ExtendedFeature(location=FeatureLocation(start, end, strand=strand), type="CDS", id="MGA_1", seq_id="sequence1")
+
+
+def test_classify_cds():
+    assert classify_cds(_cds(1030, 1300), REGION, 30) == "same_gene"          # later start, same stop
+    assert classify_cds(_cds(1000, 1300, -1), REGION, 30) == "overlapping"    # other strand, full overlap
+    assert classify_cds(_cds(1100, 1200), REGION, 30) == "overlapping"        # fragment inside
+    assert classify_cds(_cds(1260, 1600), REGION, 30) == "overlapping"        # 40 bp overlap
+    assert classify_cds(_cds(1280, 1600), REGION, 30) == "neighbour"          # 20 bp overlap
+    assert classify_cds(_cds(1300, 1600), REGION, 30) is None
+
+
+def test_classify_cds_minus_strand_same_gene():
+    region = MappedRegion("sequence1", 1000, 1300, -1, "valid", "M", [], set(), set())
+    assert classify_cds(_cds(1000, 1270, -1), region, 30) == "same_gene"
+    assert classify_cds(_cds(1000, 1270, 1), region, 30) == "overlapping"
