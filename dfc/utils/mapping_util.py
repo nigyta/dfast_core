@@ -4,9 +4,10 @@
 """Helpers for mapping nucleotide references (CARD/VFDB) onto the genome with blastn."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from Bio.Data import CodonTable
+from Bio.Seq import Seq
 
 BLAST_OUTFMT = "6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen btop"
 END_SLACK = 3  # bases of the reference that may be left unaligned at each end of a full-length hit
@@ -136,3 +137,85 @@ def is_valid_reference(nucl_seq: str, transl_table: int) -> tuple[bool, bool]:
              and codons[0] in table.start_codons
              and not any(c in table.stop_codons for c in body))
     return valid, has_terminal_stop
+
+
+@dataclass
+class MappedRegion:
+    seq_id: str
+    left0: int
+    right: int
+    strand: int
+    kind: str  # "valid", "no_start", "frameshift", "internal_stop" or "stop_lost"
+    translation: str = ""  # protein without the stop; empty for frameshift, internal_stop and stop_lost
+    notes: list[str] = field(default_factory=list)
+    stop_codons: set[tuple[int, int, int]] = field(default_factory=set)  # (start0, end, strand) in genome coordinates
+    indels: set[int] = field(default_factory=set)  # 1-based genome positions where gap runs start
+
+
+def resolve_region(record_seq: Seq, hit: MappingHit, transl_table: int, ref_has_stop: bool) -> MappedRegion | None:
+    """Classify the genome region covered by a full-length hit as a valid CDS or one of the defect kinds.
+
+    Return None for a reference without a terminal stop whose region has no in-frame stop within STOP_EXTENSION.
+    """
+    table = CodonTable.unambiguous_dna_by_id[transl_table]
+    left0, right, strand = hit.left0, hit.right, hit.strand
+    region = MappedRegion(hit.seq_id, left0, right, strand, "valid")
+
+    shift, positions = indel_analysis(hit)
+    if shift % 3 != 0:
+        region.kind = "frameshift"
+        region.notes = [f"frameshift at around {p}" for p in positions]
+        region.indels = set(positions)
+        return region
+
+    # Work in gene orientation; the sequence beyond the region (downstream) is kept for stop codon extension.
+    length = right - left0
+    if strand == 1:
+        seq = str(record_seq[left0:right + STOP_EXTENSION]).upper()
+    else:
+        beyond = max(left0 - STOP_EXTENSION, 0)
+        seq = str(record_seq[beyond:right].reverse_complement()).upper()
+
+    def set_length(new_length):
+        region.left0, region.right = (left0, left0 + new_length) if strand == 1 else (right - new_length, right)
+
+    if seq[length - 3:length] not in table.stop_codons:
+        stop = next((i for i in range(length, len(seq) - 2, 3)
+                     if seq[i:i + 3] in table.stop_codons and i + 3 - length <= STOP_EXTENSION), None)
+        if stop is not None:
+            extension = stop + 3 - length
+            if ref_has_stop:
+                region.notes.append(f"stop codon of the reference is not conserved; extended by {extension} bp")
+            length += extension
+            set_length(length)
+        elif ref_has_stop:
+            region.kind = "stop_lost"
+            region.notes.append("stop codon lost")
+            return region
+        else:
+            return None
+
+    codons = [seq[i:i + 3] for i in range(0, length - 3, 3)]  # sense codons; the terminal stop is excluded
+    stops = [i for i, c in enumerate(codons) if c in table.stop_codons]
+    if stops and stops[0] >= len(codons) - TAIL_STOP_CODONS:
+        shorter = len(codons) - stops[0]
+        codons = codons[:stops[0]]
+        length = 3 * (stops[0] + 1)
+        set_length(length)
+        region.notes.append(f"{shorter} codon(s) shorter than the reference")
+    elif stops:
+        region.kind = "internal_stop"
+        for i in stops:
+            start0 = region.left0 + 3 * i if strand == 1 else region.right - 3 * i - 3
+            region.stop_codons.add((start0, start0 + 3, strand))
+            region.notes.append(f"internal stop codon at {start0 + 1}")
+        return region
+
+    translation = str(Seq("".join(codons)).translate(table=transl_table))
+    if codons[0] not in table.start_codons:
+        region.kind = "no_start"
+        region.notes.append("no start codon")
+    else:
+        translation = "M" + translation[1:]
+    region.translation = translation
+    return region
