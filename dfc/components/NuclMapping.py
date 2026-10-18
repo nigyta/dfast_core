@@ -29,21 +29,22 @@ def _start(feature):
     return int(feature.location.start) if feature.location.strand == 1 else int(feature.location.end)
 
 
-def new_cds(region, feature_id, transl_table):
+def new_cds(region, feature_id, transl_table, inference):
     return ExtendedFeature(location=_location(region), type="CDS", id=feature_id, seq_id=region.seq_id,
                            qualifiers={"translation": [region.translation], "transl_table": [str(transl_table)],
-                                       "codon_start": [1], "note": list(region.notes)},
+                                       "codon_start": [1], "note": list(region.notes), "inference": [inference]},
                            annotations={"partial_flag": "00", "nucl_mapping": "rescued"})
 
 
-def new_pseudogene(region, feature_id):
+def new_pseudogene(region, feature_id, inference):
     return ExtendedFeature(location=_location(region), type="CDS", id=feature_id, seq_id=region.seq_id,
-                           qualifiers={"pseudogene": ["unknown"], "note": list(region.notes)},
+                           qualifiers={"pseudogene": ["unknown"], "note": list(region.notes), "inference": [inference]},
                            annotations={"partial_flag": "00", "nucl_mapping": "pseudogene"})
 
 
-def relocate_cds(cds, region, ref_label):
-    """Move the start codon of a same-gene CDS to that of the mapped region; the CDS keeps its id."""
+def relocate_cds(cds, region, ref_label, inference):
+    """Move the start codon of a same-gene CDS to that of the mapped region; the CDS keeps its id. The coordinates
+    now come from the alignment, so a COORDINATES inference of the gene finder is replaced."""
     old_start = _start(cds)
     old_length = len(cds.location)
     cds.location = _location(region)
@@ -56,6 +57,8 @@ def relocate_cds(cds, region, ref_label):
     cds.annotations["partial_flag"] = "00"
     cds.annotations.pop("partial", None)
     cds.annotations["nucl_mapping"] = "start corrected"
+    cds.qualifiers["inference"] = [inference] + [i for i in cds.qualifiers.get("inference", [])
+                                                 if not i.startswith("COORDINATES:")]
 
 
 class NuclMapping(BaseAnnotationComponent):
@@ -75,28 +78,38 @@ class NuclMapping(BaseAnnotationComponent):
         self.aligner_options = options.get("aligner_options", "")
         self.result_file = os.path.join(self.workDir, "mapping.out")
         self.hits_json = {}
+        self.inference = f"COORDINATES:alignment:blastn:{self.aligner.version}"
         self.get_db_version()
         self.load_references()
 
     def get_db_version(self):
         version_file = self.database + ".version"
         if os.path.exists(version_file):
-            db_version = open(version_file).read().strip()
+            with open(version_file) as f:
+                db_version = f.read().strip()
             self.logger.info(f"Database version: {self.db_name} {db_version}")
         else:
             self.logger.warning(f"Database version could not be found: {self.db_name} UNDETERMINED")
 
     def load_references(self):
-        self.references = models[self.db_name].load_from_tsv_file(self.database + ".nucl.ref")
+        # Not named `references`: PseudoGeneDetection collects the protein references of components with that name.
+        missing = [f for f in (self.database + ".nucl.ref", self.database + ".nucl.fasta") if not os.path.exists(f)]
+        if missing:
+            self.logger.error(f"{self.db_name} reference files not found: {', '.join(missing)}. "
+                              "Download them with 'scripts/reference_util_for_nucl.py --card --vfdb'. Aborted...")
+            exit(1)
+        self.nucl_refs = models[self.db_name].load_from_tsv_file(self.database + ".nucl.ref")
         self.ref_validity = {ref_id: is_valid_reference(model.nucl_seq, self.transl_table)
-                             for ref_id, model in self.references.items()}
+                             for ref_id, model in self.nucl_refs.items()}
 
     def genome_fasta(self):
         return os.path.join(self.pipeline_dir, "input", "genome.fna")
 
     def create_db(self):
         db_prefix = os.path.join(self.workDir, "genome")
-        self.executeCommand(self.aligner.format_db_command(self.genome_fasta(), db_prefix))
+        # Without -parse_seqids: sequence ids longer than 50 characters or with "|" (e.g. "ref|NC_000913.3|") would
+        # break makeblastdb or come back as accessions that are not keys of genome.seq_records.
+        self.executeCommand(["makeblastdb", "-dbtype", "nucl", "-in", self.genome_fasta(), "-out", db_prefix])
         return db_prefix
 
     def blast_command(self, db_prefix):
@@ -107,12 +120,14 @@ class NuclMapping(BaseAnnotationComponent):
             + self.aligner_options.split()
 
     def select_hits(self):
-        hits = []
+        hits, unknown = [], set()
         for hit in read_blast_table(self.result_file):
             if not is_full_length(hit, self.pident_cutoff):
                 continue
             if hit.seq_id not in self.genome.seq_records:
-                self.logger.warning(f"Mapping hit {hit.ref_id} refers to an unknown sequence ({hit.seq_id}); ignored.")
+                if hit.seq_id not in unknown:
+                    unknown.add(hit.seq_id)
+                    self.logger.warning(f"Mapping hits on an unknown sequence ({hit.seq_id}) are ignored.")
                 continue
             hits.append(hit)
         return group_by_locus(hits)
@@ -178,26 +193,27 @@ class NuclMapping(BaseAnnotationComponent):
             if valid:
                 self.logger.debug(f"{region.kind} in mapping of {primary.ref_id} ({primary.pident}%) at {location} "
                                   f"not called as a pseudogene: identity below {self.pseudogene_pident_cutoff}%")
-            if same is not None:
-                self.annotate(same, group)
+            target = same if same is not None else self.in_frame_cds(record, region, classes)
+            if target is not None:
+                self.annotate(target, group)
             return
 
         feature = None
         removed = {cds_id for cds_id, c in classes.items() if c == "overlapping" and cds_id not in self.same_genes}
         if region.kind == "valid" and same is None:
-            action, feature = "rescued", new_cds(region, self.new_id(), self.transl_table)
+            action, feature = "rescued", new_cds(region, self.new_id(), self.transl_table, self.inference)
             record.features.append(feature)
         elif region.kind == "valid" and (int(same.location.start), int(same.location.end)) == location:
             self.annotate(same, group, notes=region.notes)
         elif region.kind == "valid":
-            ref_label = f"{self.db_name}:{self.references[primary.ref_id].to_dict()['gene']}"
+            ref_label = f"{self.db_name}:{self.nucl_refs[primary.ref_id].to_dict()['gene']}"
             self.logger.debug(f"{same.id} relocated from {same.location} to {location} by mapping of {ref_label}")
             action, feature = "start corrected", same
-            relocate_cds(same, region, ref_label)
+            relocate_cds(same, region, ref_label, self.inference)
         elif region.kind == "no_start" and same is not None:  # the reference start is not usable
             self.annotate(same, group, notes=[n for n in region.notes if n != "no start codon"])
         else:
-            action, feature = PSEUDOGENE_ACTIONS[region.kind], new_pseudogene(region, self.new_id())
+            action, feature = PSEUDOGENE_ACTIONS[region.kind], new_pseudogene(region, self.new_id(), self.inference)
             feature.secondary_hits.append(PseudoGene(primary.ref_id, region.stop_codons, region.indels))
             record.features.append(feature)
             if same is not None:
@@ -206,12 +222,28 @@ class NuclMapping(BaseAnnotationComponent):
         if feature is not None:
             self.set_hits(feature, group, action)
 
+    @staticmethod
+    def in_frame_cds(record, region, classes):
+        """The same-strand predicted CDS overlapping the region in its reading frame with the largest overlap."""
+        def frame(cds):  # offset of the first complete codon from the region start, modulo 3
+            codon_start = int(cds.qualifiers.get("codon_start", [1])[0]) - 1
+            if region.strand == 1:
+                return (int(cds.location.start) + codon_start - region.left0) % 3
+            return (region.right - int(cds.location.end) + codon_start) % 3
+
+        def overlap(cds):
+            return min(int(cds.location.end), region.right) - max(int(cds.location.start), region.left0)
+
+        candidates = [f for f in record.features if classes.get(f.id) in ("overlapping", "neighbour")
+                      and f.location.strand == region.strand and frame(f) == 0]
+        return max(candidates, key=overlap, default=None)
+
     def new_id(self):
         return f"MAP_{next(self.map_ids)}"
 
     def nucl_hits(self, group):
         """NuclHits of a group: the primary hit first, then the others flagged as alternative hits."""
-        return [NuclHit(h.ref_id, self.references[h.ref_id], self.db_name, h.evalue, h.bitscore, h.pident,
+        return [NuclHit(h.ref_id, self.nucl_refs[h.ref_id], self.db_name, h.evalue, h.bitscore, h.pident,
                         100.0, 100.0, "alternative hit" if i else "") for i, h in enumerate(group)]
 
     def annotate(self, feature, group, secondary=False, notes=()):
@@ -225,7 +257,10 @@ class NuclMapping(BaseAnnotationComponent):
             feature.primary_hit = hit
             feature.annotations["nucl_mapping"] = "annotated"
         feature.secondary_hits.extend(others)
-        self.hits_json[feature.id] = hit.to_dict()
+        if secondary:  # keep the entry of a feature this instance created or changed (e.g. "rescued; ")
+            self.hits_json.setdefault(feature.id, hit.to_dict())
+        else:
+            self.hits_json[feature.id] = hit.to_dict()
         self.counts["annotated"] += 1
 
     def set_hits(self, feature, group, action):

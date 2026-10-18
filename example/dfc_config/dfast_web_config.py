@@ -224,7 +224,7 @@ class Config:
         },
         {
             # preliminary implementation
-            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the NuclSearch entries below).
+            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the CARD/VFDB NuclSearch entries below).
             "component_name": "NuclMapping",
             "enabled": False,
             "options": {
@@ -241,7 +241,7 @@ class Config:
         },
         {
             # preliminary implementation
-            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the NuclSearch entries below).
+            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the CARD/VFDB NuclSearch entries below).
             "component_name": "NuclMapping",
             "enabled": False,
             "options": {

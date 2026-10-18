@@ -128,3 +128,20 @@ def test_g_gtg_start(mapped):
 def test_hits_json(mapped):
     ids = {f.id for case in "abcdfg" for f in _cdss(mapped, case)}
     assert set(mapped[2]) == ids and len(ids) == 6
+
+
+def test_contig_ids_with_pipe_or_over_50_characters(tmp_path):
+    ref = CARD("ARO:1", "OXA-48", "OXA beta-lactamase", "P1", "", "N1", GENE, "E. coli", "")
+    (tmp_path / "REF.nucl.ref").write_text(ref.to_tabular() + "\n")
+    (tmp_path / "REF.nucl.fasta").write_text(ref.to_nucl_fasta())
+    records = [SeqRecord(Seq(FLANK + GENE + FLANK), id=seq_id) for seq_id in ("ref|NC_000913.3|", "x" * 60)]
+    os.makedirs(tmp_path / "input")
+    (tmp_path / "input" / "genome.fna").write_text("".join(f">{r.id}\n{r.seq}\n" for r in records))
+    genome = FakeGenome(records)
+    comp = NuclMapping(genome, {"database": str(tmp_path / "REF"), "db_name": "CARD"}, str(tmp_path), 1)
+    assert not hasattr(comp, "references")      # PseudoGeneDetection collects `references` of all components
+    comp.run()
+    for rec in records:
+        (f,) = [f for f in rec.features if f.type == "CDS"]
+        assert f.id.startswith("MAP_") and _span(f) == (L, L + 600)
+        assert f.qualifiers["inference"] == [f"COORDINATES:alignment:blastn:{comp.aligner.version}"]

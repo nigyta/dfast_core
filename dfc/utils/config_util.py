@@ -351,16 +351,17 @@ def enable_amr(config):
 
 
 def enable_amr_map(config):
-    # NuclSearch entries enabled before enable_amr() were enabled by an explicit --amr
-    was_enabled = [s for s in config.FUNCTIONAL_ANNOTATION if s.get("component_name", "") == "NuclSearch" and s["enabled"]]
+    # CARD/VFDB NuclSearch entries enabled before enable_amr() were enabled by an explicit --amr
+    card_vfdb = [s for s in config.FUNCTIONAL_ANNOTATION if s.get("component_name", "") == "NuclSearch"
+                 and s.get("options", {}).get("db_name", "") in ["CARD", "VFDB"]]
+    was_enabled = [s for s in card_vfdb if s["enabled"]]
     enable_amr(config)
     logger.info("CARD/VFDB references will be mapped onto the genome (NuclMapping) instead of NuclSearch.")
     for setting in config.FUNCTIONAL_ANNOTATION:
-        component = setting.get("component_name", "")
-        if component == "NuclMapping":
+        if setting.get("component_name", "") == "NuclMapping":
             setting["enabled"] = True
-        elif component == "NuclSearch":
-            setting["enabled"] = False
+    for setting in card_vfdb:
+        setting["enabled"] = False
     for setting in was_enabled:
         logger.warning("NuclSearch ({}) is disabled because --amr_map is specified.".format(setting["options"].get("db_name", "")))
 

@@ -40,3 +40,14 @@ def test_mapping_option_defaults():
     for path in ["dfc/default_config.py", "example/dfc_config/dfast_web_config.py"]:
         options = [s["options"] for s in _config(path).FUNCTIONAL_ANNOTATION if s["component_name"] == "NuclMapping"]
         assert [(o["blast_task"], o["pseudogene_pident_cutoff"]) for o in options] == [("dc-megablast", 95)] * 2
+
+def test_amr_map_keeps_other_nuclsearch_entries(caplog):
+    config = _config()
+    plasmid = next(s for s in config.FUNCTIONAL_ANNOTATION
+                   if s["component_name"] == "NuclSearch" and s["options"]["db_name"] == "PLASMID_DB")
+    plasmid["enabled"] = True                   # enabled by a user config
+    enable_amr(config); enable_amr_map(config)
+    assert plasmid["enabled"]
+    assert [s["enabled"] for s in config.FUNCTIONAL_ANNOTATION if s["component_name"] == "NuclSearch"
+            and s["options"]["db_name"] in ("CARD", "VFDB")] == [False, False]
+    assert "PLASMID_DB" not in caplog.text

@@ -221,6 +221,8 @@ class PseudoGene(Hit):
         self.assign_as_note(feature, verbosity=verbosity)
 
     def assign_as_note(self, feature, verbosity=2):
+        if feature.annotations.get("nucl_mapping") == "pseudogene":
+            return  # NuclMapping writes its own notes; the hit is kept for pseudogene_summary.tsv
         if verbosity == 1:
             if len(self.stop_codon) > 0 or len(self.indel) > 0:
                 note = "possible pseudo"
