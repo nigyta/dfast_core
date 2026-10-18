@@ -202,3 +202,39 @@ def test_fix_partial_cds_keeps_complete_nucl_hit_cds(tmp_path):
     fu = FeatureUtil(_Genome([complete, partial]), _Config())
     fu.fix_partial_CDS(complete); fu.fix_partial_CDS(partial)
     assert complete.type == "CDS" and partial.type == "misc_feature"
+
+
+def test_summarize_pseudo_keeps_empty_protein_description(tmp_path):
+    from dfc.models.hit import ProteinHit
+    comp, rec, _ = _setup(tmp_path, GENE)
+    f = new_pseudogene(MappedRegion("sequence1", 100, 100 + len(GENE), 1, "frameshift", "", [], set(), {111}), "PG_1", 11)
+    f.secondary_hits.append(PseudoGene("P1", set(), {111}))
+    f.primary_hit = ProteinHit("P1", "", "", "", "", "", "DB", 0.0, 1.0, 99.0, 100.0, 100.0, "")
+    f.seq_id = "sequence1"
+    rec.features.append(f); comp.genome.set_feature_dictionary()
+    summarize_pseudo(comp.genome, str(tmp_path / "pseudogene_summary.tsv"))
+    rows = [l.rstrip("\n").split("\t") for l in open(tmp_path / "pseudogene_summary.tsv")]
+    assert rows[1][3] == "frameshift" and rows[1][6] == "P1" and rows[1][7] == ""
+
+def test_summarize_pseudo_lists_stop_lost_and_no_start(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE[:-3] + "GCT")        # C flank: no stop within 100 bp
+    comp.apply([[hit]])
+    comp2, rec2, hit2 = _setup(tmp_path, "CCC" + GENE[3:])
+    comp2.apply([[hit2]])
+    for c in (comp, comp2):
+        summarize_pseudo(c.genome, str(tmp_path / f"{id(c)}.tsv"))
+    r1 = [l.split("\t") for l in open(tmp_path / f"{id(comp)}.tsv")][1]
+    r2 = [l.split("\t") for l in open(tmp_path / f"{id(comp2)}.tsv")][1]
+    assert r1[3] == "stop_codon_lost" and r1[6] == "ARO:1" and r1[7] == "OXA beta-lactamase"
+    assert r2[3] == "no_start_codon"
+
+def test_summarize_amr_dedups_feature_in_two_json_files(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE)
+    comp.apply([[hit]])
+    h = comp.hits_json["MAP_1"]
+    for d, acc in (("NuclMapping", "ARO:1"), ("NuclMapping_2", "ARO:2")):
+        (tmp_path / d).mkdir()
+        json.dump({"MAP_1": dict(h, id=acc)}, open(tmp_path / d / "nucl_hits.json", "w"))
+    summarize_amr(comp.genome, str(tmp_path), {}, str(tmp_path / "amr_summary.tsv"))
+    rows = [l for l in open(tmp_path / "amr_summary.tsv") if not l.startswith("#")]
+    assert len(rows) == 2

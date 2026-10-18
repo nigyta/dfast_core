@@ -21,7 +21,8 @@ def summarize_amr(genome, work_dir, contig_annotation_report, output_file):
                 continue
 
             seq_id = feature.seq_id
-            features_with_hits.setdefault(seq_id, []).append(feature_id)
+            if feature_id not in features_with_hits.setdefault(seq_id, []):
+                features_with_hits[seq_id].append(feature_id)
             nucl_hits.setdefault(feature_id, []).append(hit)
 
     # print(contig_annotation_report)
