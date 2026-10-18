@@ -2,8 +2,13 @@ import logging
 from collections import OrderedDict
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import FeatureLocation
 import dfc.genome as genome_mod
-from dfc.components.NuclMapping import NuclMapping
+from dfc.components.NuclMapping import NuclMapping, new_cds, new_pseudogene, relocate_cds
+from dfc.models.bio_feature import ExtendedFeature
+from dfc.models.card import CARD
+from dfc.models.hit import NuclHit, PseudoGene
+from tests.test_mapping_util import _hit, GENE
 from dfc.functionalAnnotation import COMPONENTS
 
 class FakeGenome:
@@ -43,3 +48,103 @@ def test_blast_command(tmp_path):
     cmd = comp.blast_command("/w/genome")
     assert cmd[:3] == ["blastn", "-task", "dc-megablast"] and "/db/card/CARD.nucl.fasta" in cmd
     assert cmd[cmd.index("-perc_identity") + 1] == "90" and cmd[cmd.index("-num_threads") + 1] == "4"
+
+
+def _setup(tmp_path, gene, cds=(), validity=(True, True), btop=None, ref_len=None):
+    """One contig: 100 C + gene + 100 C, with predicted CDSs given as (id, start0, end, strand)."""
+    rec = SeqRecord(Seq("C" * 100 + gene + "C" * 100), id="sequence1")
+    rec.features = [ExtendedFeature(location=FeatureLocation(s, e, strand=st), type="CDS", id=i, seq_id="sequence1",
+                                    qualifiers={"translation": ["M"], "transl_table": ["11"], "codon_start": [1]},
+                                    annotations={"partial_flag": "00"}) for i, s, e, st in cds]
+    comp = _component(tmp_path, FakeGenome([rec]))
+    comp.references = {"ARO:1": CARD("ARO:1", "OXA-48", "OXA beta-lactamase", "P1", "", "N1", gene, "E. coli", "")}
+    comp.ref_validity = {"ARO:1": validity}
+    n = ref_len or len(gene)
+    send = 100 + len(gene) if btop else 100 + n   # genome-side end of the aligned gene
+    hit = _hit(qlen=n, qend=n, sstart=101, send=send, slen=len(rec), btop=btop or str(n))
+    return comp, rec, hit
+
+def _cds_features(rec):
+    return {f.id: f for f in rec.features if f.type == "CDS"}
+
+def test_rescue_adds_cds_with_primary_hit(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE)
+    comp.apply([[hit]])
+    f = _cds_features(rec)["MAP_1"]
+    assert (int(f.location.start), int(f.location.end), f.location.strand) == (100, 100 + len(GENE), 1)
+    assert f.qualifiers["translation"] == ["M" + "A" * 20] and f.primary_hit.id == "ARO:1"
+    assert comp.hits_json["MAP_1"]["model"]["note"].startswith("rescued; ")
+    assert comp.genome.features["MAP_1"] is f
+
+def test_annotate_keeps_identical_cds(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 100, 100 + len(GENE), 1)])
+    comp.apply([[hit]])
+    assert list(_cds_features(rec)) == ["MGA_1"]
+    f = rec.features[0]
+    assert f.primary_hit.id == "ARO:1" and "nucl_mapping" not in f.annotations
+    assert not comp.hits_json["MGA_1"]["model"]["note"].startswith(("rescued", "start corrected", "pseudogene"))
+
+def test_start_correction_relocates_same_gene(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 130, 100 + len(GENE), 1)])
+    comp.apply([[hit]])
+    f = _cds_features(rec)["MGA_1"]
+    assert int(f.location.start) == 100 and f.qualifiers["translation"] == ["M" + "A" * 20]
+    assert "start codon moved 30 bp upstream by mapping of CARD:OXA-48" in f.qualifiers["note"]
+    assert f.annotations["nucl_mapping"] == "start corrected" and f.primary_hit.id == "ARO:1"
+    assert comp.hits_json["MGA_1"]["model"]["note"].startswith("start corrected; ")
+
+def test_frameshift_makes_pseudogene_and_removes_fragments(tmp_path):
+    gene = GENE[:10] + GENE[11:]   # 1-bp deletion at position 111 of the genome
+    comp, rec, hit = _setup(tmp_path, gene, ref_len=len(GENE), btop="10A-" + str(len(GENE) - 11),
+                            cds=[("MGA_1", 100, 140, 1), ("MGA_2", 140, 100 + len(gene), 1)])
+    comp.apply([[hit]])
+    assert list(_cds_features(rec)) == ["MAP_1"]
+    f = rec.features[0]
+    assert f.qualifiers["pseudogene"] == ["unknown"] and "translation" not in f.qualifiers
+    assert "frameshift at around 111" in f.qualifiers["note"]
+    assert any(isinstance(h, PseudoGene) for h in f.secondary_hits) and f.primary_hit.id == "ARO:1"
+    assert comp.hits_json["MAP_1"]["model"]["note"].startswith("pseudogene: frameshift; ")
+
+def test_overlapping_cds_other_strand_removed_neighbour_kept(tmp_path):
+    right = 100 + len(GENE)
+    comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 110, right - 10, -1), ("MGA_2", right - 20, right + 100, 1)])
+    comp.apply([[hit]])
+    assert sorted(_cds_features(rec)) == ["MAP_1", "MGA_2"]
+
+def test_no_start_with_same_gene_only_annotates(tmp_path):
+    gene = "CCC" + GENE[3:]
+    comp, rec, hit = _setup(tmp_path, gene, cds=[("MGA_1", 130, 100 + len(gene), 1)])
+    comp.apply([[hit]])
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1"] and int(f["MGA_1"].location.start) == 130 and f["MGA_1"].primary_hit.id == "ARO:1"
+
+def test_no_start_without_same_gene_is_pseudogene(tmp_path):
+    comp, rec, hit = _setup(tmp_path, "CCC" + GENE[3:])
+    comp.apply([[hit]])
+    f = _cds_features(rec)["MAP_1"]
+    assert f.qualifiers["pseudogene"] == ["unknown"] and "no start codon" in f.qualifiers["note"]
+
+def test_invalid_reference_only_annotates(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE, validity=(False, True))
+    comp.apply([[hit]])
+    assert _cds_features(rec) == {}
+    comp, rec, hit = _setup(tmp_path, GENE, validity=(False, True), cds=[("MGA_1", 130, 100 + len(GENE), 1)])
+    comp.apply([[hit]])
+    f = _cds_features(rec)["MGA_1"]
+    assert int(f.location.start) == 130 and f.primary_hit.id == "ARO:1"
+
+def test_cds_overlapping_two_regions_removed_once(tmp_path):
+    gene2 = GENE + "C" * 30 + GENE
+    comp, rec, hit1 = _setup(tmp_path, gene2, ref_len=len(GENE), cds=[("MGA_1", 100, 100 + len(gene2), -1)])
+    hit2 = _hit(qlen=len(GENE), qend=len(GENE), sstart=101 + len(GENE) + 30, send=100 + len(gene2), slen=len(rec), btop=str(len(GENE)))
+    comp.apply([[hit1], [hit2]])
+    assert sorted(_cds_features(rec)) == ["MAP_1", "MAP_2"]
+
+def test_second_instance_does_not_touch_mapped_feature(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE)
+    mapped = ExtendedFeature(location=FeatureLocation(100, 100 + len(GENE), strand=1), type="CDS", id="MAP_9", seq_id="sequence1",
+                             qualifiers={"translation": ["M"]}, annotations={"partial_flag": "00", "nucl_mapping": "rescued"})
+    mapped.primary_hit = NuclHit("VFG1", comp.references["ARO:1"], "VFDB", 0.0, 1.0, 99.0, 100.0, 100.0, "")
+    rec.features.append(mapped); comp.genome.set_feature_dictionary()
+    comp.apply([[hit]])
+    assert list(_cds_features(rec)) == ["MAP_9"] and [h.id for h in mapped.secondary_hits] == ["ARO:1"]
