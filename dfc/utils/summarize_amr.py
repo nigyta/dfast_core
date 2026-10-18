@@ -5,7 +5,9 @@ from Bio.SeqIO.InsdcIO import _insdc_location_string
 
 def summarize_amr(genome, work_dir, contig_annotation_report, output_file):
 
-    nucl_hits_json_files = glob.glob(os.path.join(work_dir, "NuclSearch*", "*.json"))
+    nucl_hits_json_files = []
+    for component in ("NuclSearch", "NuclMapping"):
+        nucl_hits_json_files += glob.glob(os.path.join(work_dir, component + "*", "*.json"))
 
     nucl_hits = {}
     features_with_hits = {}

@@ -380,8 +380,8 @@ class FeatureUtil(object):
                 _to_misc_feature(feature, hit)
             elif isinstance(hit, NuclHit):
                 _to_misc_feature(feature, hit)
-        elif isinstance(hit, NuclHit):
-                _to_misc_feature(feature, hit)
+        elif isinstance(hit, NuclHit) and feature.annotations.get("partial_flag", "00") != "00":
+            _to_misc_feature(feature, hit)
 
 
 HYPOTHETICAL_PRODUCTS = {"hypothetical protein", "conserved protein", "uncharacterized protein", "conserved hypothetical protein"}

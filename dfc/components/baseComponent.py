@@ -78,6 +78,8 @@ class BaseAnnotationComponent(object):
                 ID = feature.id
                 if type_ == "protein":
                     sequence = feature.qualifiers.get("translation", [""])[0]
+                    if not sequence:  # e.g. a pseudogene CDS from NuclMapping
+                        continue
                 elif type_ == "nucleotide":  # get CDS
                     seq = self.genome.seq_records[feature.seq_id].seq
                     sequence = str(feature.extract(seq))

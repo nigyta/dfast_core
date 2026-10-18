@@ -3,6 +3,7 @@
 
 """Map nucleotide references (CARD/VFDB) onto the genome with blastn and annotate the mapped regions."""
 
+import json
 import os
 import re
 from collections import Counter
@@ -218,7 +219,9 @@ class NuclMapping(BaseAnnotationComponent):
         self.counts["removed"] += len(cds_ids)
 
     def write_hits(self):
-        pass  # Task 7
+        hits_json_file = os.path.join(self.workDir, "nucl_hits.json")
+        with open(hits_json_file, "w") as f:
+            json.dump(self.hits_json, f, indent=4)
 
     def run(self):
         db_prefix = self.create_db()
