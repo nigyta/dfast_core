@@ -248,6 +248,7 @@ class Config:
                 "overlap_tolerance": 30,
                 "transl_table": 11,
                 "blast_task": "dc-megablast",
+                "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
                 "aligner_options": "",
             },
         },
@@ -264,6 +265,7 @@ class Config:
                 "overlap_tolerance": 30,
                 "transl_table": 11,
                 "blast_task": "dc-megablast",
+                "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
                 "aligner_options": "",
             },
         },

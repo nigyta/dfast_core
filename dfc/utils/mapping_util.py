@@ -101,21 +101,29 @@ def indel_analysis(hit: MappingHit) -> tuple[int, list[int]]:
     return shift, positions
 
 
+def _same_locus(a: MappingHit, b: MappingHit) -> bool:
+    """The regions overlap by more than half of the shorter one (operon neighbours overlap by a few bp only)."""
+    return min(a.right, b.right) - max(a.left0, b.left0) > min(a.right - a.left0, b.right - b.left0) / 2
+
+
 def group_by_locus(hits: list[MappingHit]) -> list[list[MappingHit]]:
-    """Group hits whose extrapolated regions overlap on the same sequence and strand.
+    """Group hits on the same sequence and strand whose extrapolated regions are the same locus (_same_locus),
+    transitively.
 
     Each group is sorted by (bitscore, pident) descending; groups are ordered by (seq_id, left0).
     """
-    groups = []
-    right = 0  # largest right end in the current group
+    groups, active = [], []
     for h in sorted(hits, key=lambda h: (h.seq_id, h.strand, h.left0)):
-        last = groups[-1][0] if groups else None
-        if last and (last.seq_id, last.strand) == (h.seq_id, h.strand) and h.left0 < right:
-            groups[-1].append(h)
-            right = max(right, h.right)
-        else:
-            groups.append([h])
-            right = h.right
+        joined, kept = [h], []
+        for g in active:
+            if (g[0].seq_id, g[0].strand) != (h.seq_id, h.strand) or max(m.right for m in g) <= h.left0:
+                groups.append(g)  # no later hit can reach this group
+            elif any(_same_locus(h, m) for m in g):
+                joined += g
+            else:
+                kept.append(g)
+        active = kept + [joined]
+    groups += active
     groups.sort(key=lambda g: (g[0].seq_id, min(h.left0 for h in g)))
     for g in groups:
         g.sort(key=lambda h: (h.bitscore, h.pident), reverse=True)

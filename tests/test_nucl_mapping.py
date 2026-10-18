@@ -28,6 +28,7 @@ def _component(tmp_path, genome, **options):
     comp.genome, comp.workDir, comp.pipeline_dir = genome, str(tmp_path), str(tmp_path)
     comp.logger = logging.getLogger("test")
     comp.db_name, comp.pident_cutoff, comp.overlap_tolerance, comp.transl_table = "CARD", 90, 30, 11
+    comp.pseudogene_pident_cutoff = 95
     comp.result_file = str(tmp_path / "mapping.out")
     comp.references, comp.ref_validity, comp.hits_json = {}, {}, {}
     for k, v in options.items(): setattr(comp, k, v)
@@ -106,9 +107,53 @@ def test_frameshift_makes_pseudogene_and_removes_fragments(tmp_path):
     assert list(_cds_features(rec)) == ["MAP_1"]
     f = rec.features[0]
     assert f.qualifiers["pseudogene"] == ["unknown"] and "translation" not in f.qualifiers
+    assert "transl_table" not in f.qualifiers   # DDBJ ANN3150: /pseudogene and /transl_table cannot be used together
     assert "frameshift at around 111" in f.qualifiers["note"]
     assert any(isinstance(h, PseudoGene) for h in f.secondary_hits) and f.primary_hit.id == "ARO:1"
     assert comp.hits_json["MAP_1"]["model"]["note"].startswith("pseudogene: frameshift; ")
+
+def test_distant_reference_does_not_call_pseudogene(tmp_path):
+    gene = GENE[:10] + GENE[11:]
+    cds = [("MGA_1", 100, 140, 1), ("MGA_2", 140, 100 + len(gene), 1)]
+    comp, rec, hit = _setup(tmp_path, gene, ref_len=len(GENE), btop="10A-" + str(len(GENE) - 11), cds=cds)
+    hit.pident = 93.6                                       # a single cross-strain reference (aslA)
+    comp.apply([[hit]])
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1", "MGA_2"] and f["MGA_2"].primary_hit.id == "ARO:1"
+
+def test_unresolved_region_is_skipped(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE[:-3] + "GCT", validity=(True, False))   # no stop within 100 bp
+    comp.apply([[hit]])
+    assert _cds_features(rec) == {}
+
+def _add_reference(comp, ref_id, nucl_seq, validity=(True, True)):
+    comp.references[ref_id] = CARD(ref_id, "OXA-1", "OXA beta-lactamase", "P2", "", "N2", nucl_seq, "E. coli", "")
+    comp.ref_validity[ref_id] = validity
+
+def test_identical_intact_reference_beats_longer_frameshifted_one(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 130, 100 + len(GENE), 1)])
+    hit.pident = 100.0
+    longer = GENE[:10] + "A" + GENE[10:]                    # 98.8%, one gap against the genome (hlyE)
+    _add_reference(comp, "ARO:2", longer)
+    other = _hit(ref_id="ARO:2", pident=98.8, bitscore=600.0, qlen=len(longer), qend=len(longer), sstart=101,
+                 send=100 + len(GENE), slen=len(rec), btop="10A-" + str(len(GENE) - 10))
+    comp.apply([[other, hit]])
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1"] and int(f["MGA_1"].location.start) == 100
+    assert f["MGA_1"].primary_hit.id == "ARO:1" and [h.id for h in f["MGA_1"].secondary_hits] == ["ARO:2"]
+
+def test_intact_reference_beats_longer_one_with_internal_stop(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE + "GCTGCTTAA", ref_len=len(GENE))
+    hit.pident = 100.0
+    longer = GENE[:-3] + "TACGCTGCTTAA"                     # 3 codons longer, 99.9% (cusC)
+    _add_reference(comp, "ARO:2", longer)
+    other = _hit(ref_id="ARO:2", pident=99.9, bitscore=600.0, qlen=len(longer), qend=len(longer), sstart=101,
+                 send=100 + len(longer), slen=len(rec), btop=str(len(longer)))
+    comp.apply([[other, hit]])
+    f = _cds_features(rec)
+    assert list(f) == ["MAP_1"] and "pseudogene" not in f["MAP_1"].qualifiers
+    assert (int(f["MAP_1"].location.start), int(f["MAP_1"].location.end)) == (100, 100 + len(GENE))
+    assert f["MAP_1"].primary_hit.id == "ARO:1"
 
 def test_overlapping_cds_other_strand_removed_neighbour_kept(tmp_path):
     right = 100 + len(GENE)
@@ -183,7 +228,7 @@ def test_summarize_pseudo_accepts_nucl_hit(tmp_path):
 def test_prepare_queries_skips_cds_without_translation(tmp_path):
     from dfc.components.baseComponent import BaseAnnotationComponent
     comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 0, 30, 1)])
-    rec.features.append(new_pseudogene(MappedRegion("sequence1", 100, 100 + len(GENE), 1, "frameshift", "", [], set(), set()), "MAP_1", 11))
+    rec.features.append(new_pseudogene(MappedRegion("sequence1", 100, 100 + len(GENE), 1, "frameshift", "", [], set(), set()), "MAP_1"))
     comp.genome.set_feature_dictionary()
     base = BaseAnnotationComponent.__new__(BaseAnnotationComponent)
     base.genome, base.workDir, base.CPU, base.skipAnnotatedFeatures, base.logger = comp.genome, str(tmp_path), 1, False, comp.logger
@@ -208,7 +253,7 @@ def test_fix_partial_cds_keeps_complete_nucl_hit_cds(tmp_path):
 def test_summarize_pseudo_keeps_empty_protein_description(tmp_path):
     from dfc.models.hit import ProteinHit
     comp, rec, _ = _setup(tmp_path, GENE)
-    f = new_pseudogene(MappedRegion("sequence1", 100, 100 + len(GENE), 1, "frameshift", "", [], set(), {111}), "PG_1", 11)
+    f = new_pseudogene(MappedRegion("sequence1", 100, 100 + len(GENE), 1, "frameshift", "", [], set(), {111}), "PG_1")
     f.secondary_hits.append(PseudoGene("P1", set(), {111}))
     f.primary_hit = ProteinHit("P1", "", "", "", "", "", "DB", 0.0, 1.0, 99.0, 100.0, 100.0, "")
     f.seq_id = "sequence1"

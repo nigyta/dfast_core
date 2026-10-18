@@ -79,6 +79,26 @@ def test_group_by_locus_keeps_two_loci_of_one_reference():
     assert [[h.sstart for h in g] for g in group_by_locus([a, b])] == [[1001], [4001]]
 
 
+def test_group_by_locus_keeps_operon_neighbours_apart():
+    a = _hit(ref_id="A")                                    # 1000..1300
+    for start in (1300, 1290):                              # overlaps of 1 bp and 11 bp (adeA/adeB)
+        b = _hit(ref_id="B", sstart=start, send=start + 299)
+        assert [[h.ref_id for h in g] for g in group_by_locus([a, b])] == [["A"], ["B"]]
+
+
+def test_group_by_locus_merges_references_of_different_lengths():
+    a = _hit(ref_id="A", qlen=600, qend=600, sstart=1001, send=1600)
+    b = _hit(ref_id="B", qlen=612, qend=612, sstart=1001, send=1612, bitscore=600)
+    assert [[h.ref_id for h in g] for g in group_by_locus([a, b])] == [["B", "A"]]
+
+
+def test_group_by_locus_is_transitive():
+    x = _hit(ref_id="X")                                    # 1000..1300
+    y = _hit(ref_id="Y", sstart=1281, send=1580)            # 1280..1580: overlaps X by 20 bp only
+    z = _hit(ref_id="Z", qlen=15, qend=15, sstart=1286, send=1300, bitscore=10)   # 1285..1300: half in X and in Y
+    assert [sorted(h.ref_id for h in g) for g in group_by_locus([x, y, z])] == [["X", "Y", "Z"]]
+
+
 GENE = "ATG" + "GCT" * 20 + "TAA"
 
 

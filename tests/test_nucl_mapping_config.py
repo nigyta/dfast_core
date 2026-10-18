@@ -35,3 +35,8 @@ def test_amr_map_alone_does_not_warn(caplog):
 def test_genetic_code_propagates():
     config = _config(); set_genetic_code(config, 4)
     assert [s["options"]["transl_table"] for s in config.FUNCTIONAL_ANNOTATION if s["component_name"] == "NuclMapping"] == [4, 4]
+
+def test_mapping_option_defaults():
+    for path in ["dfc/default_config.py", "example/dfc_config/dfast_web_config.py"]:
+        options = [s["options"] for s in _config(path).FUNCTIONAL_ANNOTATION if s["component_name"] == "NuclMapping"]
+        assert [(o["blast_task"], o["pseudogene_pident_cutoff"]) for o in options] == [("dc-megablast", 95)] * 2

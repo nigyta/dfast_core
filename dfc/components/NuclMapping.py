@@ -36,10 +36,9 @@ def new_cds(region, feature_id, transl_table):
                            annotations={"partial_flag": "00", "nucl_mapping": "rescued"})
 
 
-def new_pseudogene(region, feature_id, transl_table):
+def new_pseudogene(region, feature_id):
     return ExtendedFeature(location=_location(region), type="CDS", id=feature_id, seq_id=region.seq_id,
-                           qualifiers={"pseudogene": ["unknown"], "transl_table": [str(transl_table)],
-                                       "codon_start": [1], "note": list(region.notes)},
+                           qualifiers={"pseudogene": ["unknown"], "codon_start": [1], "note": list(region.notes)},
                            annotations={"partial_flag": "00", "nucl_mapping": "pseudogene"})
 
 
@@ -72,6 +71,7 @@ class NuclMapping(BaseAnnotationComponent):
         self.overlap_tolerance = options.get("overlap_tolerance", 30)
         self.transl_table = options.get("transl_table", 11)
         self.blast_task = options.get("blast_task", "dc-megablast")
+        self.pseudogene_pident_cutoff = options.get("pseudogene_pident_cutoff", 95)
         self.aligner_options = options.get("aligner_options", "")
         self.result_file = os.path.join(self.workDir, "mapping.out")
         self.hits_json = {}
@@ -130,15 +130,24 @@ class NuclMapping(BaseAnnotationComponent):
         self.logger.info(f"{self.db_name} mapping: {c['rescued']} rescued, {c['start corrected']} start corrected, "
                          f"{c['pseudogene']} pseudogenes, {c['annotated']} annotated, {c['removed']} CDSs removed")
 
+    def rank(self, region, hit):
+        """Members with a valid reference resolving to an intact CDS first, then by identity: a longer, less identical
+        reference must not turn an intact gene into a pseudogene. Invalid references rank after valid ones."""
+        valid = self.ref_validity[hit.ref_id][0]
+        intact = region is not None and valid and region.kind == "valid"
+        return region is not None, intact, valid, hit.pident, hit.bitscore
+
     def apply_group(self, group):
-        primary = group[0]
-        valid, has_stop = self.ref_validity[primary.ref_id]
-        record = self.genome.seq_records[primary.seq_id]
+        record = self.genome.seq_records[group[0].seq_id]
         # Resolved before the check below so that a region extended to the next stop codon is compared
         # at its final location with a feature of an earlier instance.
-        region = resolve_region(record.seq, primary, self.transl_table, has_stop)
+        ranked = sorted(((resolve_region(record.seq, h, self.transl_table, self.ref_validity[h.ref_id][1]), h)
+                         for h in group), key=lambda rh: self.rank(*rh), reverse=True)
+        region, primary = ranked[0]
         if region is None:
             return
+        group = [h for _, h in ranked]
+        valid = self.ref_validity[primary.ref_id][0]
         location = (region.left0, region.right)
         for feature in record.features:  # an earlier instance (e.g. CARD before VFDB) wins
             if feature.annotations.get("nucl_mapping") and feature.location.strand == region.strand \
@@ -152,7 +161,12 @@ class NuclMapping(BaseAnnotationComponent):
         classes = {cds.id: classify_cds(cds, region, self.overlap_tolerance) for cds in record.features
                    if cds.type == "CDS" and not cds.annotations.get("nucl_mapping")}
         same = next((f for f in record.features if classes.get(f.id) == "same_gene"), None)
-        if not valid:  # annotate-only reference
+        defect = region.kind != "valid" and not (region.kind == "no_start" and same is not None)
+        distant = defect and primary.pident < self.pseudogene_pident_cutoff  # too distant to call a pseudogene
+        if not valid or distant:  # annotate only
+            if valid:
+                self.logger.debug(f"{region.kind} in mapping of {primary.ref_id} ({primary.pident}%) at {location} "
+                                  f"not called as a pseudogene: identity below {self.pseudogene_pident_cutoff}%")
             if same is not None:
                 self.annotate(same, group)
             return
@@ -171,7 +185,7 @@ class NuclMapping(BaseAnnotationComponent):
         elif region.kind == "no_start" and same is not None:  # the reference start is not usable
             self.annotate(same, group, notes=[n for n in region.notes if n != "no start codon"])
         else:
-            action, feature = PSEUDOGENE_ACTIONS[region.kind], new_pseudogene(region, self.new_id(), self.transl_table)
+            action, feature = PSEUDOGENE_ACTIONS[region.kind], new_pseudogene(region, self.new_id())
             feature.secondary_hits.append(PseudoGene(primary.ref_id, region.stop_codons, region.indels))
             record.features.append(feature)
             if same is not None:
