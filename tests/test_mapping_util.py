@@ -1,4 +1,5 @@
-from dfc.utils.mapping_util import MappingHit, read_blast_table, is_full_length, indel_analysis
+from dfc.utils.mapping_util import (MappingHit, read_blast_table, is_full_length, indel_analysis,
+                                    group_by_locus, is_valid_reference)
 
 
 def _hit(**kw):
@@ -55,3 +56,32 @@ def test_indel_analysis_minus_strand():
 
 def test_indel_analysis_in_frame_gap_has_zero_shift():
     assert indel_analysis(_hit(btop="10A-A-A-287")) == (-3, [1011])
+
+
+def test_group_by_locus_merges_overlapping_hits_and_sorts_by_score():
+    a = _hit(ref_id="A", bitscore=400); b = _hit(ref_id="B", sstart=1010, send=1309, bitscore=500)
+    c = _hit(ref_id="C", sstart=3001, send=3300)
+    groups = group_by_locus([a, b, c])
+    assert [[h.ref_id for h in g] for g in groups] == [["B", "A"], ["C"]]
+
+
+def test_group_by_locus_separates_strands():
+    a = _hit(ref_id="A"); b = _hit(ref_id="B", sstart=1300, send=1001)
+    assert len(group_by_locus([a, b])) == 2
+
+
+def test_group_by_locus_keeps_two_loci_of_one_reference():
+    a = _hit(ref_id="A"); b = _hit(ref_id="A", sstart=4001, send=4300)
+    assert [[h.sstart for h in g] for g in group_by_locus([a, b])] == [[1001], [4001]]
+
+
+GENE = "ATG" + "GCT" * 20 + "TAA"
+
+
+def test_reference_validity():
+    assert is_valid_reference(GENE, 11) == (True, True)
+    assert is_valid_reference(GENE[:-3], 11) == (True, False)          # no terminal stop
+    assert is_valid_reference("CCC" + GENE[3:], 11) == (False, True)   # no start codon
+    assert is_valid_reference(GENE[:30] + "TAA" + GENE[30:], 11)[0] is False   # internal stop
+    assert is_valid_reference(GENE + "A", 11)[0] is False              # not a multiple of 3
+    assert is_valid_reference(GENE.replace("GCT", "GNT", 1), 11)[0] is False   # ambiguous base

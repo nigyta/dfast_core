@@ -6,6 +6,8 @@
 import re
 from dataclasses import dataclass
 
+from Bio.Data import CodonTable
+
 BLAST_OUTFMT = "6 qaccver saccver pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen btop"
 END_SLACK = 3  # bases of the reference that may be left unaligned at each end of a full-length hit
 STOP_EXTENSION = 100  # bases searched downstream of a region for an in-frame stop codon
@@ -96,3 +98,41 @@ def indel_analysis(hit: MappingHit) -> tuple[int, list[int]]:
         offset += step
         prev_kind = kind
     return shift, positions
+
+
+def group_by_locus(hits: list[MappingHit]) -> list[list[MappingHit]]:
+    """Group hits whose extrapolated regions overlap on the same sequence and strand.
+
+    Each group is sorted by (bitscore, pident) descending; groups are ordered by (seq_id, left0).
+    """
+    groups = []
+    right = 0  # largest right end in the current group
+    for h in sorted(hits, key=lambda h: (h.seq_id, h.strand, h.left0)):
+        last = groups[-1][0] if groups else None
+        if last and (last.seq_id, last.strand) == (h.seq_id, h.strand) and h.left0 < right:
+            groups[-1].append(h)
+            right = max(right, h.right)
+        else:
+            groups.append([h])
+            right = h.right
+    groups.sort(key=lambda g: (g[0].seq_id, min(h.left0 for h in g)))
+    for g in groups:
+        g.sort(key=lambda h: (h.bitscore, h.pident), reverse=True)
+    return groups
+
+
+def is_valid_reference(nucl_seq: str, transl_table: int) -> tuple[bool, bool]:
+    """Return (valid, has_terminal_stop) for a reference CDS.
+
+    valid: a multiple of 3, only ACGT, starts with a start codon and has no internal stop codon.
+    has_terminal_stop: the last codon is a stop codon.
+    """
+    table = CodonTable.unambiguous_dna_by_id[transl_table]
+    seq = nucl_seq.upper()
+    codons = [seq[i:i + 3] for i in range(0, len(seq), 3)]
+    has_terminal_stop = len(seq) % 3 == 0 and bool(codons) and codons[-1] in table.stop_codons
+    body = codons[:-1] if has_terminal_stop else codons
+    valid = (len(seq) % 3 == 0 and bool(codons) and set(seq) <= set("ACGT")
+             and codons[0] in table.start_codons
+             and not any(c in table.stop_codons for c in body))
+    return valid, has_terminal_stop
