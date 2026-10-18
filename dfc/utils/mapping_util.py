@@ -179,37 +179,37 @@ def resolve_region(record_seq: Seq, hit: MappingHit, transl_table: int, ref_has_
     def set_length(new_length):
         region.left0, region.right = (left0, left0 + new_length) if strand == 1 else (right - new_length, right)
 
-    if seq[length - 3:length] not in table.stop_codons:
+    # Scan the first in-frame stop inside the region before any extension.
+    codons = [seq[i:i + 3] for i in range(0, length, 3)]
+    n_sense = len(codons) - 1 if ref_has_stop else len(codons)  # codons of the reference before its stop
+    stops = [i for i, c in enumerate(codons) if c in table.stop_codons]
+    if not stops:  # no stop in the region: look for one downstream
         stop = next((i for i in range(length, len(seq) - 2, 3)
                      if seq[i:i + 3] in table.stop_codons and i + 3 - length <= STOP_EXTENSION), None)
-        if stop is not None:
-            extension = stop + 3 - length
-            if ref_has_stop:
-                region.notes.append(f"stop codon of the reference is not conserved; extended by {extension} bp")
-            length += extension
-            set_length(length)
-        elif ref_has_stop:
+        if stop is None and ref_has_stop:
             region.kind = "stop_lost"
             region.notes.append("stop codon lost")
             return region
-        else:
+        if stop is None:
             return None
-
-    codons = [seq[i:i + 3] for i in range(0, length - 3, 3)]  # sense codons; the terminal stop is excluded
-    stops = [i for i, c in enumerate(codons) if c in table.stop_codons]
-    if stops and stops[0] >= len(codons) - TAIL_STOP_CODONS:
-        shorter = len(codons) - stops[0]
-        codons = codons[:stops[0]]
-        length = 3 * (stops[0] + 1)
-        set_length(length)
-        region.notes.append(f"{shorter} codon(s) shorter than the reference")
-    elif stops:
-        region.kind = "internal_stop"
-        for i in stops:
-            start0 = region.left0 + 3 * i if strand == 1 else region.right - 3 * i - 3
-            region.stop_codons.add((start0, start0 + 3, strand))
-            region.notes.append(f"internal stop codon at {start0 + 1}")
-        return region
+        if ref_has_stop:
+            region.notes.append(f"stop codon of the reference is not conserved; extended by {stop + 3 - length} bp")
+        codons = [seq[i:i + 3] for i in range(0, stop, 3)]
+        set_length(stop + 3)
+    elif stops[0] < n_sense:  # a stop before the reference's own stop
+        if stops[0] > 0 and stops[0] >= n_sense - TAIL_STOP_CODONS:
+            region.notes.append(f"{n_sense - stops[0]} codon(s) shorter than the reference")
+            codons = codons[:stops[0]]
+            set_length(3 * (stops[0] + 1))
+        else:
+            region.kind = "internal_stop"
+            for i in (i for i in stops if i < n_sense):
+                start0 = region.left0 + 3 * i if strand == 1 else region.right - 3 * i - 3
+                region.stop_codons.add((start0, start0 + 3, strand))
+                region.notes.append(f"internal stop codon at {start0 + 1}")
+            return region
+    else:  # the stop of the reference is conserved
+        codons = codons[:n_sense]
 
     translation = str(Seq("".join(codons)).translate(table=transl_table))
     if codons[0] not in table.start_codons:

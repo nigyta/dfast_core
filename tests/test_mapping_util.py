@@ -190,3 +190,33 @@ def test_alternative_start_codon_translates_to_m():
     seq, hit = _region("GTG" + GENE[3:])
     r = resolve_region(seq, hit, 11, True)
     assert r.kind == "valid" and r.translation == "M" + "A" * 20
+
+
+def test_tail_stop_before_read_through_reference_stop():
+    # case A: stop one codon early, the reference's own stop position reads through, another stop 6 bp downstream
+    gene = GENE[:-6] + "TAA" + "GCT" + "GCT" * 1 + "TAA"
+    for strand in (1, -1):
+        seq, hit = _region(gene, ref_len=len(GENE), strand=strand)
+        if strand == -1:
+            top = 100 + len(gene)
+            hit = _hit(qlen=len(GENE), qend=len(GENE), sstart=top, send=top - len(GENE) + 1, slen=len(seq), btop=str(len(GENE)))
+        r = resolve_region(seq, hit, 11, True)
+        expected = (100, 163) if strand == 1 else (100 + len(gene) - 63, 100 + len(gene))
+        assert r.kind == "valid" and (r.left0, r.right) == expected and r.notes == ["1 codon(s) shorter than the reference"]
+
+
+def test_tail_stop_in_reference_without_stop():
+    # case B: reference without a stop (63 bp); the genome has a stop at its last sense codon
+    gene = GENE[:-6] + "TAA"
+    seq, hit = _region(gene)
+    r = resolve_region(seq, hit, 11, False)
+    assert r.kind == "valid" and r.right == 100 + len(gene) and r.notes == ["1 codon(s) shorter than the reference"]
+    assert r.translation == "M" + "A" * 19
+
+
+def test_tail_stop_in_reference_without_stop_ignores_downstream_stop():
+    # case C: stop in the second-to-last sense codon of a reference without stop, next stop 30 bp downstream
+    gene = GENE[:-9] + "TAA" + "GCT" + "GCT" * 9 + "TAA"
+    seq, hit = _region(gene, ref_len=len(GENE) - 3)
+    r = resolve_region(seq, hit, 11, False)
+    assert r.kind == "valid" and r.right == 100 + len(GENE) - 6 and r.notes == ["2 codon(s) shorter than the reference"]
