@@ -87,7 +87,7 @@ def test_annotate_keeps_identical_cds(tmp_path):
     comp.apply([[hit]])
     assert list(_cds_features(rec)) == ["MGA_1"]
     f = rec.features[0]
-    assert f.primary_hit.id == "ARO:1" and "nucl_mapping" not in f.annotations
+    assert f.primary_hit.id == "ARO:1" and f.annotations["nucl_mapping"] == "annotated"
     assert not comp.hits_json["MGA_1"]["model"]["note"].startswith(("rescued", "start corrected", "pseudogene"))
 
 def test_start_correction_relocates_same_gene(tmp_path):
@@ -235,6 +235,56 @@ def test_small_overlap_with_earlier_instance_feature_is_ignored(tmp_path):
     comp.apply([[hit]])
     f = _cds_features(rec)
     assert sorted(f) == ["MAP_10", "MAP_9"] and f["MAP_10"].primary_hit.id == "ARO:1" and not mapped.secondary_hits
+
+
+def _second_instance(tmp_path, comp):
+    """A VFDB instance on the genome of comp, with the same references."""
+    vfdb = _component(tmp_path, comp.genome, db_name="VFDB")
+    vfdb.references, vfdb.ref_validity = comp.references, comp.ref_validity
+    return vfdb
+
+def test_neighbours_mapped_by_two_instances(tmp_path):
+    comp, rec, hit_a, hit_b = _two_genes(tmp_path, [("MGA_1", 100, 100 + len(GENE_A), 1),
+                                                    ("MGA_2", B0, B0 + len(GENE_B), 1)])
+    comp.apply([[hit_a]])                       # CARD: GENE_A only
+    vfdb = _second_instance(tmp_path, comp)
+    vfdb.apply([[hit_b]])                       # VFDB: GENE_B only
+    f = _cds_features(rec)
+    assert f["MGA_1"].primary_hit.id == "ARO:1" and vfdb.counts["removed"] == 0
+    # The CARD instance still removes MGA_2 (overlap 35 > overlap_tolerance); VFDB re-creates GENE_B at its location.
+    assert sorted(f) == ["MAP_1", "MGA_1"] and f["MAP_1"].primary_hit.id == "ARO:2"
+    assert (int(f["MAP_1"].location.start), int(f["MAP_1"].location.end)) == (B0, B0 + len(GENE_B))
+
+UPSTREAM = "ATG" + "GCT" * 9                    # an in-frame start codon 30 bp upstream of GENE
+
+def _longer_reference(tmp_path, cds):
+    """Genome 100 C + UPSTREAM + GENE + 100 C; hit_short maps GENE (ARO:1), hit_long maps UPSTREAM + GENE (ARO:2)."""
+    comp, rec, hit_short = _setup(tmp_path, UPSTREAM + GENE, cds=cds)
+    hit_short = _hit(qlen=len(GENE), qend=len(GENE), sstart=131, send=130 + len(GENE), slen=len(rec), btop=str(len(GENE)))
+    _add_reference(comp, "ARO:2", UPSTREAM + GENE)
+    n = len(UPSTREAM + GENE)
+    hit_long = _hit(ref_id="ARO:2", qlen=n, qend=n, sstart=101, send=100 + n, slen=len(rec), btop=str(n))
+    return comp, rec, hit_short, hit_long
+
+def test_later_instance_does_not_relocate_annotated_cds(tmp_path):
+    end = 130 + len(GENE)
+    comp, rec, hit_short, hit_long = _longer_reference(tmp_path, [("MGA_1", 130, end, 1)])
+    comp.apply([[hit_short]])                   # CARD annotates MGA_1 in place
+    vfdb = _second_instance(tmp_path, comp)
+    vfdb.apply([[hit_long]])                    # same locus, different start: skipped
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1"] and (int(f["MGA_1"].location.start), int(f["MGA_1"].location.end)) == (130, end)
+    assert f["MGA_1"].primary_hit.id == "ARO:1" and not f["MGA_1"].secondary_hits
+
+def test_same_locus_different_location_of_rescued_feature_is_skipped(tmp_path):
+    comp, rec, hit_short, hit_long = _longer_reference(tmp_path, [])
+    mapped = ExtendedFeature(location=FeatureLocation(130, 130 + len(GENE), strand=1), type="CDS", id="MAP_9",
+                             seq_id="sequence1", qualifiers={"translation": ["M"]},
+                             annotations={"partial_flag": "00", "nucl_mapping": "rescued"})
+    rec.features.append(mapped); comp.genome.set_feature_dictionary()
+    comp.apply([[hit_long]])
+    assert list(_cds_features(rec)) == ["MAP_9"] and not mapped.secondary_hits
+    assert int(mapped.location.start) == 130
 
 
 

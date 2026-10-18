@@ -215,13 +215,15 @@ class NuclMapping(BaseAnnotationComponent):
                         100.0, 100.0, "alternative hit" if i else "") for i, h in enumerate(group)]
 
     def annotate(self, feature, group, secondary=False, notes=()):
-        """Attach the hits to a feature without changing it, as NuclSearch does."""
+        """Attach the hits to a feature without changing it, as NuclSearch does. A CDS that gets the mapping as its
+        primary hit is marked as mapped, so a later instance neither removes nor relocates it."""
         hit, *others = self.nucl_hits(group)
         feature.qualifiers.setdefault("note", []).extend(notes)
         if secondary or feature.primary_hit:
             feature.secondary_hits.append(hit)
         else:
             feature.primary_hit = hit
+            feature.annotations["nucl_mapping"] = "annotated"
         feature.secondary_hits.extend(others)
         self.hits_json[feature.id] = hit.to_dict()
         self.counts["annotated"] += 1
