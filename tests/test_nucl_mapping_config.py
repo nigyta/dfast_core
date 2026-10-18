@@ -1,3 +1,4 @@
+import logging
 import os
 from dfc.utils.config_util import load_config, enable_amr, enable_amr_map, set_genetic_code
 APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,7 +25,12 @@ def test_amr_map_enables_mapping_and_plasmidfinder():
 
 def test_amr_map_with_amr_disables_nuclsearch(caplog):
     config = _config(); enable_amr(config); enable_amr_map(config)
-    assert all(not e for e in _enabled(config, "NuclSearch")) and "NuclSearch" in caplog.text
+    assert all(not e for e in _enabled(config, "NuclSearch"))
+    assert any(r.levelno == logging.WARNING and "NuclSearch" in r.getMessage() for r in caplog.records)
+
+def test_amr_map_alone_does_not_warn(caplog):
+    config = _config(); enable_amr_map(config)
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING and "NuclSearch" in r.getMessage()]
 
 def test_genetic_code_propagates():
     config = _config(); set_genetic_code(config, 4)
