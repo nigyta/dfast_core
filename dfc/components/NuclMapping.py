@@ -38,7 +38,7 @@ def new_cds(region, feature_id, transl_table):
 
 def new_pseudogene(region, feature_id):
     return ExtendedFeature(location=_location(region), type="CDS", id=feature_id, seq_id=region.seq_id,
-                           qualifiers={"pseudogene": ["unknown"], "codon_start": [1], "note": list(region.notes)},
+                           qualifiers={"pseudogene": ["unknown"], "note": list(region.notes)},
                            annotations={"partial_flag": "00", "nucl_mapping": "pseudogene"})
 
 

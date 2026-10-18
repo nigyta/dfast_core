@@ -107,7 +107,7 @@ def test_frameshift_makes_pseudogene_and_removes_fragments(tmp_path):
     assert list(_cds_features(rec)) == ["MAP_1"]
     f = rec.features[0]
     assert f.qualifiers["pseudogene"] == ["unknown"] and "translation" not in f.qualifiers
-    assert "transl_table" not in f.qualifiers   # DDBJ ANN3150: /pseudogene and /transl_table cannot be used together
+    assert not {"transl_table", "codon_start"} & set(f.qualifiers)   # DDBJ ANN3150: not allowed with /pseudogene
     assert "frameshift at around 111" in f.qualifiers["note"]
     assert any(isinstance(h, PseudoGene) for h in f.secondary_hits) and f.primary_hit.id == "ARO:1"
     assert comp.hits_json["MAP_1"]["model"]["note"].startswith("pseudogene: frameshift; ")
