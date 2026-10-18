@@ -71,6 +71,7 @@ class NuclMapping(BaseAnnotationComponent):
         self.evalue_cutoff = options.get("evalue_cutoff", 1e-10)
         self.overlap_tolerance = options.get("overlap_tolerance", 30)
         self.transl_table = options.get("transl_table", 11)
+        self.blast_task = options.get("blast_task", "dc-megablast")
         self.aligner_options = options.get("aligner_options", "")
         self.result_file = os.path.join(self.workDir, "mapping.out")
         self.hits_json = {}
@@ -99,7 +100,7 @@ class NuclMapping(BaseAnnotationComponent):
         return db_prefix
 
     def blast_command(self, db_prefix):
-        return ["blastn", "-task", "dc-megablast", "-query", self.database + ".nucl.fasta", "-db", db_prefix,
+        return ["blastn", "-task", self.blast_task, "-query", self.database + ".nucl.fasta", "-db", db_prefix,
                 "-out", self.result_file, "-outfmt", "'" + BLAST_OUTFMT + "'",
                 "-evalue", str(self.evalue_cutoff), "-perc_identity", str(self.pident_cutoff),
                 "-max_target_seqs", "1000", "-max_hsps", "50", "-num_threads", str(self.CPU)] \

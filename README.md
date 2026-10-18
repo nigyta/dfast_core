@@ -271,6 +271,7 @@ Workflow options:
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
   --amr                 [Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs
+  --amr_map             [Preliminary implementation] Like --amr, but CARD/VFDB references are mapped directly onto the genome (NuclMapping) instead of being searched with the predicted CDSs
   --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
@@ -360,6 +361,18 @@ DFAST performs PlasmidFinder-based searches against the following reference data
 Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
 ```
 dfast -g example/pOXA-48.fa --amr
+```
+
+__Direct mapping of references (`--amr_map`)__  
+`--amr_map` works like `--amr`, but the CARD/VFDB nucleotide references are mapped directly onto the genome with `blastn` (`NuclMapping`) instead of being searched with the predicted CDSs (`NuclSearch`). Only references that are correct genes (length a multiple of 3, a start codon, no internal stop codon, no ambiguous bases) change the annotation; the hits of other references are only attached to an overlapping CDS, as with `--amr`. Only full-length mappings (the whole reference aligned at 90% identity or more) are used; partial mappings are ignored. A full-length mapping:
+- adds a CDS for a gene that CDS prediction missed (rescue),
+- moves the start codon of a predicted CDS of the same gene to that of the reference (start correction; recorded in `/note`),
+- reports a gene with a frameshift, an internal stop codon, a lost stop codon or no start codon as one CDS with `/pseudogene="unknown"`, with the reason and position in `/note` (e.g. "frameshift at around 1234"),
+- removes predicted CDSs on either strand that overlap the mapped gene by more than `overlap_tolerance`.
+
+These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudogene_summary.tsv`. The options of the `NuclMapping` entries in the config include `pident_cutoff` (minimum identity, default 90) and `overlap_tolerance` (predicted CDSs overlapping a mapped gene by more than this many bp are removed, default 30). If `--amr` and `--amr_map` are both given, `NuclSearch` is disabled. `--amr_map` is planned to replace `NuclSearch` under `--amr` in a future version.
+```
+dfast -g example/pOXA-48.fa --amr_map
 ```
 
 ### Mobile genetic element (MGE) detection

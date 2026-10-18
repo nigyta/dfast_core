@@ -48,9 +48,10 @@ def test_select_hits_keeps_full_length_hits_on_known_contigs(tmp_path, caplog):
     assert "unknown" in caplog.text
 
 def test_blast_command(tmp_path):
-    comp = _component(tmp_path, FakeGenome([]), database="/db/card/CARD", evalue_cutoff=1e-10, aligner_options="", CPU=4)
+    comp = _component(tmp_path, FakeGenome([]), database="/db/card/CARD", evalue_cutoff=1e-10, aligner_options="", CPU=4,
+                      blast_task="megablast")
     cmd = comp.blast_command("/w/genome")
-    assert cmd[:3] == ["blastn", "-task", "dc-megablast"] and "/db/card/CARD.nucl.fasta" in cmd
+    assert cmd[:3] == ["blastn", "-task", "megablast"] and "/db/card/CARD.nucl.fasta" in cmd
     assert cmd[cmd.index("-perc_identity") + 1] == "90" and cmd[cmd.index("-num_threads") + 1] == "4"
 
 
