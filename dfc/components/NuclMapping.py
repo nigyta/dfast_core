@@ -14,7 +14,7 @@ from .NuclSearch import models
 from ..models.bio_feature import ExtendedFeature
 from ..models.hit import NuclHit, PseudoGene
 from ..utils.mapping_util import (BLAST_OUTFMT, read_blast_table, is_full_length, group_by_locus, is_valid_reference,
-                                  resolve_region, classify_cds)
+                                  resolve_region, classify_cds, same_locus)
 
 PSEUDOGENE_ACTIONS = {"frameshift": "pseudogene: frameshift", "internal_stop": "pseudogene: internal stop codon",
                       "stop_lost": "pseudogene: stop codon lost", "no_start": "pseudogene: no start codon"}
@@ -122,8 +122,17 @@ class NuclMapping(BaseAnnotationComponent):
         map_ids = [int(m.group(1)) for m in map(re.compile(r"MAP_(\d+)").fullmatch, self.genome.features) if m]
         self.map_ids = count(max(map_ids, default=0) + 1)
         self.counts = Counter()
-        for group in groups:
-            self.apply_group(group)
+        # Resolved before acting, at the final location of a region extended to the next stop codon.
+        resolved = [r for r in map(self.resolve_group, groups) if r]
+        # A CDS that is the same gene of some group is never removed as overlapping by another group (operon
+        # neighbours overlapping by more than overlap_tolerance).
+        self.same_genes = set()
+        for region, _ in resolved:
+            features = self.genome.seq_records[region.seq_id].features
+            self.same_genes.update(cds.id for cds in features if cds.type == "CDS"
+                                   and classify_cds(cds, region, self.overlap_tolerance) == "same_gene")
+        for region, group in resolved:
+            self.apply_group(region, group)
         self.genome.sort_features()
         self.genome.set_feature_dictionary()
         c = self.counts
@@ -137,22 +146,24 @@ class NuclMapping(BaseAnnotationComponent):
         intact = region is not None and valid and region.kind == "valid"
         return region is not None, intact, valid, hit.pident, hit.bitscore
 
-    def apply_group(self, group):
+    def resolve_group(self, group):
+        """(region of the primary hit, members with the primary first), or None if no member region resolves."""
         record = self.genome.seq_records[group[0].seq_id]
-        # Resolved before the check below so that a region extended to the next stop codon is compared
-        # at its final location with a feature of an earlier instance.
         ranked = sorted(((resolve_region(record.seq, h, self.transl_table, self.ref_validity[h.ref_id][1]), h)
                          for h in group), key=lambda rh: self.rank(*rh), reverse=True)
-        region, primary = ranked[0]
-        if region is None:
-            return
-        group = [h for _, h in ranked]
+        region = ranked[0][0]
+        return None if region is None else (region, [h for _, h in ranked])
+
+    def apply_group(self, region, group):
+        record = self.genome.seq_records[region.seq_id]
+        primary = group[0]
         valid = self.ref_validity[primary.ref_id][0]
         location = (region.left0, region.right)
-        for feature in record.features:  # an earlier instance (e.g. CARD before VFDB) wins
+        for feature in record.features:  # a feature already mapped at this locus (e.g. by CARD before VFDB) wins
+            feature_location = (int(feature.location.start), int(feature.location.end))
             if feature.annotations.get("nucl_mapping") and feature.location.strand == region.strand \
-                    and int(feature.location.start) < region.right and region.left0 < int(feature.location.end):
-                if (int(feature.location.start), int(feature.location.end)) == location:
+                    and same_locus(feature_location, location):
+                if feature_location == location:
                     self.annotate(feature, group, secondary=True)
                 else:
                     self.logger.debug(f"Mapping of {primary.ref_id} at {location} overlaps {feature.id}; skipped.")
@@ -172,6 +183,7 @@ class NuclMapping(BaseAnnotationComponent):
             return
 
         feature = None
+        removed = {cds_id for cds_id, c in classes.items() if c == "overlapping" and cds_id not in self.same_genes}
         if region.kind == "valid" and same is None:
             action, feature = "rescued", new_cds(region, self.new_id(), self.transl_table)
             record.features.append(feature)
@@ -189,8 +201,8 @@ class NuclMapping(BaseAnnotationComponent):
             feature.secondary_hits.append(PseudoGene(primary.ref_id, region.stop_codons, region.indels))
             record.features.append(feature)
             if same is not None:
-                classes[same.id] = "overlapping"  # replaced by the pseudogene
-        self.remove_cds(record, {cds_id for cds_id, c in classes.items() if c == "overlapping"})
+                removed.add(same.id)  # replaced by the pseudogene
+        self.remove_cds(record, removed)
         if feature is not None:
             self.set_hits(feature, group, action)
 

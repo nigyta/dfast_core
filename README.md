@@ -368,7 +368,7 @@ __Direct mapping of references (`--amr_map`)__
 - adds a CDS for a gene that CDS prediction missed (rescue),
 - moves the start codon of a predicted CDS of the same gene to that of the reference (start correction; recorded in `/note`),
 - reports a gene with a frameshift, an internal stop codon or no stop codon within 100 bp of the reference's stop as one CDS with `/pseudogene="unknown"`, with the reason and position in `/note` (e.g. "frameshift at around 1234"); a missing start codon gives a pseudogene only when no predicted CDS of the same gene exists (otherwise that CDS is kept),
-- removes predicted CDSs on either strand that overlap the mapped gene by more than `overlap_tolerance`.
+- removes predicted CDSs on either strand that overlap the mapped gene by more than `overlap_tolerance`, except CDSs of genes mapped by other references (e.g. operon neighbours).
 
 A lost stop codon extended to the next in-frame stop (up to 100 bp) and a stop codon in the last 2 codons of the reference (a CDS that much shorter) are tolerated and recorded in `/note`. When several references map to the same locus, the most identical one that maps as an intact gene is used. A pseudogene is called only from a reference mapped at 95% identity or more (option `pseudogene_pident_cutoff`); below that, the mapping only annotates a predicted CDS of the same gene.
 

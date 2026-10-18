@@ -200,6 +200,43 @@ def test_second_instance_does_not_touch_mapped_feature(tmp_path):
     assert list(_cds_features(rec)) == ["MAP_9"] and [h.id for h in mapped.secondary_hits] == ["ARO:1"]
 
 
+GENE_A = "ATG" + "GCT" * 40 + "TAA"                       # 126 bp
+GENE_B = GENE_A[-35:] + "G" + "GCT" * 40 + "TAA"          # starts (CTG) 35 bp before the end of GENE_A
+B0 = 100 + len(GENE_A) - 35                                 # start0 of GENE_B in the genome
+
+def _two_genes(tmp_path, cds):
+    """GENE_A at 100..226 and GENE_B overlapping it by 35 bp (ecpE/ecpD), each with its own full-length reference."""
+    comp, rec, hit_a = _setup(tmp_path, GENE_A[:-35] + GENE_B, ref_len=len(GENE_A), cds=cds)
+    _add_reference(comp, "ARO:2", GENE_B)
+    hit_b = _hit(ref_id="ARO:2", qlen=len(GENE_B), qend=len(GENE_B), sstart=B0 + 1, send=B0 + len(GENE_B),
+                 slen=len(rec), btop=str(len(GENE_B)))
+    return comp, rec, hit_a, hit_b
+
+def test_overlapping_neighbours_keep_their_cds(tmp_path):
+    comp, rec, hit_a, hit_b = _two_genes(tmp_path, [("MGA_1", 100, 100 + len(GENE_A), 1),
+                                                    ("MGA_2", B0, B0 + len(GENE_B), 1)])
+    comp.apply([[hit_a], [hit_b]])
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1", "MGA_2"] and comp.counts["removed"] == 0
+    assert f["MGA_1"].primary_hit.id == "ARO:1" and f["MGA_2"].primary_hit.id == "ARO:2"
+
+def test_neighbour_of_rescued_gene_is_processed(tmp_path):
+    comp, rec, hit_a, hit_b = _two_genes(tmp_path, [("MGA_2", B0, B0 + len(GENE_B), 1)])
+    comp.apply([[hit_a], [hit_b]])
+    f = _cds_features(rec)
+    assert sorted(f) == ["MAP_1", "MGA_2"] and f["MGA_2"].primary_hit.id == "ARO:2"
+
+def test_small_overlap_with_earlier_instance_feature_is_ignored(tmp_path):
+    comp, rec, hit = _setup(tmp_path, GENE)
+    mapped = ExtendedFeature(location=FeatureLocation(100 + len(GENE) - 20, 250, strand=1), type="CDS", id="MAP_9",
+                             seq_id="sequence1", qualifiers={"translation": ["M"]},
+                             annotations={"partial_flag": "00", "nucl_mapping": "rescued"})
+    rec.features.append(mapped); comp.genome.set_feature_dictionary()
+    comp.apply([[hit]])
+    f = _cds_features(rec)
+    assert sorted(f) == ["MAP_10", "MAP_9"] and f["MAP_10"].primary_hit.id == "ARO:1" and not mapped.secondary_hits
+
+
 
 def test_write_hits_json(tmp_path):
     comp, rec, hit = _setup(tmp_path, GENE)
