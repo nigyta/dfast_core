@@ -1,4 +1,4 @@
-from dfc.utils.mapping_util import (MappingHit, read_blast_table, is_full_length, indel_analysis,
+from dfc.utils.mapping_util import (truncated_region, MappingHit, read_blast_table, is_full_length, indel_analysis,
                                     group_by_locus, is_valid_reference, resolve_region,
                                     MappedRegion, classify_cds)
 from Bio.Seq import Seq
@@ -265,3 +265,50 @@ def test_classify_cds_minus_strand_same_gene():
     region = MappedRegion("sequence1", 1000, 1300, -1, "valid", "M", [], set(), set())
     assert classify_cds(_cds(1000, 1270, -1), region, 30) == "same_gene"
     assert classify_cds(_cds(1000, 1270, 1), region, 30) == "overlapping"
+
+
+# Truncated CDS: a frameshift or internal stop codon late in the gene leaves a long 5' ORF (e.g. E. coli yddK)
+LONG = "ATG" + "GCT" * 16 + "AAA" * 3 + "TAA"   # 63 bp, 20 sense codons
+
+
+def test_truncated_region_after_late_frameshift():
+    gene = LONG[:51] + "T" + LONG[51:]          # 1-bp insertion: TAA right after codon 16
+    seq, hit = _region(gene, ref_len=len(LONG), btop="51-T12")
+    region = resolve_region(seq, hit, 11, True)
+    assert region.kind == "frameshift"
+    t = truncated_region(seq, region, hit, 11, True, 0.7)
+    assert (t.kind, t.left0, t.right, t.strand) == ("valid", 100, 154, 1)
+    assert t.translation == "M" + "A" * 16
+    assert t.notes == ["85% of the reference length; frameshift at around 152"] and t.truncated == 85
+    assert not t.indels and not t.stop_codons and region.truncated == 0
+
+
+def test_truncated_region_minus_strand():
+    gene = LONG[:51] + "T" + LONG[51:]
+    seq, _ = _region(gene, strand=-1)
+    hit = _hit(qlen=len(LONG), qend=len(LONG), sstart=100 + len(gene), send=101, slen=len(seq), btop="51-T12")
+    t = truncated_region(seq, resolve_region(seq, hit, 11, True), hit, 11, True, 0.7)
+    assert (t.kind, t.left0, t.right, t.strand) == ("valid", len(seq) - 154, len(seq) - 100, -1)
+    assert t.translation == "M" + "A" * 16
+
+
+def test_truncated_region_after_late_internal_stop():
+    gene = LONG[:51] + "TAA" + LONG[54:]        # stop at codon 17 of 20
+    seq, hit = _region(gene)
+    region = resolve_region(seq, hit, 11, True)
+    assert region.kind == "internal_stop"
+    t = truncated_region(seq, region, hit, 11, True, 0.7)
+    assert (t.kind, t.right) == ("valid", 154) and t.notes == ["85% of the reference length; internal stop codon at 152"]
+
+
+def test_early_defect_stays_a_pseudogene():
+    gene = LONG[:12] + "TAA" + LONG[15:]        # stop at codon 4 of 20
+    seq, hit = _region(gene)
+    region = resolve_region(seq, hit, 11, True)
+    assert truncated_region(seq, region, hit, 11, True, 0.7) is region
+
+
+def test_truncation_keeps_other_kinds():
+    seq, hit = _region(LONG)
+    region = resolve_region(seq, hit, 11, True)
+    assert region.kind == "valid" and truncated_region(seq, region, hit, 11, True, 0.7) is region

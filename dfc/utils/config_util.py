@@ -358,7 +358,8 @@ def enable_amr_map(config):
     enable_amr(config)
     logger.info("CARD/VFDB references will be mapped onto the genome (NuclMapping) instead of NuclSearch.")
     for setting in config.FUNCTIONAL_ANNOTATION:
-        if setting.get("component_name", "") == "NuclMapping":
+        if setting.get("component_name", "") == "NuclMapping" \
+                and setting.get("options", {}).get("db_name", "") in ["CARD", "VFDB"]:
             setting["enabled"] = True
     for setting in card_vfdb:
         setting["enabled"] = False

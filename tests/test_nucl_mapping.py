@@ -28,7 +28,7 @@ def _component(tmp_path, genome, **options):
     comp.genome, comp.workDir, comp.pipeline_dir = genome, str(tmp_path), str(tmp_path)
     comp.logger = logging.getLogger("test")
     comp.db_name, comp.pident_cutoff, comp.overlap_tolerance, comp.transl_table = "CARD", 90, 30, 11
-    comp.pseudogene_pident_cutoff = 95
+    comp.pseudogene_pident_cutoff, comp.overlap_fraction, comp.truncated_fraction = 95, 0.2, 0.7
     comp.inference = INFERENCE
     comp.result_file = str(tmp_path / "mapping.out")
     comp.nucl_refs, comp.ref_validity, comp.hits_json = {}, {}, {}
@@ -165,11 +165,26 @@ def test_intact_reference_beats_longer_one_with_internal_stop(tmp_path):
     assert (int(f["MAP_1"].location.start), int(f["MAP_1"].location.end)) == (100, 100 + len(GENE))
     assert f["MAP_1"].primary_hit.id == "ARO:1"
 
-def test_overlapping_cds_other_strand_removed_neighbour_kept(tmp_path):
+def test_other_strand_cds_is_kept_neighbour_kept(tmp_path):
     right = 100 + len(GENE)
     comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 110, right - 10, -1), ("MGA_2", right - 20, right + 100, 1)])
     comp.apply([[hit]])
-    assert sorted(_cds_features(rec)) == ["MAP_1", "MGA_2"]
+    assert sorted(_cds_features(rec)) == ["MAP_1", "MGA_1", "MGA_2"] and comp.counts["removed"] == 0
+
+
+def test_same_strand_cds_removed_only_when_overlap_is_20_percent(tmp_path):
+    right = 100 + len(GENE)
+    # MGA_1: 35 bp of 300 bp (12%) overlap -> kept; MGA_2: inside the gene -> removed
+    comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", right - 35, right + 265, 1), ("MGA_2", 110, 150, 1)])
+    comp.apply([[hit]])
+    assert sorted(_cds_features(rec)) == ["MAP_1", "MGA_1"] and comp.counts["removed"] == 1
+
+
+def test_annotate_removes_nothing(tmp_path):
+    # the mapping only confirms MGA_1, so the overlapping same-strand MGA_2 is not removed (E. coli aceK case)
+    comp, rec, hit = _setup(tmp_path, GENE, cds=[("MGA_1", 100, 100 + len(GENE), 1), ("MGA_2", 110, 150, 1)])
+    comp.apply([[hit]])
+    assert sorted(_cds_features(rec)) == ["MGA_1", "MGA_2"] and comp.counts["removed"] == 0
 
 def test_no_start_with_same_gene_only_annotates(tmp_path):
     gene = "CCC" + GENE[3:]
@@ -195,7 +210,7 @@ def test_invalid_reference_only_annotates(tmp_path):
 
 def test_cds_overlapping_two_regions_removed_once(tmp_path):
     gene2 = GENE + "C" * 30 + GENE
-    comp, rec, hit1 = _setup(tmp_path, gene2, ref_len=len(GENE), cds=[("MGA_1", 100, 100 + len(gene2), -1)])
+    comp, rec, hit1 = _setup(tmp_path, gene2, ref_len=len(GENE), cds=[("MGA_1", 110, 90 + len(gene2), 1)])
     hit2 = _hit(qlen=len(GENE), qend=len(GENE), sstart=101 + len(GENE) + 30, send=100 + len(gene2), slen=len(rec), btop=str(len(GENE)))
     comp.apply([[hit1], [hit2]])
     assert sorted(_cds_features(rec)) == ["MAP_1", "MAP_2"]
@@ -260,10 +275,9 @@ def test_neighbours_mapped_by_two_instances(tmp_path):
     vfdb = _second_instance(tmp_path, comp)
     vfdb.apply([[hit_b]])                       # VFDB: GENE_B only
     f = _cds_features(rec)
-    assert f["MGA_1"].primary_hit.id == "ARO:1" and vfdb.counts["removed"] == 0
-    # The CARD instance still removes MGA_2 (overlap 35 > overlap_tolerance); VFDB re-creates GENE_B at its location.
-    assert sorted(f) == ["MAP_1", "MGA_1"] and f["MAP_1"].primary_hit.id == "ARO:2"
-    assert (int(f["MAP_1"].location.start), int(f["MAP_1"].location.end)) == (B0, B0 + len(GENE_B))
+    assert f["MGA_1"].primary_hit.id == "ARO:1" and comp.counts["removed"] == vfdb.counts["removed"] == 0
+    # CARD only confirms MGA_1, so it removes nothing; VFDB then annotates MGA_2 in place.
+    assert sorted(f) == ["MGA_1", "MGA_2"] and f["MGA_2"].primary_hit.id == "ARO:2"
 
 UPSTREAM = "ATG" + "GCT" * 9                    # an in-frame start codon 30 bp upstream of GENE
 
@@ -447,3 +461,72 @@ def test_missing_reference_files_abort_with_hint(tmp_path, caplog):
     else:
         raise AssertionError("no exit")
     assert "reference_util_for_nucl.py --card --vfdb" in caplog.text
+
+
+# Truncated CDS (yddK case): a 1-bp insertion leaves an ORF of 85% of the reference from its start codon
+LONG = "ATG" + "GCT" * 16 + "AAA" * 3 + "TAA"
+LONG_INS = LONG[:51] + "T" + LONG[51:]
+
+
+def test_late_frameshift_corrects_the_truncated_cds(tmp_path):
+    comp, rec, hit = _setup(tmp_path, LONG_INS, ref_len=len(LONG), btop="51-T12", cds=[("MGA_1", 130, 154, 1)])
+    comp.apply([[hit]])
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1"] and (int(f["MGA_1"].location.start), int(f["MGA_1"].location.end)) == (100, 154)
+    assert "85% of the reference length; frameshift at around 152" in f["MGA_1"].qualifiers["note"]
+    assert "pseudogene" not in f["MGA_1"].qualifiers
+    assert comp.hits_json["MGA_1"]["model"]["note"].startswith("start corrected, truncated (85% of the reference); ")
+
+
+def test_late_frameshift_without_cds_rescues_the_truncated_cds(tmp_path):
+    comp, rec, hit = _setup(tmp_path, LONG_INS, ref_len=len(LONG), btop="51-T12")
+    comp.apply([[hit]])
+    f = _cds_features(rec)["MAP_1"]
+    assert (int(f.location.start), int(f.location.end)) == (100, 154) and "pseudogene" not in f.qualifiers
+    assert f.qualifiers["translation"] == ["M" + "A" * 16]
+
+
+def test_truncated_fraction_option(tmp_path):
+    comp, rec, hit = _setup(tmp_path, LONG_INS, ref_len=len(LONG), btop="51-T12")
+    comp.truncated_fraction = 0.9            # 85% is not enough: pseudogene as before
+    comp.apply([[hit]])
+    assert _cds_features(rec)["MAP_1"].qualifiers["pseudogene"] == ["unknown"]
+
+
+def test_custom_plasmid_db_reference_is_loaded(tmp_path, capsys):
+    from dfc.models.nucref import PLASMID_DB
+    ref = PLASMID_DB("P1", "repA", "replication protein", "", "", GENE, "", "AB000001", "pTest")
+    (tmp_path / "PDB.nucl.ref").write_text(ref.to_tabular() + "\n")
+    (tmp_path / "PDB.nucl.fasta").write_text(ref.to_nucl_fasta())
+    comp = _component(tmp_path, FakeGenome([]), database=str(tmp_path / "PDB"), db_name="PLASMID_DB")
+    comp.load_references()
+    assert list(comp.nucl_refs) == ["P1"] and comp.ref_validity["P1"] == (True, True)
+    assert comp.nucl_refs["P1"].to_dict()["accession"] == "PLASMID_DB:P1" and capsys.readouterr().out == ""
+
+
+def test_truncated_cds_is_reported_when_only_annotated(tmp_path):
+    comp, rec, hit = _setup(tmp_path, LONG_INS, ref_len=len(LONG), btop="51-T12", cds=[("MGA_1", 100, 154, 1)])
+    comp.apply([[hit]])
+    assert comp.hits_json["MGA_1"]["model"]["note"].startswith("truncated (85% of the reference); ")
+
+
+def test_truncated_cds_needs_pseudogene_identity(tmp_path):
+    # 94% < pseudogene_pident_cutoff: no truncated CDS; the hit is only attached to the in-frame predicted CDS
+    comp, rec, hit = _setup(tmp_path, LONG_INS, ref_len=len(LONG), btop="51-T12", cds=[("MGA_1", 130, 154, 1)])
+    hit.pident = 94.0
+    comp.apply([[hit]])
+    f = _cds_features(rec)
+    assert list(f) == ["MGA_1"] and int(f["MGA_1"].location.start) == 130 and f["MGA_1"].primary_hit.id == "ARO:1"
+    assert comp.counts["start corrected"] == comp.counts["rescued"] == comp.counts["removed"] == 0
+
+
+def test_intact_reference_ranks_before_truncated_one(tmp_path):
+    # ARO:1 (LONG, 99.9%) is truncated by the insertion; ARO:2 is the intact 54-bp ORF (99.0%) at the same locus
+    comp, rec, hit_long = _setup(tmp_path, LONG_INS, ref_len=len(LONG), btop="51-T12")
+    hit_long.pident = 99.9
+    orf = LONG_INS[:54]
+    _add_reference(comp, "ARO:2", orf)
+    hit_orf = _hit(ref_id="ARO:2", qlen=54, qend=54, sstart=101, send=154, slen=len(rec), btop="54", pident=99.0)
+    comp.apply([[hit_long, hit_orf]])
+    f = _cds_features(rec)["MAP_1"]
+    assert f.primary_hit.id == "ARO:2" and not [n for n in f.qualifiers["note"] if "of the reference length" in n]

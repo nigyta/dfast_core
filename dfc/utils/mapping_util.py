@@ -158,6 +158,7 @@ class MappedRegion:
     notes: list[str] = field(default_factory=list)
     stop_codons: set[tuple[int, int, int]] = field(default_factory=set)  # (start0, end, strand) in genome coordinates
     indels: set[int] = field(default_factory=set)  # 1-based genome positions where gap runs start
+    truncated: int = 0  # for a truncated CDS (see truncated_region), its length in % of the reference; 0 otherwise
 
 
 def resolve_region(record_seq: Seq, hit: MappingHit, transl_table: int, ref_has_stop: bool) -> MappedRegion | None:
@@ -227,6 +228,29 @@ def resolve_region(record_seq: Seq, hit: MappingHit, transl_table: int, ref_has_
         translation = "M" + translation[1:]
     region.translation = translation
     return region
+
+
+def truncated_region(record_seq: Seq, region: MappedRegion, hit: MappingHit, transl_table: int, ref_has_stop: bool,
+                     min_fraction: float) -> MappedRegion:
+    """A frameshifted or interrupted region is a truncated CDS when the ORF from the start codon of the reference to
+    the first stop codon covers at least min_fraction of the sense codons of the reference (e.g. E. coli yddK, the 5'
+    part of a frameshifted espR1 homologue). Otherwise, and for other kinds, the region is returned unchanged."""
+    if region.kind not in ("frameshift", "internal_stop"):
+        return region
+    table = CodonTable.unambiguous_dna_by_id[transl_table]
+    seq = record_seq[region.left0:region.right]
+    seq = str(seq if region.strand == 1 else seq.reverse_complement()).upper()
+    codons = [seq[i:i + 3] for i in range(0, len(seq) - 2, 3)]
+    stop = next((i for i, c in enumerate(codons) if c in table.stop_codons), None)
+    ref_sense = hit.qlen // 3 - (1 if ref_has_stop else 0)
+    if not codons or codons[0] not in table.start_codons or stop is None or stop < min_fraction * ref_sense:
+        return region
+    length = 3 * (stop + 1)
+    left0, right = (region.left0, region.left0 + length) if region.strand == 1 else (region.right - length, region.right)
+    translation = "M" + str(Seq("".join(codons[:stop])).translate(table=transl_table))[1:]
+    note = f"{round(100 * stop / ref_sense)}% of the reference length; " + "; ".join(region.notes)
+    return MappedRegion(region.seq_id, left0, right, region.strand, "valid", translation, [note],
+                        truncated=round(100 * stop / ref_sense))
 
 
 def classify_cds(cds, region: MappedRegion, tolerance: int) -> str | None:

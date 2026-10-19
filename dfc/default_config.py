@@ -249,6 +249,8 @@ class Config:
                 "transl_table": 11,
                 "blast_task": "dc-megablast",
                 "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
+                "overlap_fraction": 0.2,  # a same-strand predicted CDS is removed only if the overlap is >= this fraction of its length
+                "truncated_fraction": 0.7,  # a late frameshift/stop leaving an ORF of >= this fraction of the reference gives a truncated CDS
                 "aligner_options": "",
             },
         },
@@ -266,24 +268,28 @@ class Config:
                 "transl_table": 11,
                 "blast_task": "dc-megablast",
                 "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
+                "overlap_fraction": 0.2,  # a same-strand predicted CDS is removed only if the overlap is >= this fraction of its length
+                "truncated_fraction": 0.7,  # a late frameshift/stop leaving an ORF of >= this fraction of the reference gives a truncated CDS
                 "aligner_options": "",
             },
         },
         {
             # preliminary implementation
-            "component_name": "NuclSearch",
-            "enabled": False,  # Not implemented. Never set this to True
+            # Maps a custom nucleotide reference (prepared in the PLASMID_DB format of reference_util_for_nucl.py) onto the genome.
+            "component_name": "NuclMapping",
+            "enabled": False,
             "options": {
-                "skipAnnotatedFeatures": False,
-                "evalue_cutoff": 1e-6,
-                "qcov_cutoff": 90,
-                "scov_cutoff": 90,
-                "pident_cutoff": 90,
-                "aligner": "blastn",
-                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
                 "database": "/work/db/PLASMID_DB",
                 "db_name": "PLASMID_DB",
-                "db_type": "PLASMID_DB",  # Must be either of auto/card/vfdb
+                "pident_cutoff": 90,
+                "evalue_cutoff": 1e-10,
+                "overlap_tolerance": 30,
+                "transl_table": 11,
+                "blast_task": "dc-megablast",
+                "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
+                "overlap_fraction": 0.2,  # a same-strand predicted CDS is removed only if the overlap is >= this fraction of its length
+                "truncated_fraction": 0.7,  # a late frameshift/stop leaving an ORF of >= this fraction of the reference gives a truncated CDS
+                "aligner_options": "",
             },
         },
         {
