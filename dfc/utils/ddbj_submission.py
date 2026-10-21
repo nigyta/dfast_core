@@ -88,7 +88,7 @@ class DDBJsubmission(object):
                 except ImportError:
                     self.logger.warning("[Experimental] DFAST Record JSON will not be generated. Please install dr_tools and use Python>=3.10.")
                 except ValidationError as e:
-                    self.logger.warning(f"[Experimental] DFAST Record JSON will not be generated due to a metadata validation error (e.g. a missing reference year): {e}")
+                    self.logger.warning(f"[Experimental] DFAST Record JSON will not be generated due to a metadata validation error: {e}")
                 except Exception as e:
                     self.logger.warning(f"[Experimental] DFAST Record JSON will not be generated due to an unexpected error: {e}")
         else:
