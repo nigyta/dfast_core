@@ -81,7 +81,8 @@ class DDBJsubmission(object):
                     json_out_dir = os.path.dirname(self.output_dir)
                     json_file = os.path.join(json_out_dir, "dfast_record.json")
                     division = "ENV" if getattr(self.genome, "is_mag", False) else "BCT"
-                    drt_ann2json(ann_file, fasta_file, json_file, division=division, record_version="v2")
+                    # v3 is the version dr_tools builds directly from the MSS files, and the only one the DFAST web service accepts
+                    drt_ann2json(ann_file, fasta_file, json_file, division=division, record_version="v3")
                     self.logger.info(f"Converted MSS file into JSON. {ann_file} --> {json_file} [Experimental]")
 
                 except ImportError:

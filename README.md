@@ -387,7 +387,7 @@ dfast -g example/pOXA-48.fa --mge
 ```
 
 ### DFAST Record JSON  
-DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
+DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. It is written in version 3 of the DDBJ Record format (`"schema_version": "v3"`); versions up to 1.5.3 wrote version 2. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
 ```
 pip install "git+https://github.com/ddbj/dr_tools.git"
 ```
