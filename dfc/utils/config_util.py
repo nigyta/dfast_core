@@ -338,33 +338,22 @@ def set_values_from_metadata(config):
 
 
 def enable_amr(config):
+    """CARD/VFDB references are mapped onto the genome (NuclMapping). A CARD/VFDB NuclSearch entry enabled in the config
+    (searching the predicted CDSs, the previous method) is used instead of the mapping of that database."""
     logger.info("AMR/VFG annotation and Plasmid identification enabled.")
+    searched = {s.get("options", {}).get("db_name", "") for s in config.FUNCTIONAL_ANNOTATION
+                if s.get("component_name", "") == "NuclSearch" and s.get("enabled")}
     for setting in config.FUNCTIONAL_ANNOTATION:
-        if setting.get("component_name", "") == "NuclSearch":
-            db_name = setting.get("options", {}).get("db_name", "")
-            if db_name in ["CARD", "VFDB"]:
+        db_name = setting.get("options", {}).get("db_name", "")
+        if setting.get("component_name", "") == "NuclMapping" and db_name in ["CARD", "VFDB"]:
+            if db_name in searched:
+                logger.info("{} is searched with NuclSearch as set in the config, not mapped with NuclMapping.".format(db_name))
+            else:
                 setting["enabled"] = True
 
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
             setting["enabled"] = True
-
-
-def enable_amr_map(config):
-    # CARD/VFDB NuclSearch entries enabled before enable_amr() were enabled by an explicit --amr
-    card_vfdb = [s for s in config.FUNCTIONAL_ANNOTATION if s.get("component_name", "") == "NuclSearch"
-                 and s.get("options", {}).get("db_name", "") in ["CARD", "VFDB"]]
-    was_enabled = [s for s in card_vfdb if s["enabled"]]
-    enable_amr(config)
-    logger.info("CARD/VFDB references will be mapped onto the genome (NuclMapping) instead of NuclSearch.")
-    for setting in config.FUNCTIONAL_ANNOTATION:
-        if setting.get("component_name", "") == "NuclMapping" \
-                and setting.get("options", {}).get("db_name", "") in ["CARD", "VFDB"]:
-            setting["enabled"] = True
-    for setting in card_vfdb:
-        setting["enabled"] = False
-    for setting in was_enabled:
-        logger.warning("NuclSearch ({}) is disabled because --amr_map is specified.".format(setting["options"].get("db_name", "")))
 
 
 def enable_mge(config):

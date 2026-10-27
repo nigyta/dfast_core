@@ -237,7 +237,7 @@ class Config:
         },
         {
             # preliminary implementation
-            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the CARD/VFDB NuclSearch entries below).
+            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--amr' (unless the NuclSearch entry of the same database below is enabled).
             "component_name": "NuclMapping",
             "enabled": False,
             "options": {
@@ -256,7 +256,7 @@ class Config:
         },
         {
             # preliminary implementation
-            # Maps full-length CARD/VFDB references onto the genome (enabled by '--amr_map', which disables the CARD/VFDB NuclSearch entries below).
+            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--amr' (unless the NuclSearch entry of the same database below is enabled).
             "component_name": "NuclMapping",
             "enabled": False,
             "options": {
@@ -293,7 +293,8 @@ class Config:
             },
         },
         {
-            # preliminary implementation
+            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--amr'). Not used by default;
+            # set 'enabled' to True here to use it instead of the NuclMapping entry of the same database.
             "component_name": "NuclSearch",
             "enabled": False,
             "options": {
@@ -310,7 +311,8 @@ class Config:
             },
         },
         {
-            # preliminary implementation
+            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--amr'). Not used by default;
+            # set 'enabled' to True here to use it instead of the NuclMapping entry of the same database.
             "component_name": "NuclSearch",
             "enabled": False,
             "options": {

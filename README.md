@@ -270,8 +270,7 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
-  --amr                 [Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs
-  --amr_map             [Preliminary implementation] Like --amr, but CARD/VFDB references are mapped directly onto the genome (NuclMapping) instead of being searched with the predicted CDSs
+  --amr                 [Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome) and identification of plasmid-derived contigs
   --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
@@ -358,13 +357,13 @@ The script automatically fetches the latest CARD version from [card.mcmaster.ca]
 You can pin a specific version with `--card_version 4.0.1`, and use `--vfdb_update_date` to override the VFDB timestamp (defaults to today's date).  
 DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.1](https://doi.org/10.6084/m9.figshare.26778175), and [WHRepDB v1.1](https://doi.org/10.6084/m9.figshare.31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
-Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
+Invoke DFAST with `--amr` to enable `NuclMapping` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
 ```
 dfast -g example/pOXA-48.fa --amr
 ```
 
-__Direct mapping of references (`--amr_map`)__  
-`--amr_map` works like `--amr`, but the CARD/VFDB nucleotide references are mapped directly onto the genome with `blastn` (`NuclMapping`) instead of being searched with the predicted CDSs (`NuclSearch`). Only references that are correct genes (length a multiple of 3, a start codon, no internal stop codon, no ambiguous bases) change the annotation; the hits of other references are only attached to a predicted CDS (the one of the same gene, otherwise the same-strand CDS overlapping the mapped gene in the same reading frame), and no CDS is removed. Only full-length mappings (the whole reference aligned at 90% identity or more) are used; partial mappings are ignored. A full-length mapping:
+__Mapping of CARD/VFDB references (`NuclMapping`)__  
+With `--amr`, the CARD/VFDB nucleotide references are mapped directly onto the genome with `blastn` (`NuclMapping`). Only references that are correct genes (length a multiple of 3, a start codon, no internal stop codon, no ambiguous bases) change the annotation; the hits of other references are only attached to a predicted CDS (the one of the same gene, otherwise the same-strand CDS overlapping the mapped gene in the same reading frame), and no CDS is removed. Only full-length mappings (the whole reference aligned at 90% identity or more) are used; partial mappings are ignored. A full-length mapping:
 - adds a CDS for a gene that CDS prediction missed (rescue),
 - moves the start codon of a predicted CDS of the same gene to that of the reference (start correction; recorded in `/note`),
 - reports a gene with a frameshift, an internal stop codon or no stop codon within 100 bp of the reference's stop as one CDS with `/pseudogene="unknown"`, with the reason and position in `/note` (e.g. "frameshift at around 1234"); a missing start codon gives a pseudogene only when no predicted CDS of the same gene exists (otherwise that CDS is kept),
@@ -373,10 +372,9 @@ __Direct mapping of references (`--amr_map`)__
 
 A lost stop codon extended to the next in-frame stop (up to 100 bp) and a stop codon in the last 2 codons of the reference (the CDS is then up to 2 codons shorter than the reference) are tolerated and recorded in `/note`. When several references map to the same locus, the most identical one that maps as an intact gene is used. A pseudogene is called only from a reference mapped at 95% identity or more (option `pseudogene_pident_cutoff`); below that, the mapping only attaches its hit to a predicted CDS, as for references that are not correct genes.
 
-These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudogene_summary.tsv`. The options of the `NuclMapping` entries in the config include `pident_cutoff` (minimum identity, default 90) `overlap_tolerance` (default 30 bp) and `overlap_fraction` (default 0.2) for the removal of replaced CDSs, and `truncated_fraction` (default 0.7). A custom nucleotide reference in the PLASMID_DB format of `reference_util_for_nucl.py` can also be mapped by enabling the `PLASMID_DB` entry of `NuclMapping` in the config. If `--amr` and `--amr_map` are both given, `NuclSearch` is disabled for CARD/VFDB. `--amr_map` is planned to replace `NuclSearch` under `--amr` in a future version.
-```
-dfast -g example/pOXA-48.fa --amr_map
-```
+These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudogene_summary.tsv`. The options of the `NuclMapping` entries in the config include `pident_cutoff` (minimum identity, default 90), `overlap_tolerance` (default 30 bp) and `overlap_fraction` (default 0.2) for the removal of replaced CDSs, and `truncated_fraction` (default 0.7). A custom nucleotide reference in the PLASMID_DB format of `reference_util_for_nucl.py` can also be mapped by enabling the `PLASMID_DB` entry of `NuclMapping` in the config.
+
+The previous method of `--amr`, which searched the nucleotide sequences of the predicted CDSs against CARD/VFDB (`NuclSearch`; a CDS is annotated at 90% identity and 90% coverage of both sequences, and no CDS is added, moved or removed), is still available: set `"enabled": True` for the CARD and/or VFDB `NuclSearch` entries in a config file (`--config`). `--amr` then uses `NuclSearch` instead of `NuclMapping` for those databases.
 
 ### Mobile genetic element (MGE) detection
 Invoke DFAST with `--mge` to detect mobile genetic elements using
