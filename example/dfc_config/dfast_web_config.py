@@ -451,6 +451,17 @@ class Config:
                 "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
+        {
+            # DefenseFinder to detect anti-phage defense systems (and anti-defense systems with "-a"). Enabled by "--amr".
+            # Models are downloaded by `dfast_file_downloader.py --defensefinder` (license: CC BY-NC-SA 4.0).
+            "component_name": "DefenseFinder",
+            "enabled": False,
+            "options": {
+                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "models_dir": "@@DB_ROOT@@/defense_finder_models",
+                "cmd_options": "-a",
+            },
+        },
 
     ]
 
@@ -474,6 +485,16 @@ class Config:
             "options": {
                 "db_path": "@@DB_ROOT@@/mefinder_db",
                 "cmd_options": "--min-coverage 0.95",
+            },
+        },
+        {
+            # IntegronFinder to detect integrons (MGEdb used by MobileElementFinder has no integrons). Enabled by "--mge".
+            "tool_name": "IntegronFinder",
+            "target": "feature",
+            "enabled": False,
+            "options": {
+                # "--local-max" finds more attC sites (e.g. superintegrons) but is slower.
+                "cmd_options": "",
             },
         },
     ]

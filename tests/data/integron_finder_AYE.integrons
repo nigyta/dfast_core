@@ -1,0 +1,16 @@
+# integron_finder 2.0.6 
+# cmd: integron_finder --circ --func-annot --cpu 4 --gbk --outdir OUT genome.fna
+ID_integron	ID_replicon	element	pos_beg	pos_end	strand	evalue	type_elt	annotation	model	type	default	distance_2attC	considered_topology
+integron_01	sequence1	sequence1_3390	3620981	3621328	-1	1.5999999999999999e-62	protein	SMR_qac_E-NCBIFAM	NF000276.2	complete	Yes	NA	circ
+integron_01	sequence1	attc_001	3621431	3621490	-1	2e-07	attC	attC	attc_4	complete	Yes	NA	circ
+integron_01	sequence1	sequence1_3391	3621492	3622271	-1	4.4e-181	protein	ANT_3pp_AadA1-NCBIFAM	NF033126.1	complete	Yes	NA	circ
+integron_01	sequence1	attc_002	3622686	3622755	-1	0.02	attC	attC	attc_4	complete	Yes	1196.0	circ
+integron_01	sequence1	sequence1_3392	3622696	3623349	-1	NA	protein	protein	NA	complete	Yes	NA	circ
+integron_01	sequence1	attc_003	3623224	3623293	-1	2.3e-06	attC	attC	attc_4	complete	Yes	469.0	circ
+integron_01	sequence1	attc_004	3623762	3623870	-1	2.1e-05	attC	attC	attc_4	complete	Yes	469.0	circ
+integron_01	sequence1	sequence1_3393	3623865	3624398	-1	1.3e-66	protein	AAC_3_I-NCBIFAM	NF033083.0	complete	Yes	NA	circ
+integron_01	sequence1	sequence1_3394	3624500	3625513	1	3.4e-23	protein	intI	intersection_tyr_intI	complete	Yes	NA	circ
+integron_02	sequence1	sequence1_3422	3655558	3655905	-1	1.5999999999999999e-62	protein	SMR_qac_E-NCBIFAM	NF000276.2	CALIN	Yes	NA	circ
+integron_02	sequence1	attc_001	3656008	3656067	-1	2e-07	attC	attC	attc_4	CALIN	Yes	NA	circ
+integron_02	sequence1	sequence1_3423	3656069	3656884	-1	5.299999999999999e-181	protein	ANT_3pp_AadA1-NCBIFAM	NF033126.1	CALIN	Yes	NA	circ
+integron_03	sequence1	sequence1_3444	3677546	3678559	1	3.4e-23	protein	intI	intersection_tyr_intI	In0	Yes	NA	circ

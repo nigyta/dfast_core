@@ -112,16 +112,18 @@ parser.add_argument("--plasmidfinder", action="store_true",
                          help="Reference data for PlasmidFinder")
 parser.add_argument("--mefinder", action="store_true",
                          help="Install MobileElementFinder and build its MGEdb BLAST index")
+parser.add_argument("--defensefinder", action="store_true",
+                         help="DefenseFinder models (defense-finder update). License: CC BY-NC-SA 4.0")
 parser.add_argument("--no_indexing", action="store_true",
                          help="Do not perform database indexing")
 group_out = parser.add_mutually_exclusive_group()
 group_out.add_argument("-o", "--out", help="Output directory (default: current directory.\nFor --assembly, --assembly_fasta. Not allowed with argument --dbroot)", type=str, metavar="PATH")
-group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder, --mefinder. Not allowed with argument --out)", type=str, metavar="PATH")
+group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_ROOT/db.\nFor --protein, --cdd, --hmm, --plasmidfinder, --mefinder, --defensefinder. Not allowed with argument --out)", type=str, metavar="PATH")
 
 args = parser.parse_args()
 
 
-if all(x is None for x in [args.protein, args.rrna, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not args.mefinder:
+if all(x is None for x in [args.protein, args.rrna, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not (args.mefinder or args.defensefinder):
     parser.print_help()
     exit()
 
@@ -389,6 +391,19 @@ def retrieve_mefinder_reference(out_dir=".", no_indexing=False):
     logger.info(f"MobileElementFinder setup completed. Index at: {mefinder_db_dir}")
 
 
+def retrieve_defensefinder_models(out_dir="."):
+    models_dir = os.path.join(out_dir, "defense_finder_models")
+    defense_finder = shutil.which("defense-finder")
+    if not defense_finder:
+        logger.error("defense-finder is not found. Install it with 'conda install -c bioconda defense-finder'.")
+        exit(1)
+    logger.info(f"Downloading DefenseFinder models into: {models_dir} (license: CC BY-NC-SA 4.0)")
+    if subprocess.run([defense_finder, "update", "--models-dir", models_dir]).returncode != 0:
+        logger.error("Failed to download DefenseFinder models!")
+        exit(1)
+    logger.info("DefenseFinder models setup completed.")
+
+
 def _download_plasmidfinder_extra_databases(plasmid_db_dir):
     # PlasmidFinder v3 uses blastn with -subject <db>.fsa directly,
     # so no pre-built index (makeblastdb/KMA) is needed.
@@ -580,6 +595,12 @@ if args.mefinder:
         os.makedirs(out_dir)
     logger.info("Setting up MobileElementFinder. Index will be written into '{}'".format(out_dir))
     retrieve_mefinder_reference(out_dir, no_indexing=args.no_indexing)
+
+if args.defensefinder:
+    db_root = get_db_root(args)
+    if not os.path.exists(db_root):
+        os.makedirs(db_root)
+    retrieve_defensefinder_models(db_root)
 
 
 # test GCF_000091005.1 GCA_000008865.1

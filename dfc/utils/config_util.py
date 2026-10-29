@@ -340,7 +340,7 @@ def set_values_from_metadata(config):
 def enable_amr(config):
     """CARD/VFDB references are mapped onto the genome (NuclMapping). A CARD/VFDB NuclSearch entry enabled in the config
     (searching the predicted CDSs, the previous method) is used instead of the mapping of that database."""
-    logger.info("AMR/VFG annotation and Plasmid identification enabled.")
+    logger.info("AMR/VFG annotation, Plasmid identification and defense system detection enabled.")
     searched = {s.get("options", {}).get("db_name", "") for s in config.FUNCTIONAL_ANNOTATION
                 if s.get("component_name", "") == "NuclSearch" and s.get("enabled")}
     for setting in config.FUNCTIONAL_ANNOTATION:
@@ -350,6 +350,8 @@ def enable_amr(config):
                 logger.info("{} is searched with NuclSearch as set in the config, not mapped with NuclMapping.".format(db_name))
             else:
                 setting["enabled"] = True
+        elif setting.get("component_name", "") == "DefenseFinder":
+            setting["enabled"] = True
 
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
@@ -357,9 +359,9 @@ def enable_amr(config):
 
 
 def enable_mge(config):
-    logger.info("Mobile genetic element detection (MobileElementFinder) enabled.")
+    logger.info("Mobile genetic element detection (MobileElementFinder, IntegronFinder) enabled.")
     for setting in config.CONTIG_ANNOTATION:
-        if setting.get("tool_name", "") == "MobileElementFinder":
+        if setting.get("tool_name", "") in ("MobileElementFinder", "IntegronFinder"):
             setting["enabled"] = True
 
 

@@ -270,8 +270,10 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
-  --amr                 [Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome) and identification of plasmid-derived contigs
+  --amr                 [Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome), identification of plasmid-derived contigs
+                        and detection of (anti-)defense systems with DefenseFinder
   --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
+                        and IntegronFinder
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
@@ -357,7 +359,7 @@ The script automatically fetches the latest CARD version from [card.mcmaster.ca]
 You can pin a specific version with `--card_version 4.0.1`, and use `--vfdb_update_date` to override the VFDB timestamp (defaults to today's date).  
 DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.1](https://doi.org/10.6084/m9.figshare.26778175), and [WHRepDB v1.1](https://doi.org/10.6084/m9.figshare.31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
-Invoke DFAST with `--amr` to enable `NuclMapping` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
+Invoke DFAST with `--amr` to enable `NuclMapping` for CARD/VFDB, `ContigAnnotation` using `PlasmidFinder`, and `DefenseFinder`
 ```
 dfast -g example/pOXA-48.fa --amr
 ```
@@ -375,6 +377,18 @@ A lost stop codon extended to the next in-frame stop (up to 100 bp) and a stop c
 These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudogene_summary.tsv`. The options of the `NuclMapping` entries in the config include `pident_cutoff` (minimum identity, default 90), `overlap_tolerance` (default 30 bp) and `overlap_fraction` (default 0.2) for the removal of replaced CDSs, and `truncated_fraction` (default 0.7). A custom nucleotide reference in the PLASMID_DB format of `reference_util_for_nucl.py` can also be mapped by enabling the `PLASMID_DB` entry of `NuclMapping` in the config.
 
 The previous method of `--amr`, which searched the nucleotide sequences of the predicted CDSs against CARD/VFDB (`NuclSearch`; a CDS is annotated at 90% identity and 90% coverage of both sequences, and no CDS is added, moved or removed), is still available: set `"enabled": True` for the CARD and/or VFDB `NuclSearch` entries in a config file (`--config`). `--amr` then uses `NuclSearch` instead of `NuclMapping` for those databases.
+
+__Defense systems__  
+With `--amr`, [DefenseFinder](https://github.com/mdmparis/defense-finder) (with AntiDefenseFinder, `-a`) searches the predicted proteins
+for anti-phage defense and anti-defense systems. Each gene in a system gets a `/note` such as
+`DefenseFinder: MazE of MazEF defense system`, and `amr_summary.tsv` lists one `##` line per system.
+Install DefenseFinder and download its models into `DB_ROOT/defense_finder_models`:
+```
+conda install -c bioconda defense-finder
+scripts/dfast_file_downloader.py --defensefinder
+```
+The DefenseFinder models are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial use);
+they are not bundled with DFAST or its Docker image.
 
 ### Mobile genetic element (MGE) detection
 Invoke DFAST with `--mge` to detect mobile genetic elements using
@@ -394,6 +408,11 @@ scripts/dfast_file_downloader.py --mefinder
 (This installs MobileElementFinder into the current Python environment, so run it
 where DFAST's Python can `pip install`. The MGEdb sequences ship with the pip
 package; only the BLAST index is written to `DB_ROOT`.)
+
+`--mge` also runs [IntegronFinder 2](https://github.com/gem-pasteur/Integron_Finder), because MGEdb has no integrons.
+Each integron (complete, In0 or CALIN) is annotated as `mobile_element` with `/mobile_element_type="integron"`,
+and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed).
+Add `--local-max` to the `cmd_options` of the `IntegronFinder` entry in `CONTIG_ANNOTATION` for a more sensitive (slower) search.
 
 Then run DFAST with `--mge`:
 ```
