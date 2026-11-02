@@ -76,6 +76,15 @@ RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
 # Install DFAST Record tools (kept as a remote git install; small and rarely changes, so placed above COPY)
 RUN pip install "git+https://github.com/ddbj/dr_tools.git"
 
+# Security: CVE-2026-111497, an out-of-bounds write in the Brotli decoder. libbrotli1 is
+# pulled in transitively by the apt packages above, so installing other packages leaves the
+# base image's copy untouched; it has to be upgraded explicitly. The dpkg line puts the
+# resulting version in the build log.
+RUN apt-get update && \
+    apt-get install -y --only-upgrade libbrotli1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    dpkg -l libbrotli1 | tail -1
+
 # ---- Install dfast_core from the LOCAL build context ----
 # Keep this as the last layer so the heavy apt/pip/tRNAscan layers above stay cached.
 # Only this layer re-runs when the local source changes (no manual cache-bust needed).
