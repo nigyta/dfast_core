@@ -406,7 +406,7 @@ def module_unavailable(config, module):
         data = options.get("db_path", "")
     elif module == "integron":
         if not shutil.which("integron_finder"):
-            problems.append("'integron_finder' is not found. Install it with 'conda install -c bioconda integron_finder'.")
+            problems.append("'integron_finder' is not found. Install it with 'conda install -c bioconda \"integron_finder>=2.0.6\"'.")
     else:
         if not shutil.which("defense-finder"):
             problems.append("'defense-finder' is not found. Install it with 'conda install -c bioconda defense-finder'.")

@@ -52,7 +52,7 @@ group_genome.add_argument("--use_original_name", choices=["t", "true", "f", "fal
                           help="Use original sequence names in a query FASTA file [t|f(=default)]", metavar="BOOL")
 group_genome.add_argument("--sort_sequence", choices=["t", "true", "f", "false"],
                           help="Sort sequences by length [t(=default)|f]", metavar="BOOL")
-group_genome.add_argument("--minimum_length", help="Minimum sequence length (default:200)", type=int, metavar="INT")
+group_genome.add_argument("--minimum_length", help="Minimum sequence length (default:1000)", type=int, metavar="INT")
 group_genome.add_argument("--fix_origin", help="Rotate/flip the chromosome so that the dnaA gene comes first. (ONLY FOR A FINISHED GENOME)", action="store_true")
 group_genome.add_argument("--offset", help="Offset from the start codon of the dnaA gene. (for --fix_origin option, default=0)", default=0, type=int, metavar="INT")
 

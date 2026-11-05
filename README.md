@@ -30,7 +30,7 @@ For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 ## Overview
 
 * **Easy install**  
-DFAST is implemented in Python and runs on Mac and Linux. No additional Python modules are required other than BioPython. The external programs for the default workflow are installed from Bioconda or apt (they were bundled up to Ver 1.4).  
+DFAST is implemented in Python and runs on Mac and Linux. The external programs for the default workflow are installed from Bioconda or apt (they were bundled up to Ver 1.4).  
 Bioconda package and Docker image are also available.
 
 * **Flexible and customizable**  
@@ -62,12 +62,20 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   * `rpsbproc` 0.5 or later (CDDsearch, i.e. COG assignment)
   * HMMER 3 (`hmmscan`, `hmmsearch`, `hmmpress`, and `nhmmer` and `hmmbuild` for rRNA prediction)
   * LAST 1180 or later (`lastdb`, `lastal`; PseudoGeneDetection)
-  * Prodigal 2.6.3 (CDS prediction). Use the Bioconda or Debian trixie build. The Ubuntu 24.04 apt package (2.6.3-6) writes a broken GFF without the `partial` attribute, and DFAST stops with an error when it detects such a build.
+  * Prodigal 2.6.3 (CDS prediction). Use the Bioconda or Debian trixie build. On Ubuntu 24.04, the apt package (2.6.3-6) writes the GFF without the `partial` attribute, which DFAST needs; DFAST stops with an error when the attribute is missing.
   * Aragorn 1.2.x (tRNA/tmRNA prediction)
   * GHOSTX (the default protein aligner)
   * Diced 0.1.4 or later (CRISPR prediction; Python package)
   * DIAMOND (optional; only for `--aligner diamond`)
   * MGA (MetaGeneAnnotator; optional, only for `--use_mga`; Bioconda `metagene_annotator`, linux-64 only)
+
+  Optional programs for the accessory annotations (`--modules`, see [Experimental work](#experimental-work)); `--modules all` skips the ones that are not installed:
+  * PlasmidFinder 3.x (`plasmid`; PyPI `plasmidfinder`, Bioconda has only 2.x)
+  * MobileElementFinder (`mge`; installed by `dfast_file_downloader.py --modules mge`)
+  * IntegronFinder 2.0.6 or later (`integron`; Bioconda `integron_finder`). Specify the version, `conda install -c bioconda "integron_finder>=2.0.6"`: without it, conda may choose 2.0rc6, which does not work with current Biopython. IntegronFinder 2.0.6 requires HMMER 3.3.2 or earlier, so conda downgrades HMMER in that environment, and it cannot be installed from Bioconda on linux-aarch64 and osx-arm64
+  * DefenseFinder 3.x (`defense`; Bioconda `defense-finder`). Its models are under CC BY-NC-SA 4.0 (non-commercial use) and are not distributed with DFAST; see [Defense systems](#defense-systems).
+  * `amr` and `vf` need only BLAST+ and the CARD/VFDB data (`dfast_file_downloader.py --modules amr vf`).
+  * Git, to download the PlasmidFinder data and to install MobileElementFinder with `dfast_file_downloader.py --modules plasmid mge` (MobileElementFinder is installed from its repository together with `setuptools<81`).
 
   The easiest way is to create a conda environment from Bioconda. Diced 0.1.4 is not on Bioconda yet (0.1.3 only), so install it from PyPI (add `metagene_annotator` for `--use_mga`):
   ```
@@ -75,7 +83,7 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   conda activate dfast
   pip install "diced>=0.1.4"
   ```
-  They are also available from apt on Debian/Ubuntu (`ncbi-blast+ hmmer last-align aragorn prodigal`; `rpsblast` is installed as `rpsblast+`), from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), and from the developers ([Prodigal](https://github.com/hyattpd/Prodigal), [HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last), [Aragorn](https://www.trna.se/ARAGORN/), [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/), [DIAMOND](https://github.com/bbuchfink/diamond)) and PyPI ([Diced](https://pypi.org/project/diced/)). See the [Dockerfile](Dockerfile) for an example.  
+  They are also available from apt on Debian/Ubuntu (`ncbi-blast+ hmmer last-align aragorn prodigal`; `rpsblast` is installed as `rpsblast+`, so link it as `rpsblast`, e.g. `ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast`, and the NCBI `rpsbproc` binary needs `libdw.so.1`, e.g. apt `libdw1t64`), from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), and from the developers ([Prodigal](https://github.com/hyattpd/Prodigal), [HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last), [Aragorn](https://www.trna.se/ARAGORN/), [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/), [DIAMOND](https://github.com/bbuchfink/diamond)) and PyPI ([Diced](https://pypi.org/project/diced/)). See the [Dockerfile](Dockerfile) for an example.  
   BLAST+ creates databases in the BLAST database version 5 format, which the BLAST+ 2.6.0 bundled up to Ver 1.4 cannot read. Databases in version 4 created by older DFAST can still be used.
 
 * **Java and Perl**  
@@ -94,7 +102,7 @@ Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigy
 * **Download the distribution**  
 Download the latest DFAST distribution from [GitHub Tags](https://github.com/nigyta/dfast_core/tags), then unarchive it.
   ```
-  wget https://github.com/nigyta/dfast_core/archive/refs/tags/x.x.2.tar.gz  
+  wget https://github.com/nigyta/dfast_core/archive/refs/tags/x.x.x.tar.gz  
   tar xvfz x.x.x.tar.gz  # Files will be uncompressed into dfast_core-x.x.x direcotory   
   cd dfast_core-x.x.x    # Hereafter, we call this directory $DFAST_APP_ROOT
   ```
@@ -138,7 +146,7 @@ We recommend specifying the latest version. See available versions from [here](h
 conda install -c bioconda -c conda-forge dfast=1.X.XX
 ```
 If this does not work, please try to install DFAST into the fresh conda environment.
-From Ver 1.5, the external programs listed in [Prerequisites](#prerequisites) are installed as dependencies of the Bioconda package.
+The external programs listed in [Prerequisites](#prerequisites) (required ones) are installed as dependencies of the Bioconda package (from Ver 1.5; Diced from Ver 1.6). If your environment does not have Diced 0.1.4 or later, install it with `pip install "diced>=0.1.4"`. DefenseFinder (`--modules defense`) is also a dependency of the package; the other optional programs for `--modules` are not, so install the ones you need.
 
 DFAST executables are added to the `PATH` environmental variable, and the software package is installed in the `opt` directory under the Anaconda/Miniconda root directory. (e.g. /home/USER/miniconda3/opt/dfast-X.X.X/)  
 
@@ -204,6 +212,9 @@ Partial rRNAs (hits aligned to less than 80% of the expected length) are reporte
 * CRISPR prediction (Diced, run with the CRT parameters)
 * Assembly gaps within sequences
 
+__Prodigal and Diced (Ver 1.6)__  
+In Ver 1.6, CDS prediction moved from MetaGeneAnnotator (MGA) to [Prodigal](https://github.com/hyattpd/Prodigal), and CRISPR prediction from CRT to [Diced](https://github.com/althonos/diced) (a reimplementation of [MinCED](https://github.com/ctSkennerton/minced), run with the CRT parameters), in consideration of long-term maintainability. MGA is still available with `--use_mga` (Bioconda `metagene_annotator`, linux-64 only, genetic code 11 only).
+
 Optionally, you can choose MGA/GeneMarkS2 and tRNAscan-SE to predict CDS and tRNA, respectively. See [FAQ](docs/FAQ.md). (You need to install them manually.)
 
 ### Functional annotation
@@ -235,8 +246,8 @@ Basic options:
   -c PATH, --config PATH
                         Configuration file (default config will be used if not specified)
   --organism STR        Organism name
-  --strain STR          Strain name (mutually exclusive with --isolate)
-  --isolate STR         Isolate name for MAG/MAG-WGS submissions (mutually exclusive with --strain)
+  --strain STR          Strain name
+  --isolate STR         Isolate name (for MAG/MAG-WGS; mutually exclusive with --strain)
 
 Genome settings:
   --complete BOOL       Treat the query as a complete genome. Not required unless you need INSDC submission files. [t|f(=default)]
@@ -256,7 +267,8 @@ Locus_tag settings:
 
 Workflow options:
   --threshold STR       Thresholds for default database search (format: "pident,q_cov,s_cov,e_value", default: "0,75,75,1e-6")
-  --database PATH       Additional reference database to be searched against prior to the default database. (format: db_path[,db_name[,pident,q_cov,s_cov,e_value]])
+  --database PATH       Additional reference database to be searched against prior to the default database. (format:
+                        db_path[,db_name[,pident,q_cov,s_cov,e_value]])
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp|diamond]
   --use_prodigal        [Deprecated] Prodigal is the default CDS predictor since Ver 1.6; this option is no longer needed
@@ -268,6 +280,8 @@ Workflow options:
                         Prokaryotic rRNA models for Barrnap [bac(=default) arc]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac arc
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma),25(=Gracilibacteria)]. Supported by Prodigal; MGA and --metagenome support 11 only
   --no_func_anno        Disable all functional annotation steps
+  --hmm_db STR          HMM database for HMMscan [tigr(=default)|ncbifam]. 'ncbifam' searches the whole NCBI HMM collection (TIGR, NCBIFAM and PRK-
+                        derived models)
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
   --no_cds              Disable CDS prediction
@@ -276,12 +290,13 @@ Workflow options:
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of Prodigal/MGA for metagenome contigs
   --modules NAME [NAME ...]
-                        [Preliminary implementation] Enable accessory annotations: amr (CARD), vf (VFDB), plasmid (PlasmidFinder),
-                        mge (MobileElementFinder), integron (IntegronFinder), defense (DefenseFinder). 'all' enables all of them
-                        and skips unavailable modules with a warning; a module named explicitly stops DFAST if it is unavailable
+                        [Preliminary implementation] Enable accessory annotations: amr (CARD), vf (VFDB), plasmid (PlasmidFinder), mge
+                        (MobileElementFinder), integron (IntegronFinder), defense (DefenseFinder). 'all' enables all of them and skips unavailable
+                        modules with a warning; a module named explicitly stops DFAST if it is unavailable
   --amr                 [Removed in Ver 1.6] use --modules amr vf plasmid defense
   --mge                 [Removed in Ver 1.6] use --modules mge integron
-  --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
+  --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence,
+                        --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
   These values are only used to create INSDC submission files and do not affect the annotation result. See documents for more detail.
@@ -292,7 +307,7 @@ Genome source modifiers and metadata [advanced]:
   --additional_modifiers STR
                         Additional modifiers for source features
   --metadata_file PATH  Path to a metadata file (optional for DDBJ submission file)
-  --mag                 Enable MAG submission mode (sets project_type=mag-wgs). Use with --complete t to set project_type=mag.
+  --mag                 Enable MAG submission mode (project_type=mag-wgs). Combine with --complete t for project_type=mag.
 
 Run options:
   --cpu INT             Number of CPUs to use
@@ -323,7 +338,7 @@ In this case, you need to update "libstdc++.so.6". (You might need to install a 
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
 
 ## How to run DFAST within a Docker container.
-The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags). The Dockerhub image includes all the external programs (Prodigal, Diced and MGA for `--use_mga`; also DIAMOND for `--aligner diamond`). The quay.io image includes them from Ver 1.6.0 on Bioconda.  
+The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags). The Dockerhub image includes all the external programs (Prodigal, Diced and MGA for `--use_mga`; also DIAMOND for `--aligner diamond`) and the optional programs for `--modules` (PlasmidFinder, MobileElementFinder, IntegronFinder and DefenseFinder), but no reference data: the DefenseFinder models in particular are not included (see [Defense systems](#defense-systems)). The quay.io image is built from the Bioconda package and includes the programs that the package depends on (not the optional ones for `--modules`).  
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```
@@ -348,7 +363,7 @@ Images on Docker Hub are built automatically: pushing a version tag (e.g. `1.4.0
 
 ## Experimental work
 ### Annotation for antibiotic registance genes and virulence fators  
-`blastn` (BLAST+) and PlasmidFinder 3.x are required. PlasmidFinder 3.x is not available from Bioconda (which has 2.x), so install it from PyPI into the Python environment of DFAST:
+`blastn` (BLAST+) is required. PlasmidFinder 3.x is required only for `--modules plasmid`. It is not available from Bioconda (which has 2.x), so install it from PyPI into the Python environment of DFAST:
 ```
 pip install plasmidfinder
 ```
@@ -360,7 +375,11 @@ scripts/dfast_file_downloader.py --modules amr vf plasmid
 ```
 This runs `scripts/reference_util_for_nucl.py --card --vfdb` (CARD and VFDB) and `scripts/dfast_file_downloader.py --plasmidfinder` (PlasmidFinder) for you; the latter two can still be run directly.
 The script automatically fetches the latest CARD version from [card.mcmaster.ca](https://card.mcmaster.ca/download).
-You can pin a specific version with `--card_version 4.0.1`, and use `--vfdb_update_date` to override the VFDB timestamp (defaults to today's date).  
+To pin a CARD version or set the VFDB timestamp (defaults to today's date), run `reference_util_for_nucl.py` directly:
+```
+scripts/reference_util_for_nucl.py --card --card_version 4.0.1 --vfdb --vfdb_update_date 2024-05-03
+```
+
 DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.1](https://doi.org/10.6084/m9.figshare.26778175), and [WHRepDB v1.1](https://doi.org/10.6084/m9.figshare.31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
 Select the accessory annotations with `--modules`. Each module is one of:
@@ -395,7 +414,7 @@ These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudoge
 
 The previous method of `--modules amr vf`, which searched the nucleotide sequences of the predicted CDSs against CARD/VFDB (`NuclSearch`; a CDS is annotated at 90% identity and 90% coverage of both sequences, and no CDS is added, moved or removed), is still available: set `"enabled": True` for the CARD and/or VFDB `NuclSearch` entries in a config file (`--config`). `--modules amr` / `vf` then uses `NuclSearch` instead of `NuclMapping` for those databases.
 
-__Defense systems__  
+### Defense systems
 With `--modules defense`, [DefenseFinder](https://github.com/mdmparis/defense-finder) (with AntiDefenseFinder, `-a`) searches the predicted proteins
 for anti-phage defense and anti-defense systems. Each gene in a system gets a `/note` such as
 `DefenseFinder: MazE of MazEF defense system`, and `amr_summary.tsv` lists one `##` line per system.
@@ -404,8 +423,12 @@ Install DefenseFinder and download its models into `DB_ROOT/defense_finder_model
 conda install -c bioconda defense-finder
 scripts/dfast_file_downloader.py --modules defense
 ```
-The DefenseFinder models are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial use);
-they are not bundled with DFAST or its Docker image.
+**License of the DefenseFinder models.** The models used by DefenseFinder (defense-finder-models and CasFinder, by Institut Pasteur and CNRS) are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), which does not allow commercial use. The DefenseFinder program itself is GPL-3.0.
+* DFAST does not redistribute the models: they are not part of DFAST, its Docker image or its Bioconda package. `dfast_file_downloader.py --modules defense` (or `--defensefinder`) downloads them from their developers with `defense-finder update`.
+* When you run `--modules defense` (also via `--modules all`), you use the models under their license. Commercial use requires permission from the developers of DefenseFinder.
+* The developers of DefenseFinder have permitted the use of the models in the DFAST web service, on the condition that DFAST does not redistribute them.
+* Please cite DefenseFinder (Tesson et al., *Nat Commun* 2022; 13:2561) and, for anti-defense systems, AntiDefenseFinder (Tesson et al., *Nucleic Acids Res* 2024, doi:10.1093/nar/gkae1171) when you publish results.
+
 When DefenseFinder or its models are not found, `--modules all` skips it with a warning and `--modules defense` stops with an error.
 
 ### Mobile genetic element (MGE) detection
@@ -429,7 +452,7 @@ package; only the BLAST index is written to `DB_ROOT`.)
 
 `--modules integron` runs [IntegronFinder 2](https://github.com/gem-pasteur/Integron_Finder) (included in `--modules all`), because MGEdb has no integrons.
 Each integron (complete, In0 or CALIN) is annotated as `mobile_element` with `/mobile_element_type="integron"`,
-and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed, so `dfast_file_downloader.py --modules integron` only logs that); without it, `--modules all` skips it with a warning and `--modules integron` stops with an error.
+and each attC site as `misc_recomb`. Install it with `conda install -c bioconda "integron_finder>=2.0.6"` (no reference data is needed, so `dfast_file_downloader.py --modules integron` only logs that); without it, `--modules all` skips it with a warning and `--modules integron` stops with an error.
 Add `--local-max` to the `cmd_options` of the `IntegronFinder` entry in `CONTIG_ANNOTATION` for a more sensitive (slower) search.
 
 Then run DFAST with `--modules mge integron`:

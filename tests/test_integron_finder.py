@@ -55,4 +55,4 @@ def test_missing_executable_exits_with_hint(tmp_path, monkeypatch, caplog):
     monkeypatch.setattr(IntegronFinder, "version", None)
     with pytest.raises(SystemExit):
         IntegronFinder(workDir=str(tmp_path))
-    assert "conda install -c bioconda integron_finder" in caplog.text
+    assert 'conda install -c bioconda "integron_finder>=2.0.6"' in caplog.text

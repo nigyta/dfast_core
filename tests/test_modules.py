@@ -103,7 +103,7 @@ def test_missing_executable_message(tmp_path, no_tools, caplog):
     config = _config(tmp_path)
     with caplog.at_level(logging.INFO), pytest.raises(SystemExit):
         enable_modules(config, ["integron"])
-    assert "conda install -c bioconda integron_finder" in caplog.text
+    assert 'conda install -c bioconda "integron_finder>=2.0.6"' in caplog.text
 
 
 def test_amr_respects_nuclsearch_in_config(tmp_path, tools, caplog):

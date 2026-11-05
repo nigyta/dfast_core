@@ -104,4 +104,4 @@ def test_all_skips_missing_defense_and_integron(tmp_path, monkeypatch, caplog):
     assert _enabled("component_name", "DefenseFinder", config.FUNCTIONAL_ANNOTATION) == [False]
     assert _enabled("tool_name", "IntegronFinder", config.CONTIG_ANNOTATION) == [False]
     assert "dfast_file_downloader.py --modules defense" in caplog.text
-    assert "conda install -c bioconda integron_finder" in caplog.text
+    assert 'conda install -c bioconda "integron_finder>=2.0.6"' in caplog.text

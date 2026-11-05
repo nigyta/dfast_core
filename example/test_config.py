@@ -204,7 +204,7 @@ class Config:
                 "scov_cutoff": 75,
                 "aligner": "ghostx",  # ghostz, ghostx or blastp
                 "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
-                "database": "@@APP_ROOT@@/db/protein/DFAST-default.ref",
+                "database": "@@DB_ROOT@@/protein/DFAST-default.ref",
             },
         },
         {
@@ -241,8 +241,8 @@ class Config:
             "enabled": False,
             "options": {
                 "skipAnnotatedFeatures": True,
-                "database": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0_TIGR.LIB",
-                "attributes": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0.tsv",
+                "database": "@@DB_ROOT@@/hmm/NCBIfam_20.0_TIGR.LIB",
+                "attributes": "@@DB_ROOT@@/hmm/NCBIfam_20.0.tsv",
                 "db_name": "TIGR",
                 "cmd_options": "--cut_tc",
             },
@@ -253,8 +253,8 @@ class Config:
             "enabled": False,
             "options": {
                 "skipAnnotatedFeatures": True,
-                "database": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0.LIB",
-                "attributes": "@@APP_ROOT@@/db/hmm/NCBIfam_20.0.tsv",
+                "database": "@@DB_ROOT@@/hmm/NCBIfam_20.0.LIB",
+                "attributes": "@@DB_ROOT@@/hmm/NCBIfam_20.0.tsv",
                 "db_name": "NCBIfam",
                 "cmd_options": "--cut_tc",
             },
@@ -267,7 +267,7 @@ class Config:
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
                 "db_name": "",  # eg 'Pfam',
-                "database": ""  # eg '@@APP_ROOT@@/db/hmm/Pfam-A.hmm'
+                "database": ""  # eg '@@DB_ROOT@@/hmm/Pfam-A.hmm'
             },
         },
         {
@@ -278,8 +278,8 @@ class Config:
             "options": {
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
-                "database": "@@APP_ROOT@@/db/cdd/Cog",
-                "rpsbproc_data": "@@APP_ROOT@@/db/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
+                "database": "@@DB_ROOT@@/cdd/Cog",
+                "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
         {
@@ -289,8 +289,8 @@ class Config:
             "options": {
                 "skipAnnotatedFeatures": False,
                 "evalue_cutoff": 1e-6,
-                "database": "",  # eg @@APP_ROOT@@/db/cdd/Prk
-                "rpsbproc_data": "@@APP_ROOT@@/db/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
+                "database": "",  # eg @@DB_ROOT@@/cdd/Prk
+                "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
 

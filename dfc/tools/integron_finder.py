@@ -78,7 +78,7 @@ class IntegronFinder(ContigAnnotationTool):
     # integron_finder may write matplotlib cache messages to stderr, which setVersion() treats as "not found".
     VERSION_CHECK_CMD = ["integron_finder", "--version", "2>/dev/null"]
     VERSION_PATTERN = r"integron_finder version (\d+\.\d+\.\d+)"
-    VERSION_ERROR_MSG = "IntegronFinder 2 is required for --modules integron. Install it with 'conda install -c bioconda integron_finder'."
+    VERSION_ERROR_MSG = "IntegronFinder 2 is required for --modules integron. Install it with 'conda install -c bioconda \"integron_finder>=2.0.6\"'."
 
     def __init__(self, options=None, workDir="OUT"):
         if options is None:

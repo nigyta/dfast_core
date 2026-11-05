@@ -12,7 +12,7 @@ MGA supports the genetic code 11 only, so `--use_mga` stops with an error when `
 Note that MGA is not bundled in the DFAST distribution. Please install it by yourself. 
 
 Notes on Prodigal:
-* DFAST stops when the Prodigal GFF has no `partial=` attribute. Some builds (e.g. the Ubuntu 24.04 apt package 2.6.3-6) write a broken GFF; use the Bioconda or Debian trixie build instead.
+* DFAST stops when the Prodigal GFF has no `partial=` attribute. Some builds (e.g. the Ubuntu 24.04 apt package 2.6.3-6) write the GFF without the `partial` attribute; use the Bioconda or Debian trixie build instead.
 * Prodigal needs at least 20,000 bp of sequence to train. For a shorter input, DFAST automatically runs it with `-p meta` (genetic code 11 only; DFAST stops with other genetic codes).
 * `--metagenome` runs Prodigal with `-p meta`, which supports the genetic code 11 only; DFAST stops when it is combined with another `--gcode`.
 * Use `--gcode 4` (Mycoplasma) or `--gcode 25` (SR1/Gracilibacteria) for these genetic codes. Start codons are taken from the translation table.
@@ -72,7 +72,7 @@ You can specify it with a `--dbroot` option. This may be helpful when running DF
 
 Download the reference data:  
 ```
-dfast_file_downloader.py --protein dfast --cdd Cog --hmm TIGR --dbroot /dfast_db
+dfast_file_downloader.py --protein dfast --rrna barrnap --cdd Cog --hmm NCBIfam --dbroot /dfast_db
 ```
 Invoke DFAST:
 ```
