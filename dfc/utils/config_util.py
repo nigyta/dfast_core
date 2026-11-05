@@ -173,7 +173,7 @@ def disable_hmm_scan(config):
 
 def disable_cds_prediction(config):
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") == "CDS":
+        if _is_cds_tool(setting):
             setting["enabled"] = False
 
 def disable_trna_prediction(config):
@@ -255,7 +255,7 @@ def disable_func_annotation(config):
 def enable_metagenome_mode(config):
     logger.info("Metagenome mode is enabled.")
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") == "CDS":
+        if _is_cds_tool(setting):
             tool_name = setting.get("tool_name", "")
             if tool_name == "MGA":
                 if setting.get("enabled"):

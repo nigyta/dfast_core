@@ -315,12 +315,11 @@ if args.show_config:
 # print(dir(config))
 
 
-
 # rotate the chromosome so that dnaA comes first.
 if args.fix_origin:
     query_genome_fasta = config.GENOME_FASTA
     fd, temporary_fasta_file = tempfile.mkstemp()
-    fix_origin(query_genome_fasta, temporary_fasta_file, offset=args.offset, logger=logger)
+    fix_origin(query_genome_fasta, temporary_fasta_file, offset=args.offset, logger=logger, transl_table=args.gcode)
     logger.info("Created a temporary file for the origin-fixed genome. ({0})".format((temporary_fasta_file )))
     config.GENOME_FASTA = temporary_fasta_file
 
