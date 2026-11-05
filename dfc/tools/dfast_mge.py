@@ -250,3 +250,17 @@ class MobileElementFinder(ContigAnnotationTool):
                 s=entry["start"], e=entry["end"])
             report.setdefault(seq_id, []).append(summary)
         return source_notes, report
+
+    def getSummaryRows(self):
+        rows = []
+        with open(self.result_file) as fh:
+            data = json.load(fh)
+        for entry in data.get("result", []):
+            location = "{0}..{1}".format(entry["start"], entry["end"])
+            if entry["strand"] == -1:
+                location = "complement({0})".format(location)
+            rows.append({"module": "mge", "sequence": entry["contig"].split()[0], "location": location,
+                         "gene/system": entry["name"], "identity": "{0:.1f}".format(float(entry["identity"]) * 100),
+                         "note": "{0}, coverage:{1:.1f}%".format(_TYPE_NAME.get(entry["type"], entry["type"]),
+                                                                 float(entry["coverage"]) * 100)})
+        return rows

@@ -3,6 +3,7 @@
 
 import sys
 import os
+import shutil
 import pprint
 from logging import getLogger
 
@@ -298,7 +299,7 @@ def set_genetic_code(config, value):
             if "transl_table" in setting["options"]:
                 setting["options"]["transl_table"] = value
         for setting in config.FUNCTIONAL_ANNOTATION:
-            if setting.get("component_name", "") == "PseudoGeneDetection":
+            if setting.get("component_name", "") in ["PseudoGeneDetection", "NuclMapping"]:
                 setting["options"]["transl_table"] = value
 
 
@@ -337,13 +338,36 @@ def set_values_from_metadata(config):
     config.GENOME_CONFIG["project_type"] = project_type
 
 
+def _available(name, executable, conda_package, data_dir=None, downloader_option=None):
+    """Tools added to --amr/--mge in 1.5.5 are skipped with a warning when they are not installed, so that
+    --amr/--mge keep working without them. Enabling them in a config file still requires them."""
+    if not shutil.which(executable):
+        logger.warning("{0} is skipped because '{1}' is not found. Install it with 'conda install -c bioconda {2}'."
+                       .format(name, executable, conda_package))
+        return False
+    if data_dir is not None and not os.path.exists(data_dir):
+        logger.warning("{0} is skipped because its data are not found in '{1}'. "
+                       "Run 'dfast_file_downloader.py {2}' to download them.".format(name, data_dir, downloader_option))
+        return False
+    return True
+
+
 def enable_amr(config):
-    logger.info("AMR/VFG annotation and Plasmid identification enabled.")
+    """CARD/VFDB references are mapped onto the genome (NuclMapping). A CARD/VFDB NuclSearch entry enabled in the config
+    (searching the predicted CDSs, the previous method) is used instead of the mapping of that database."""
+    logger.info("AMR/VFG annotation, Plasmid identification and defense system detection enabled.")
+    searched = {s.get("options", {}).get("db_name", "") for s in config.FUNCTIONAL_ANNOTATION
+                if s.get("component_name", "") == "NuclSearch" and s.get("enabled")}
     for setting in config.FUNCTIONAL_ANNOTATION:
-        if setting.get("component_name", "") == "NuclSearch":
-            db_name = setting.get("options", {}).get("db_name", "")
-            if db_name in ["CARD", "VFDB"]:
+        db_name = setting.get("options", {}).get("db_name", "")
+        if setting.get("component_name", "") == "NuclMapping" and db_name in ["CARD", "VFDB"]:
+            if db_name in searched:
+                logger.info("{} is searched with NuclSearch as set in the config, not mapped with NuclMapping.".format(db_name))
+            else:
                 setting["enabled"] = True
+        elif setting.get("component_name", "") == "DefenseFinder":
+            setting["enabled"] = _available("DefenseFinder", "defense-finder", "defense-finder",
+                                            setting.get("options", {}).get("models_dir"), "--defensefinder")
 
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
@@ -351,10 +375,12 @@ def enable_amr(config):
 
 
 def enable_mge(config):
-    logger.info("Mobile genetic element detection (MobileElementFinder) enabled.")
+    logger.info("Mobile genetic element detection (MobileElementFinder, IntegronFinder) enabled.")
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "MobileElementFinder":
             setting["enabled"] = True
+        elif setting.get("tool_name", "") == "IntegronFinder":
+            setting["enabled"] = _available("IntegronFinder", "integron_finder", "integron_finder")
 
 
 def enable_mag(config, complete=False):

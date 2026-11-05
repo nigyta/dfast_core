@@ -215,6 +215,7 @@ By default, GHOSTX is used to align protein sequences. DIAMOND (`--very-sensitiv
 * Sequence and annotation data in GFF3 and GenBank format
 * Sequence data in FASTA format
 * Statistics for genome sequences and annotated features
+* Summary of the accessory annotations with `--amr`/`--mge` (`accessory_summary.tsv`)
 * DDBJ submission files
 
 ## Options
@@ -270,8 +271,10 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of MGA/Prodigal for metagenome contigs
-  --amr                 [Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs
+  --amr                 [Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome), identification of plasmid-derived contigs
+                        and detection of (anti-)defense systems with DefenseFinder
   --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
+                        and IntegronFinder
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
@@ -357,10 +360,37 @@ The script automatically fetches the latest CARD version from [card.mcmaster.ca]
 You can pin a specific version with `--card_version 4.0.1`, and use `--vfdb_update_date` to override the VFDB timestamp (defaults to today's date).  
 DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.1](https://doi.org/10.6084/m9.figshare.26778175), and [WHRepDB v1.1](https://doi.org/10.6084/m9.figshare.31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
-Invoke DFAST with `--amr` to enable `NuclSearch` for CARD/VFDB and `ContigAnnotation` using `PlasmidFinder`
+Invoke DFAST with `--amr` to enable `NuclMapping` for CARD/VFDB, `ContigAnnotation` using `PlasmidFinder`, and `DefenseFinder`
 ```
 dfast -g example/pOXA-48.fa --amr
 ```
+
+__Mapping of CARD/VFDB references (`NuclMapping`)__  
+With `--amr`, the CARD/VFDB nucleotide references are mapped directly onto the genome with `blastn` (`NuclMapping`). Only references that are correct genes (length a multiple of 3, a start codon, no internal stop codon, no ambiguous bases) change the annotation; the hits of other references are only attached to a predicted CDS (the one of the same gene, otherwise the same-strand CDS overlapping the mapped gene in the same reading frame), and no CDS is removed. Only full-length mappings (the whole reference aligned at 90% identity or more) are used; partial mappings are ignored. A full-length mapping:
+- adds a CDS for a gene that CDS prediction missed (rescue),
+- moves the start codon of a predicted CDS of the same gene to that of the reference (start correction; recorded in `/note`),
+- reports a gene with a frameshift, an internal stop codon or no stop codon within 100 bp of the reference's stop as one CDS with `/pseudogene="unknown"`, with the reason and position in `/note` (e.g. "frameshift at around 1234"); a missing start codon gives a pseudogene only when no predicted CDS of the same gene exists (otherwise that CDS is kept),
+- but when the open reading frame from the reference's start codon to the first stop codon still covers 70% or more of the reference (option `truncated_fraction`) and the reference is mapped at 95% identity or more, annotates that truncated CDS instead of a pseudogene, with its length relative to the reference and the reason in `/note` (e.g. "72% of the reference length; frameshift at around 1544766") and "truncated (72% of the reference)" in `amr_summary.tsv`; a reference that maps as an intact gene at the same locus is preferred to it,
+- when it adds or moves a CDS or calls a pseudogene, removes the predicted CDSs on the same strand that it replaces: those overlapping the mapped gene by more than `overlap_tolerance` (30 bp) and by at least `overlap_fraction` (20%) of their own length, except CDSs of genes mapped by other references (e.g. operon neighbours). A mapping that only confirms a predicted CDS removes nothing, and CDSs on the opposite strand are never removed.
+
+A lost stop codon extended to the next in-frame stop (up to 100 bp) and a stop codon in the last 2 codons of the reference (the CDS is then up to 2 codons shorter than the reference) are tolerated and recorded in `/note`. When several references map to the same locus, the most identical one that maps as an intact gene is used. A pseudogene is called only from a reference mapped at 95% identity or more (option `pseudogene_pident_cutoff`); below that, the mapping only attaches its hit to a predicted CDS, as for references that are not correct genes.
+
+These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudogene_summary.tsv`. The options of the `NuclMapping` entries in the config include `pident_cutoff` (minimum identity, default 90), `overlap_tolerance` (default 30 bp) and `overlap_fraction` (default 0.2) for the removal of replaced CDSs, and `truncated_fraction` (default 0.7). A custom nucleotide reference in the PLASMID_DB format of `reference_util_for_nucl.py` can also be mapped by enabling the `PLASMID_DB` entry of `NuclMapping` in the config.
+
+The previous method of `--amr`, which searched the nucleotide sequences of the predicted CDSs against CARD/VFDB (`NuclSearch`; a CDS is annotated at 90% identity and 90% coverage of both sequences, and no CDS is added, moved or removed), is still available: set `"enabled": True` for the CARD and/or VFDB `NuclSearch` entries in a config file (`--config`). `--amr` then uses `NuclSearch` instead of `NuclMapping` for those databases.
+
+__Defense systems__  
+With `--amr`, [DefenseFinder](https://github.com/mdmparis/defense-finder) (with AntiDefenseFinder, `-a`) searches the predicted proteins
+for anti-phage defense and anti-defense systems. Each gene in a system gets a `/note` such as
+`DefenseFinder: MazE of MazEF defense system`, and `amr_summary.tsv` lists one `##` line per system.
+Install DefenseFinder and download its models into `DB_ROOT/defense_finder_models`:
+```
+conda install -c bioconda defense-finder
+scripts/dfast_file_downloader.py --defensefinder
+```
+The DefenseFinder models are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial use);
+they are not bundled with DFAST or its Docker image.
+When DefenseFinder or its models are not found, `--amr` skips it with a warning.
 
 ### Mobile genetic element (MGE) detection
 Invoke DFAST with `--mge` to detect mobile genetic elements using
@@ -381,13 +411,34 @@ scripts/dfast_file_downloader.py --mefinder
 where DFAST's Python can `pip install`. The MGEdb sequences ship with the pip
 package; only the BLAST index is written to `DB_ROOT`.)
 
+`--mge` also runs [IntegronFinder 2](https://github.com/gem-pasteur/Integron_Finder), because MGEdb has no integrons.
+Each integron (complete, In0 or CALIN) is annotated as `mobile_element` with `/mobile_element_type="integron"`,
+and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed); without it, `--mge` skips it with a warning.
+Add `--local-max` to the `cmd_options` of the `IntegronFinder` entry in `CONTIG_ANNOTATION` for a more sensitive (slower) search.
+
 Then run DFAST with `--mge`:
 ```
 dfast -g example/pOXA-48.fa --mge
 ```
 
+### Summary of the accessory annotations (`accessory_summary.tsv`)
+With `--amr` and/or `--mge`, `accessory_summary.tsv` lists the results of all the accessory annotations in one table,
+one row per gene, region or system, sorted by module, sequence and position:
+
+| column | content |
+|---|---|
+| `module` | `amr` (CARD), `vf` (VFDB), `plasmid` (PlasmidFinder), `mge` (MobileElementFinder), `integron` (IntegronFinder) or `defense` (DefenseFinder); a custom reference mapped with `NuclMapping` gets its database name in lower case |
+| `sequence` | sequence name |
+| `location` | location on the sequence, e.g. `complement(5445..6242)` |
+| `locus_tag` | locus_tag of the CDS (comma-separated for a defense system); empty for a region |
+| `gene/system` | gene name, or the name of the element or system |
+| `identity` | identity (%) to the reference; empty when not applicable |
+| `note` | details, e.g. the product and how the CDS was annotated (`rescued`, `pseudogene`, `truncated`, ...) |
+
+`amr_summary.tsv` is still written in its previous format.
+
 ### DFAST Record JSON  
-DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
+DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. It is written in version 3 of the DDBJ Record format (`"schema_version": "v3"`); versions up to 1.5.4 wrote version 2. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
 ```
 pip install "git+https://github.com/ddbj/dr_tools.git"
 ```

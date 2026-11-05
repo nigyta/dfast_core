@@ -221,6 +221,8 @@ class PseudoGene(Hit):
         self.assign_as_note(feature, verbosity=verbosity)
 
     def assign_as_note(self, feature, verbosity=2):
+        if feature.annotations.get("nucl_mapping") == "pseudogene":
+            return  # NuclMapping writes its own notes; the hit is kept for pseudogene_summary.tsv
         if verbosity == 1:
             if len(self.stop_codon) > 0 or len(self.indel) > 0:
                 note = "possible pseudo"
@@ -285,6 +287,29 @@ class MBGDHit(Hit):
     def get_inference(self):
         # inference: similar to AA sequence:MBGD:2016-01_default:317
         return "similar to AA sequence:MBGD:{0}_{1}:{2}".format(self.mbgd_version, self.mbgd_tabid, self.clst_id)
+
+
+def defense_system_label(type_, subtype, activity):
+    """e.g. 'N6_RM_Type_I (RM_Type_I) defense system', 'Hachiman defense system', 'lar (Anti_RM) anti-defense system'"""
+    kind = "anti-defense system" if activity == "Antidefense" else "defense system"
+    name = subtype if subtype == type_ else "{0} ({1})".format(subtype, type_)
+    return "{0} {1}".format(name, kind)
+
+
+class DefenseHit(Hit):
+    """
+    A gene in an (anti-)defense system detected by DefenseFinder
+    """
+
+    def __init__(self, type_, subtype, activity, gene_name, sys_id):
+        self.type, self.subtype, self.activity, self.sys_id = type_, subtype, activity, sys_id
+        self.gene_name = gene_name.split("__")[-1]  # e.g. "Hachiman__HamB" -> "HamB"
+
+    def __str__(self):
+        return "DefenseFinder: {0} of {1}".format(self.gene_name, defense_system_label(self.type, self.subtype, self.activity))
+
+    def assign_as_note(self, feature, verbosity=2):
+        feature.qualifiers.setdefault("note", []).append(str(self))
 
 
 class NuclHit(Hit):

@@ -130,7 +130,6 @@ class PLASMID_DB(NucRef):
         return "<PLASMID_DB:{self.protein_id} {self.product}>".format(self=self)
 
     def to_dict(self):
-        print("OVERRIDE")
         gene = self.gene
         if self.gene_synonym:
             gene += f" (synonym: {self.gene_synonym})"

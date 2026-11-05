@@ -313,6 +313,16 @@ def test_getresult_source_notes_empty_report_populated(tmp_path):
     assert any("MobileElementFinder: Tn1999" in line for line in report["JN626286.1"])
 
 
+def test_get_summary_rows(tmp_path):
+    tool = MobileElementFinder(options={}, workDir=str(tmp_path))
+    os.makedirs(tool.output_directory, exist_ok=True)
+    import shutil
+    shutil.copy(_FIXTURE, tool.result_file)
+    row = tool.getSummaryRows()[0]
+    assert row == {"module": "mge", "sequence": "JN626286.1", "location": "complement(2292..8429)",
+                   "gene/system": "Tn1999", "identity": "100.0", "note": "composite transposon, coverage:100.0%"}
+
+
 def test_base_getfeatures_default(tmp_path):
     from dfc.tools.base_tools import ContigAnnotationTool
 

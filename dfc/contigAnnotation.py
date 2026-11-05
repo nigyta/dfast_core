@@ -8,10 +8,12 @@ from concurrent import futures
 from Bio.SeqFeature import ExactPosition, FeatureLocation
 from .tools.dfast_plasmidfinder import Plasmidfinder
 from .tools.dfast_mge import MobileElementFinder
+from .tools.integron_finder import IntegronFinder
 
 TOOLS = {
     "Plasmidfinder": Plasmidfinder,
     "MobileElementFinder": MobileElementFinder,
+    "IntegronFinder": IntegronFinder,
 }
 
 
@@ -84,6 +86,10 @@ class ContigAnnotation(object):
             for seq_id, report in dict_report.items():
                 dict_contig_annotation_report.setdefault(seq_id, []).extend(report)
         return dict_source_notes, dict_features, dict_contig_annotation_report
+
+    def summaryRows(self):
+        """Rows of accessory_summary.tsv from all tools"""
+        return [row for tool in self.tools for row in tool.getSummaryRows()]
 
     def cleanup(self):
         shutil.rmtree(self.child_dir)
