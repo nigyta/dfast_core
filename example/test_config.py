@@ -140,16 +140,16 @@ class Config:
             },
         },
         {
-            # CRT for CRISPR detection
-            # CRT runs on JavaVM. Depending on your system, it requires additional parameters to run.
-            # Example
-            #     "java_options": "-Xmx256m"
-            "tool_name": "CRT",
-            "enabled": False,
+            # Diced for CRISPR detection (Python package, run in-process; pip install 'diced>=0.1.4')
+            # The default parameters are those of CRT, which Diced replaced.
+            "tool_name": "Diced",
+            "target": "CRISPR",
+            "enabled": True,
             "options": {
-                "jar_file": "@@APP_ROOT@@/bin/common/CRT1.2-CLI.jar",
-                "java_options": "",  # options passed to java. e.g. -Xmx256m
-                "cmd_options": "",  # cmd_options passed to CRT.
+                "min_repeat_length": 19,
+                "max_repeat_length": 38,
+                "min_spacer_length": 19,
+                "max_spacer_length": 48,
             },
         },
         {

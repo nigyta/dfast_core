@@ -132,43 +132,6 @@ class Aligner(Tool):
         self.executeCommand(cmd, shell=False)
 
 
-class JavaWrapper(Tool):
-    NAME = "Java"  # Should be overridden in child classes.
-    VERSION_PATTERN = r'version "(.+)"'
-    
-    SHELL = False
-
-    def __init__(self, options=None, java_options=""):
-
-        self.java_options = java_options
-
-        super(JavaWrapper, self).__init__(options)
-
-    def setVersion(self):
-        """
-        Check the tool version.
-        This method uses VERSION_CHECK_CMD and VERSION_PATTERN.
-        """
-        version_check_command_ = ["java", self.java_options, "-version", "2>&1 /dev/null"]
-
-        self.logger.info("Checking {0} version... ".format(self.__class__.NAME))
-        out, err = self.executeCommand(version_check_command_, shell=True)
-        m = re.search(self.__class__.VERSION_PATTERN, out.decode('utf-8'))
-        if m:
-            version = m.group(1)
-            self.__class__.version = version
-            self.logger.info("Java initialized. (Version {self.version})".format(self=self))
-        else:
-            self.logger.error("Java version could not be determined. Aborted...\n" +
-                              "Please check if Java is installed in your system.\n" +
-                              "Depending on your system, Java requires additional options to run, such as '-Xmx512m'. " +
-                              "You can set them to java_options in the config file or the environmental variable _JAVA_OPTIONS.")
-            exit(1)
-
-    def getCommand(self):
-        return ["java", self.java_options]
-
-
 class ContigAnnotationTool(Tool):
     NAME = "ContigAnnotationTool"  # Should be overridden in child classes.
     TYPE = ""  # Must be one of the features. e.g. CDS, tRNA, rRNA
@@ -211,17 +174,3 @@ class ContigAnnotationTool(Tool):
         Default: no rows.
         """
         return []
-
-if __name__ == '__main__':
-    logger = getLogger(__name__)
-
-    logger.setLevel(DEBUG)
-
-    handler = StreamHandler()
-    handler.setLevel(DEBUG)
-    logger.setLevel(DEBUG)
-    logger.addHandler(handler)
-
-    tool = JavaWrapper()
-    print(tool.version)
-

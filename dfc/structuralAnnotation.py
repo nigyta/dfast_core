@@ -11,7 +11,7 @@ from .tools.mga import MGA
 from .tools.barrnap import Barrnap
 from .tools.aragorn import Aragorn
 from .tools.gap import GAP
-from .tools.CRT import CRT
+from .tools.diced import Diced
 # from .tools.glimmer import Glimmer
 from .tools.prodigal import Prodigal
 from .tools.genemarkS2 import GeneMarkS2
@@ -24,7 +24,7 @@ TOOLS = {
     "MGA": MGA,
     "Barrnap": Barrnap,
     "Aragorn": Aragorn,
-    "CRT": CRT,
+    "Diced": Diced,
     # "Glimmer": Glimmer,
     "Prodigal": Prodigal,
     "GeneMarkS2": GeneMarkS2,
