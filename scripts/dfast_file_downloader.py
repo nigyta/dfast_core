@@ -25,6 +25,7 @@ logger.addHandler(StreamHandler())
 
 sys.path.append(app_root)
 from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models, build_rrna_hmm
+from dfc.utils.config_util import MODULES
 from dfc.tools.barrnap import RRNA_MODELS, RFAM_RELEASE, RFAM_FAMILIES, KINGDOMS
 
 
@@ -79,6 +80,9 @@ DFAST file downloader\n\
         Files will be downloaded to DB root directory by default.
         DB root can be specified with "--dbroot" option.
 
+    --modules: Reference data for the accessory modules of dfast --modules (amr, vf, plasmid, mge, integron, defense, or all).
+        Files will be written to DB root directory.
+
     --assembly, --assembly_fasta: For Reference genomes
         Reference genome file will be downloaded from NCBI Assembly Database either in GenBank or Fasta format.
         Files will be written to the current directory or the directory specified with "--out" option.
@@ -112,6 +116,8 @@ parser.add_argument("--mefinder", action="store_true",
                          help="Install MobileElementFinder and build its MGEdb BLAST index")
 parser.add_argument("--defensefinder", action="store_true",
                          help="DefenseFinder models (defense-finder update). License: CC BY-NC-SA 4.0")
+parser.add_argument("--modules", nargs='+', choices=MODULES + ("all",),
+                         help="Reference data for the accessory modules of dfast --modules. [{}|all]".format("|".join(MODULES)), metavar="STR")
 parser.add_argument("--no_indexing", action="store_true",
                          help="Do not perform database indexing")
 group_out = parser.add_mutually_exclusive_group()
@@ -120,8 +126,13 @@ group_out.add_argument("-d", "--dbroot", help="DB root directory (default: APP_R
 
 args = parser.parse_args()
 
+# --modules is expanded into the corresponding single options (amr and vf are handled by the subprocess below).
+modules = set(MODULES if args.modules and "all" in args.modules else args.modules or [])
+args.plasmidfinder = args.plasmidfinder or "plasmid" in modules
+args.mefinder = args.mefinder or "mge" in modules
+args.defensefinder = args.defensefinder or "defense" in modules
 
-if all(x is None for x in [args.protein, args.rrna, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.plasmidfinder]) and not (args.mefinder or args.defensefinder):
+if all(x is None for x in [args.protein, args.rrna, args.cdd, args.hmm, args.assembly, args.assembly_fasta, args.modules]) and not (args.plasmidfinder or args.mefinder or args.defensefinder):
     parser.print_help()
     exit()
 
@@ -577,6 +588,16 @@ if args.assembly_fasta:
             output_genbank_file = retrieved_file.replace(".fna.gz", ".fna")
             gunzip_file(retrieved_file, output_genbank_file)
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
+
+if modules & {"amr", "vf"}:
+    db_root = get_db_root(args)
+    cmd = [sys.executable, os.path.join(app_root, "scripts", "reference_util_for_nucl.py"), "--dbroot", db_root]
+    cmd += (["--card"] if "amr" in modules else []) + (["--vfdb"] if "vf" in modules else [])
+    logger.info("Preparing CARD/VFDB. Files will be written into '{}'".format(db_root))
+    subprocess.run(cmd, check=True)
+
+if "integron" in modules:
+    logger.info("IntegronFinder needs no reference data.")
 
 if args.plasmidfinder:
     db_root = get_db_root(args)
