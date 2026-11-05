@@ -32,6 +32,12 @@ TOOLS = {
 }
 
 
+REMOVED_TOOLS = {
+    "CRT": "Use the Diced entry of dfc/default_config.py instead.",
+    "RNAmmer": "Use the default rRNA prediction (Barrnap method) instead.",
+}
+
+
 def start_codons_of(transl_table):
     """Return the set of start codons defined by the translation table (int or numeric str)."""
     return set(unambiguous_dna_by_id[int(transl_table)].start_codons)
@@ -54,15 +60,18 @@ class StructuralAnnotation(object):
         self.logger.info("Initializing structural annotation tools... ")
 
         for tool_config in self.configs:
-            Tool = TOOLS.get(tool_config["tool_name"])
+            if not tool_config.get("enabled"):
+                continue  # e.g. CRT and RNAmmer entries of a Ver 1.5 config
+            tool_name = tool_config["tool_name"]
+            Tool = TOOLS.get(tool_name)
             if Tool:
-                if tool_config.get("enabled"):
-                    tool = Tool(options=tool_config.get("options", {}), workDir=self.workDir)
-                    self.tools.append(tool)
+                self.tools.append(Tool(options=tool_config.get("options", {}), workDir=self.workDir))
             else:
-                self.logger.error(
-                    "{0} is not registered in {1}. \nProcess aborted due to an error.".format(tool_config["tool_name"],
-                                                                                              __name__))
+                if tool_name in REMOVED_TOOLS:
+                    msg = "{0} was removed in Ver 1.6. {1}".format(tool_name, REMOVED_TOOLS[tool_name])
+                else:
+                    msg = "{0} is not registered in {1}.".format(tool_name, __name__)
+                self.logger.error(msg + " \nProcess aborted due to an error.")
                 exit(1)
 
     def execute(self):
