@@ -87,5 +87,9 @@ class ContigAnnotation(object):
                 dict_contig_annotation_report.setdefault(seq_id, []).extend(report)
         return dict_source_notes, dict_features, dict_contig_annotation_report
 
+    def summaryRows(self):
+        """Rows of accessory_summary.tsv from all tools"""
+        return [row for tool in self.tools for row in tool.getSummaryRows()]
+
     def cleanup(self):
         shutil.rmtree(self.child_dir)

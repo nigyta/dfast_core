@@ -97,3 +97,14 @@ class Plasmidfinder(ContigAnnotationTool):
                 f"PlasmidFinder: {plasmid_type}, Description: {description}, HitInfo: {hit_info}"
             )
         return D, report
+
+    def getSummaryRows(self):
+        rows = []
+        for hit in json.load(open(self.result_file)).get("seq_regions", {}).values():
+            ref_length = hit.get("ref_seq_lenght", hit.get("ref_seq_length", 0))
+            rows.append({"module": "plasmid", "sequence": hit["query_id"],
+                         "location": f"{hit['query_start_pos']}..{hit['query_end_pos']}",
+                         "gene/system": hit["name"], "identity": str(hit["identity"]),
+                         "note": f"similar to {hit['ref_acc']} ({hit.get('ref_database', '')}), "
+                                 f"aligned:{hit['alignment_length']}/{ref_length}"})
+        return rows

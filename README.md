@@ -215,6 +215,7 @@ By default, GHOSTX is used to align protein sequences. DIAMOND (`--very-sensitiv
 * Sequence and annotation data in GFF3 and GenBank format
 * Sequence data in FASTA format
 * Statistics for genome sequences and annotated features
+* Summary of the accessory annotations with `--amr`/`--mge` (`accessory_summary.tsv`)
 * DDBJ submission files
 
 ## Options
@@ -418,6 +419,22 @@ Then run DFAST with `--mge`:
 ```
 dfast -g example/pOXA-48.fa --mge
 ```
+
+### Summary of the accessory annotations (`accessory_summary.tsv`)
+With `--amr` and/or `--mge`, `accessory_summary.tsv` lists the results of all the accessory annotations in one table,
+one row per gene, region or system, sorted by module, sequence and position:
+
+| column | content |
+|---|---|
+| `module` | `amr` (CARD), `vf` (VFDB), `plasmid` (PlasmidFinder), `mge` (MobileElementFinder), `integron` (IntegronFinder) or `defense` (DefenseFinder); a custom reference mapped with `NuclMapping` gets its database name in lower case |
+| `sequence` | sequence name |
+| `location` | location on the sequence, e.g. `complement(5445..6242)` |
+| `locus_tag` | locus_tag of the CDS (comma-separated for a defense system); empty for a region |
+| `gene/system` | gene name, or the name of the element or system |
+| `identity` | identity (%) to the reference; empty when not applicable |
+| `note` | details, e.g. the product and how the CDS was annotated (`rescued`, `pseudogene`, `truncated`, ...) |
+
+`amr_summary.tsv` is still written in its previous format.
 
 ### DFAST Record JSON  
 DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 

@@ -120,3 +120,11 @@ class IntegronFinder(ContigAnnotationTool):
             report.setdefault(integron["seq_id"], []).append("IntegronFinder: {0}, {1}..{2}".format(
                 integron_summary(integron), integron["start"], integron["end"]))
         return {}, report
+
+    def getSummaryRows(self):
+        return [{"module": "integron", "sequence": integron["seq_id"],
+                 "location": "{0}..{1}".format(integron["start"], integron["end"]),
+                 "gene/system": _INTEGRON_TYPE_LABEL.get(integron["type"], integron["type"]),
+                 "note": "attC sites: {0}; integrase: {1}".format(len(integron["attC"]),
+                                                                 "intI" if integron["intI"] else "none")}
+                for integron in self.getIntegrons()]

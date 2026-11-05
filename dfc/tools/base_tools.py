@@ -205,6 +205,13 @@ class ContigAnnotationTool(Tool):
         """
         return {}
 
+    def getSummaryRows(self):
+        """Return the rows of accessory_summary.tsv as a list of dicts (see utils.summarize_accessory.HEADER).
+
+        Default: no rows.
+        """
+        return []
+
 if __name__ == '__main__':
     logger = getLogger(__name__)
 

@@ -55,8 +55,9 @@ class DefenseFinder(BaseAnnotationComponent):
                 hit = DefenseHit(row["type"], row["subtype"], row["activity"], row["gene_name"], row["sys_id"])
                 self.genome.features[feature_id].secondary_hits.append(hit)
                 system = systems.setdefault(row["sys_id"], {
-                    "type": row["type"], "subtype": row["subtype"], "activity": row["activity"], "features": []})
+                    "type": row["type"], "subtype": row["subtype"], "activity": row["activity"], "features": [], "genes": []})
                 system["features"].append(feature_id)
+                system["genes"].append(hit.gene_name)
         # read by utils.summarize_amr
         with open(os.path.join(self.workDir, "systems.json"), "w") as f:
             json.dump(systems, f, indent=2)
