@@ -103,7 +103,7 @@ class Config:
         {
             # MetaGeneAnnotator for CDS prediction
             "tool_name": "MGA",
-            "enabled": True,
+            "enabled": False,
             "options": {"cmd_options": "-s"},  # -s for single species, -m for multiple species
         },
         {
@@ -170,9 +170,9 @@ class Config:
         },
         {
             # Prodigal for CDS prediction
-            # By default Prodigal is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
+            # Prodigal is the default CDS predictor. To use MGA instead, disable this and enable MGA (or enable merge_cds in FEATURE_ADJUSTMENT).
             "tool_name": "Prodigal",
-            "enabled": False,
+            "enabled": True,
             "options": {
                 "transl_table": 11,
                 "cmd_options": "",

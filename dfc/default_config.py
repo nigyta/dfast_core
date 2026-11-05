@@ -117,7 +117,7 @@ class Config:
             # MetaGeneAnnotator for CDS prediction
             "tool_name": "MGA",
             "target": "CDS",
-            "enabled": True,
+            "enabled": False,
             "options": {"cmd_options": "-s", "transl_table": 11},  # -s for single species, -m for multiple species
         },
         {
@@ -192,7 +192,7 @@ class Config:
             # Prodigal for CDS prediction
             "tool_name": "Prodigal",
             "target": "CDS",
-            "enabled": False,
+            "enabled": True,
             "options": {
                 "transl_table": 11,
                 "cmd_options": "",  # -p meta for metagenome contigs

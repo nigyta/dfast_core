@@ -286,15 +286,10 @@ def set_gff(config, gff_file_name):
                 setting["enabled"] = False
 
 def set_genetic_code(config, value):
-    if value not in [4, 11]:
-        logger.warning("[WARNING] Unsupported genetic code {} is specified.".format(value))
-    if value == 11:
-        pass
-    else:
-        # genetic code 4 can be specified when using Prodigal/GeneMarkS2/Aragorn
-        logger.warning("Genetic code is set to {}.".format(value))
-        logger.warning("Prodigal (--use_prodigal), GeneMarkS2 (--use_genemarks2), or customized binary of MGA is required.")
-
+    if value not in [4, 11, 25]:
+        logger.warning("Unsupported genetic code {} is specified.".format(value))
+    if value != 11:
+        logger.info("Genetic code is set to {}.".format(value))
         for setting in config.STRUCTURAL_ANNOTATION:
             if "transl_table" in setting["options"]:
                 setting["options"]["transl_table"] = value
@@ -303,6 +298,22 @@ def set_genetic_code(config, value):
                 setting["options"]["transl_table"] = value
 
 
+def check_genetic_code(config):
+    """Exit if the enabled CDS predictor cannot handle the genetic code: MGA and metagenome mode support table 11 only."""
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if setting.get("target", "") != "CDS" or not setting.get("enabled"):
+            continue
+        options = setting.get("options", {})
+        tool_name = setting.get("tool_name", "")
+        transl_table = options.get("transl_table", 11)
+        cmd_options = options.get("cmd_options", "")
+        if tool_name == "MGA" and transl_table != 11:
+            logger.error("MGA supports only the genetic code 11, but {} is specified. Please use the default CDS predictor (Prodigal).".format(transl_table))
+            exit(1)
+        metagenome = (tool_name == "Prodigal" and "-p meta" in cmd_options) or (tool_name == "MGA" and "-m" in cmd_options.split())
+        if metagenome and transl_table != 11:
+            logger.error("Metagenome mode supports only the genetic code 11, but {} is specified.".format(transl_table))
+            exit(1)
 
 
 def set_values_from_metadata(config):

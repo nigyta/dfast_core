@@ -41,9 +41,9 @@ class Config:
 
     STRUCTURAL_ANNOTATION = [
         {
-            "tool_name": "MGA",
+            "tool_name": "Prodigal",
             "enabled": True,
-            "options": {"cmd_options": "-s"},  # -s for single species, -m for multiple species
+            "options": {"transl_table": 11, "cmd_options": ""},
         },
     ]
 
