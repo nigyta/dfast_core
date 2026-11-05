@@ -130,6 +130,14 @@ def test_modules_choices():
     assert p.returncode == 2
 
 
+def test_modules_all_wiring_in_dfast(tmp_path):
+    # With an empty DB root every module with data is skipped with a warning; the run goes on.
+    p = subprocess.run([sys.executable, DFAST, "-g", GENOME, "--modules", "all", "--dbroot", str(tmp_path), "--show_config"],
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    assert p.returncode == 0, p.stdout
+    assert "is skipped" in p.stdout and "Modules enabled" in p.stdout
+
+
 def _drop_entries(config, name):
     for settings in (config.FUNCTIONAL_ANNOTATION, config.CONTIG_ANNOTATION):
         settings[:] = [s for s in settings if name not in (s.get("component_name"), s.get("tool_name"))]

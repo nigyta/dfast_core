@@ -378,6 +378,7 @@ def _plasmidfinder_available():
 def module_unavailable(config, module):
     """Return why a module cannot run (what is missing and how to install it), or None if it can."""
     name, db_name = _MODULE_ENTRIES[module]
+    name = name.replace("Plasmidfinder", "PlasmidFinder")  # the config entry is named Plasmidfinder
     if module in ("amr", "vf") and _nuclsearch_entry(config, module):
         # ponytail: a CARD/VFDB NuclSearch entry enabled in the config is used instead of the mapping; its reference
         # files are not checked here, NuclSearch reports them when it starts.
@@ -401,7 +402,7 @@ def module_unavailable(config, module):
         data = options.get("db_path", "")
     elif module == "mge":
         if not shutil.which("mefinder"):
-            problems.append("'mefinder' is not found. Install it with 'pip install MobileElementFinder'.")
+            problems.append("'mefinder' is not found. Install it with 'dfast_file_downloader.py --modules mge'.")
         data = options.get("db_path", "")
     elif module == "integron":
         if not shutil.which("integron_finder"):

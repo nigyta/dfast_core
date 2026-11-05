@@ -589,13 +589,6 @@ if args.assembly_fasta:
             gunzip_file(retrieved_file, output_genbank_file)
             logger.info("\tDownloaded to {}".format(os.path.abspath(output_genbank_file)))
 
-if modules & {"amr", "vf"}:
-    db_root = get_db_root(args)
-    cmd = [sys.executable, os.path.join(app_root, "scripts", "reference_util_for_nucl.py"), "--dbroot", db_root]
-    cmd += (["--card"] if "amr" in modules else []) + (["--vfdb"] if "vf" in modules else [])
-    logger.info("Preparing CARD/VFDB. Files will be written into '{}'".format(db_root))
-    subprocess.run(cmd, check=True)
-
 if "integron" in modules:
     logger.info("IntegronFinder needs no reference data.")
 
@@ -620,6 +613,16 @@ if args.defensefinder:
     if not os.path.exists(db_root):
         os.makedirs(db_root)
     retrieve_defensefinder_models(db_root)
+
+# Last, so that a failed CARD/VFDB download does not prevent the other modules.
+if modules & {"amr", "vf"}:
+    db_root = get_db_root(args)
+    cmd = [sys.executable, os.path.join(app_root, "scripts", "reference_util_for_nucl.py"), "--dbroot", db_root]
+    cmd += (["--card"] if "amr" in modules else []) + (["--vfdb"] if "vf" in modules else [])
+    logger.info("Preparing CARD/VFDB. Files will be written into '{}'".format(db_root))
+    if subprocess.run(cmd).returncode != 0:
+        logger.error("Failed to prepare CARD/VFDB!")
+        exit(1)
 
 
 # test GCF_000091005.1 GCA_000008865.1

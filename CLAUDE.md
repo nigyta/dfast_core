@@ -46,7 +46,7 @@ There is no build step and no linter config. The `dfast` script resolves `APP_RO
 - `dfc/models/`: parsers and models for reference hits and databases (CARD, VFDB, CDD, plasmid DB, nucleotide refs).
 - `dfc/utils/ddbj_submission.py` + `metadata_util.py` + `metadata_definition.tsv`: MSS submission output. Metadata fields, their MSS feature/qualifier mapping, and validation patterns are defined in the TSV. `--metadata_file` values are loaded via `set_values_from_metadata`. MAG/ENV handling depends on `GENOME_CONFIG["project_type"]`.
 - `dfc/dev/`: experimental entry points (`dfast_gff`, `dfast_re` reannotation), not part of the main pipeline.
-- `scripts/dfast_file_downloader.py`: downloads and indexes reference DBs (protein, CDD, HMM, CARD/VFDB, PlasmidFinder, MobileElementFinder). It dispatches on argv at import time, so tests run it as a subprocess. `reference_util*.py` builds custom reference DBs.
+- `scripts/dfast_file_downloader.py`: downloads and indexes reference DBs (protein, CDD, HMM, CARD/VFDB, PlasmidFinder, MobileElementFinder, DefenseFinder; `--modules NAME ...` downloads the data of the accessory modules). It dispatches on argv at import time, so tests run it as a subprocess. `reference_util*.py` builds custom reference DBs.
 
 ## Releases
 
