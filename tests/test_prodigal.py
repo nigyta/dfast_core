@@ -63,8 +63,25 @@ def test_broken_gff_exits(tmp_path, caplog):
     assert "partial" in caplog.text
 
 
-def test_short_input_uses_meta(tmp_path):
-    assert "-p meta" in " ".join(_tool(tmp_path, {"a": 4000, "b": 6000}).getCommand())
+def test_short_input_uses_meta(tmp_path, caplog):
+    with caplog.at_level("INFO"):
+        cmd = " ".join(_tool(tmp_path, {"a": 4000, "b": 6000}).getCommand())
+    assert "-p meta" in cmd
+    assert "10,000 bp" in caplog.text and "-p meta" in caplog.text
+
+
+def test_failed_prodigal_exits(tmp_path, monkeypatch, caplog):
+    # Prodigal writes its error to the log file, so the generic stderr check never sees it
+    fake = tmp_path / "fakebin"
+    fake.mkdir()
+    (fake / "prodigal").write_text("#!/bin/sh\necho 'Error: fake failure' >&2\nexit 15\n")
+    (fake / "prodigal").chmod(0o755)
+    monkeypatch.setenv("PATH", str(fake) + os.pathsep + os.environ["PATH"])
+    tool = _tool(tmp_path, {"a": 30000})
+    os.makedirs(os.path.join(str(tmp_path), "structural"), exist_ok=True)
+    with pytest.raises(SystemExit):
+        tool.run()
+    assert "fake failure" in caplog.text
 
 
 def test_short_input_non11_exits(tmp_path, caplog):

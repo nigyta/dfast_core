@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # coding: UTF8
 
+import subprocess
+
 from .base_tools import StructuralAnnotationTool
 from Bio import SeqIO
 # from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -48,9 +50,20 @@ class Prodigal(StructuralAnnotationTool):
         cmd = ["prodigal", self.cmd_options]
         if self.total_length < self.MIN_SINGLE_LENGTH and "-p" not in self.cmd_options.split():
             cmd += ["-p", "meta"]
+            self.logger.info("Input is shorter than {0:,} bp ({1:,} bp); Prodigal will run with '-p meta'.".format(
+                self.MIN_SINGLE_LENGTH, self.total_length))
         cmd += ["-g", str(self.transl_table), "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
         return cmd
 
+    def run(self):
+        """Prodigal's stderr goes to the log file, so the generic stderr check cannot see a failure; check the exit code."""
+        cmd = " ".join(self.getCommand())
+        self.logger.debug('Running command "{0}" ({1})'.format(cmd, self.__class__.__name__))
+        if subprocess.run(cmd, shell=True).returncode != 0:
+            self.logger.error("Process aborted due to an error in {0}.".format(self.__class__.__name__))
+            with open(self.logFile) as f:
+                self.logger.error(f.read())
+            exit(1)
 
     def getFeatures(self):
         """Prodigal generates standard GFF format.
