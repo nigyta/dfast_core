@@ -1,3 +1,24 @@
+Ver 1.6.0 (unreleased) ---------------------------------------
+DFAST no longer bundles any executables and no longer needs Java: the Roadmap of Ver 1.5.0 is done. All external programs are installed from Bioconda, apt or PyPI. The 'bin' directory has been removed.
+
+CDS prediction: Prodigal (the 'prodigal' executable, 2.6.3) is now the default CDS predictor instead of MGA, so CDS predictions change from Ver 1.5 (start codons, partial CDSs and the number of short CDSs differ). Results of Ver 1.5 can be reproduced approximately with '--use_mga', which uses the 'mga' command from the Bioconda package 'metagene_annotator' (linux-64 only, genetic code 11 only). '--use_prodigal' is kept for compatibility: it still selects Prodigal and logs a warning that it is no longer needed. '--metagenome' runs Prodigal with '-p meta' (MGA with '-m' with '--use_mga').
+  - DFAST stops with an error when the Prodigal GFF has no 'partial=' attribute. Some builds of Prodigal 2.6.3, such as the Ubuntu 24.04 apt package (/usr/bin/prodigal, 2.6.3-6), write a broken GFF and would make every gene look complete; use the Bioconda or Debian trixie build.
+  - Prodigal needs at least 20,000 bp of sequence for training in the normal mode. For an input shorter than 20,000 bp in total, DFAST runs it with '-p meta' automatically and logs it (genetic code 11 only; DFAST stops with another genetic code).
+  - A gene whose start codon is exactly at a sequence end is reported as partial by Prodigal. The existing fix (length >= 500 bp, a database hit, and ATG/GTG/TTG start codon) turns it into a complete CDS, as before.
+
+Genetic codes: '--gcode' accepts 4 (Mycoplasma), 11 and 25 (SR1/Gracilibacteria); other NCBI tables are passed through with a warning, as before. The table reaches Prodigal ('-g'), Aragorn, the translation of CDSs, PseudoGeneDetection ('lastal -G') and the /transl_table qualifier. Start codons are taken from the translation table of Biopython (ATG, GTG and TTG for table 25) instead of fixed lists. '--use_mga' and '--metagenome' support only the genetic code 11 and stop with an error with other '--gcode' values, because Prodigal's meta mode ignores '-g' and MGA has no other tables.
+
+CRISPR prediction: Diced (>= 0.1.4, Python package; 'pip install "diced>=0.1.4"', Bioconda has only 0.1.3 at present) replaces CRT. It runs with the CRT parameters (repeat length 19-38, spacer length 19-48) and the CRISPR features keep the most frequent repeat sequence as 'rpt_unit_seq', so the results are comparable (115 of 120 arrays were identical to CRT on 81 genomes). CRT and the Java dependency are removed.
+
+'--use_rnammer' and RNAmmer support have been removed. Use the default rRNA prediction (Barrnap method; '--rrna_model rfam' and '--rrna_kingdom bac arc' for more coverage).
+
+GHOSTX (the default aligner) runs as one process with '--cpu' threads, like DIAMOND, so the memory no longer grows with the number of CPUs (7.5 GB to 2.3 GB with '--cpu 4' in a test) and the results are identical. This needs GHOSTX built with OpenMP (Bioconda 'ghostx' 1.3.7 build 3 or later); older builds ignore the thread option and run slower.
+
+Docker image: Prodigal (apt), Diced (pip) and MGA (extracted from the Bioconda package) are installed and Java is removed. The image is still linux/amd64 because the Bioconda MGA build is x86_64 only.
+
+The configurations of the web service (example/dfc_config/dfast_web_config*.py) use Prodigal and Diced. Prodigal and 'diced>=0.1.4' must be installed in the environment before this version is deployed to the web service.
+
+
 Ver 1.5.5 (20261105) ---------------------------------------
 '--amr' maps the CARD/VFDB nucleotide references directly onto the genome with blastn (NuclMapping), instead of searching the predicted CDSs (NuclSearch). A full-length mapping adds a CDS that gene prediction missed, moves the start codon of a predicted CDS to that of the reference, reports a gene with a frameshift or an internal stop codon as a pseudogene ('/pseudogene="unknown"') or, when 70% or more of the reference remains, as a truncated CDS, and removes the predicted CDSs that it replaces. The results of '--amr' therefore change from earlier versions. The previous method is still available by enabling the CARD/VFDB NuclSearch entries in a config file. See README for the rules.
 

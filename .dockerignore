@@ -23,9 +23,6 @@ testdata_fix2021nov/
 tests/
 docs/
 
-# ---- Mac-only binaries (image は linux/amd64; 114M 削減) ----
-bin/Darwin/
-
 # ---- 旧 docker dir（移動後は削除されるが念のため） ----
 dfc_docker/
 
