@@ -219,7 +219,7 @@ By default, GHOSTX is used to align protein sequences. DIAMOND (`--very-sensitiv
 * Sequence and annotation data in GFF3 and GenBank format
 * Sequence data in FASTA format
 * Statistics for genome sequences and annotated features
-* Summary of the accessory annotations with `--amr`/`--mge` (`accessory_summary.tsv`)
+* Summary of the accessory annotations with `--modules` (`accessory_summary.tsv`)
 * DDBJ submission files
 
 ## Options
@@ -275,10 +275,12 @@ Workflow options:
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
   --metagenome          Set options of Prodigal/MGA for metagenome contigs
-  --amr                 [Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome), identification of plasmid-derived contigs
-                        and detection of (anti-)defense systems with DefenseFinder
-  --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
-                        and IntegronFinder
+  --modules NAME [NAME ...]
+                        [Preliminary implementation] Enable accessory annotations: amr (CARD), vf (VFDB), plasmid (PlasmidFinder),
+                        mge (MobileElementFinder), integron (IntegronFinder), defense (DefenseFinder). 'all' enables all of them
+                        and skips unavailable modules with a warning; a module named explicitly stops DFAST if it is unavailable
+  --amr                 [Removed in Ver 1.6] use --modules amr vf plasmid defense
+  --mge                 [Removed in Ver 1.6] use --modules mge integron
   --gff GFF             [Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.
 
 Genome source modifiers and metadata [advanced]:
@@ -354,20 +356,33 @@ DFAST runs it as `python -m plasmidfinder`, or uses a `plasmidfinder.py` command
 __Usage__
 1. Prepare [CARD](https://card.mcmaster.ca), [VFDB](http://www.mgc.ac.cn/VFs/), and [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/) reference data.
 ```
-scripts/dfast_file_downloader.py --plasmidfinder
-scripts/reference_util_for_nucl.py --card --vfdb
+scripts/dfast_file_downloader.py --modules amr vf plasmid
 ```
+This runs `scripts/reference_util_for_nucl.py --card --vfdb` (CARD and VFDB) and `scripts/dfast_file_downloader.py --plasmidfinder` (PlasmidFinder) for you; the latter two can still be run directly.
 The script automatically fetches the latest CARD version from [card.mcmaster.ca](https://card.mcmaster.ca/download).
 You can pin a specific version with `--card_version 4.0.1`, and use `--vfdb_update_date` to override the VFDB timestamp (defaults to today's date).  
 DFAST performs PlasmidFinder-based searches against the following reference databases: [PlasmidFinderDB](https://bitbucket.org/genomicepidemiology/plasmidfinder_db/src/master/), [AcinetobacterPlasmidTyping v3.0](https://figshare.com/articles/dataset/AcinetobacterPlasmidTyping_database_v3_0/30426412), [PseudomonasRepDB v1.1](https://doi.org/10.6084/m9.figshare.26778175), and [WHRepDB v1.1](https://doi.org/10.6084/m9.figshare.31883887). When reporting results obtained with these tools in a publication, please cite the papers associated with each tool and reference database.  
 2. Run
-Invoke DFAST with `--amr` to enable `NuclMapping` for CARD/VFDB, `ContigAnnotation` using `PlasmidFinder`, and `DefenseFinder`
+Select the accessory annotations with `--modules`. Each module is one of:
+
+| module | annotation | needs |
+|---|---|---|
+| `amr` | CARD, mapped onto the genome (`NuclMapping`) | CARD data |
+| `vf` | VFDB, mapped onto the genome (`NuclMapping`) | VFDB data |
+| `plasmid` | plasmid-derived contigs (PlasmidFinder) | PlasmidFinder 3.x and its data |
+| `mge` | mobile genetic elements (MobileElementFinder) | `mefinder` and its data |
+| `integron` | integrons (IntegronFinder 2) | `integron_finder` (no data) |
+| `defense` | anti-phage defense and anti-defense systems (DefenseFinder) | `defense-finder` and its models |
+
 ```
-dfast -g example/pOXA-48.fa --amr
+dfast -g example/pOXA-48.fa --modules amr vf plasmid
+dfast -g example/pOXA-48.fa --modules all
 ```
+`--modules all` enables all six modules and skips a module that is not available (not installed, or its data is missing) with a warning. A module that you name explicitly stops DFAST with an error that says what is missing and how to get it (also when `all` is given together with it).
+`--amr` and `--mge` of earlier versions were removed in Ver 1.6 and stop DFAST with an error: use `--modules amr vf plasmid defense` (or `--modules all`) instead of `--amr`, and `--modules mge integron` (or `--modules all`) instead of `--mge`.
 
 __Mapping of CARD/VFDB references (`NuclMapping`)__  
-With `--amr`, the CARD/VFDB nucleotide references are mapped directly onto the genome with `blastn` (`NuclMapping`). Only references that are correct genes (length a multiple of 3, a start codon, no internal stop codon, no ambiguous bases) change the annotation; the hits of other references are only attached to a predicted CDS (the one of the same gene, otherwise the same-strand CDS overlapping the mapped gene in the same reading frame), and no CDS is removed. Only full-length mappings (the whole reference aligned at 90% identity or more) are used; partial mappings are ignored. A full-length mapping:
+With `--modules amr` and `--modules vf`, the CARD and VFDB nucleotide references are mapped directly onto the genome with `blastn` (`NuclMapping`). Only references that are correct genes (length a multiple of 3, a start codon, no internal stop codon, no ambiguous bases) change the annotation; the hits of other references are only attached to a predicted CDS (the one of the same gene, otherwise the same-strand CDS overlapping the mapped gene in the same reading frame), and no CDS is removed. Only full-length mappings (the whole reference aligned at 90% identity or more) are used; partial mappings are ignored. A full-length mapping:
 - adds a CDS for a gene that CDS prediction missed (rescue),
 - moves the start codon of a predicted CDS of the same gene to that of the reference (start correction; recorded in `/note`),
 - reports a gene with a frameshift, an internal stop codon or no stop codon within 100 bp of the reference's stop as one CDS with `/pseudogene="unknown"`, with the reason and position in `/note` (e.g. "frameshift at around 1234"); a missing start codon gives a pseudogene only when no predicted CDS of the same gene exists (otherwise that CDS is kept),
@@ -378,23 +393,23 @@ A lost stop codon extended to the next in-frame stop (up to 100 bp) and a stop c
 
 These changes are listed in `amr_summary.tsv`, and pseudogenes also in `pseudogene_summary.tsv`. The options of the `NuclMapping` entries in the config include `pident_cutoff` (minimum identity, default 90), `overlap_tolerance` (default 30 bp) and `overlap_fraction` (default 0.2) for the removal of replaced CDSs, and `truncated_fraction` (default 0.7). A custom nucleotide reference in the PLASMID_DB format of `reference_util_for_nucl.py` can also be mapped by enabling the `PLASMID_DB` entry of `NuclMapping` in the config.
 
-The previous method of `--amr`, which searched the nucleotide sequences of the predicted CDSs against CARD/VFDB (`NuclSearch`; a CDS is annotated at 90% identity and 90% coverage of both sequences, and no CDS is added, moved or removed), is still available: set `"enabled": True` for the CARD and/or VFDB `NuclSearch` entries in a config file (`--config`). `--amr` then uses `NuclSearch` instead of `NuclMapping` for those databases.
+The previous method of `--modules amr vf`, which searched the nucleotide sequences of the predicted CDSs against CARD/VFDB (`NuclSearch`; a CDS is annotated at 90% identity and 90% coverage of both sequences, and no CDS is added, moved or removed), is still available: set `"enabled": True` for the CARD and/or VFDB `NuclSearch` entries in a config file (`--config`). `--modules amr` / `vf` then uses `NuclSearch` instead of `NuclMapping` for those databases.
 
 __Defense systems__  
-With `--amr`, [DefenseFinder](https://github.com/mdmparis/defense-finder) (with AntiDefenseFinder, `-a`) searches the predicted proteins
+With `--modules defense`, [DefenseFinder](https://github.com/mdmparis/defense-finder) (with AntiDefenseFinder, `-a`) searches the predicted proteins
 for anti-phage defense and anti-defense systems. Each gene in a system gets a `/note` such as
 `DefenseFinder: MazE of MazEF defense system`, and `amr_summary.tsv` lists one `##` line per system.
 Install DefenseFinder and download its models into `DB_ROOT/defense_finder_models`:
 ```
 conda install -c bioconda defense-finder
-scripts/dfast_file_downloader.py --defensefinder
+scripts/dfast_file_downloader.py --modules defense
 ```
 The DefenseFinder models are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial use);
 they are not bundled with DFAST or its Docker image.
-When DefenseFinder or its models are not found, `--amr` skips it with a warning.
+When DefenseFinder or its models are not found, `--modules all` skips it with a warning and `--modules defense` stops with an error.
 
 ### Mobile genetic element (MGE) detection
-Invoke DFAST with `--mge` to detect mobile genetic elements using
+Invoke DFAST with `--modules mge` to detect mobile genetic elements using
 [MobileElementFinder](https://bitbucket.org/mhkj/mge_finder) (`mefinder`).
 Detected MGEs are annotated as `mobile_element` features (with
 `/mobile_element_type`, e.g. `transposon:Tn1999`) when the element type maps to
@@ -406,24 +421,24 @@ the `MobileElementFinder` entry in `CONTIG_ANNOTATION`.
 First, install MobileElementFinder and build its reference (MGEdb) BLAST index
 into `DB_ROOT/mefinder_db`:
 ```
-scripts/dfast_file_downloader.py --mefinder
+scripts/dfast_file_downloader.py --modules mge
 ```
 (This installs MobileElementFinder into the current Python environment, so run it
 where DFAST's Python can `pip install`. The MGEdb sequences ship with the pip
 package; only the BLAST index is written to `DB_ROOT`.)
 
-`--mge` also runs [IntegronFinder 2](https://github.com/gem-pasteur/Integron_Finder), because MGEdb has no integrons.
+`--modules integron` runs [IntegronFinder 2](https://github.com/gem-pasteur/Integron_Finder) (included in `--modules all`), because MGEdb has no integrons.
 Each integron (complete, In0 or CALIN) is annotated as `mobile_element` with `/mobile_element_type="integron"`,
-and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed); without it, `--mge` skips it with a warning.
+and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed, so `dfast_file_downloader.py --modules integron` only logs that); without it, `--modules all` skips it with a warning and `--modules integron` stops with an error.
 Add `--local-max` to the `cmd_options` of the `IntegronFinder` entry in `CONTIG_ANNOTATION` for a more sensitive (slower) search.
 
-Then run DFAST with `--mge`:
+Then run DFAST with `--modules mge integron`:
 ```
-dfast -g example/pOXA-48.fa --mge
+dfast -g example/pOXA-48.fa --modules mge integron
 ```
 
 ### Summary of the accessory annotations (`accessory_summary.tsv`)
-With `--amr` and/or `--mge`, `accessory_summary.tsv` lists the results of all the accessory annotations in one table,
+With `--modules`, `accessory_summary.tsv` lists the results of all the accessory annotations in one table,
 one row per gene, region or system, sorted by module, sequence and position:
 
 | column | content |

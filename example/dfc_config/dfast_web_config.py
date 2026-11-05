@@ -212,7 +212,7 @@ class Config:
         },
         {
             # preliminary implementation
-            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--amr' (unless the NuclSearch entry of the same database below is enabled).
+            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--modules amr' (or 'all') (unless the NuclSearch entry of the same database below is enabled).
             "component_name": "NuclMapping",
             "enabled": False,
             "options": {
@@ -231,7 +231,7 @@ class Config:
         },
         {
             # preliminary implementation
-            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--amr' (unless the NuclSearch entry of the same database below is enabled).
+            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--modules vf' (or 'all') (unless the NuclSearch entry of the same database below is enabled).
             "component_name": "NuclMapping",
             "enabled": False,
             "options": {
@@ -268,7 +268,7 @@ class Config:
             },
         },
         {
-            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--amr'). Not used by default;
+            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--modules amr vf'). Not used by default;
             # set 'enabled' to True here to use it instead of the NuclMapping entry of the same database.
             "component_name": "NuclSearch",
             "enabled": False,
@@ -286,7 +286,7 @@ class Config:
             },
         },
         {
-            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--amr'). Not used by default;
+            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--modules amr vf'). Not used by default;
             # set 'enabled' to True here to use it instead of the NuclMapping entry of the same database.
             "component_name": "NuclSearch",
             "enabled": False,
@@ -439,7 +439,7 @@ class Config:
             },
         },
         {
-            # DefenseFinder to detect anti-phage defense systems (and anti-defense systems with "-a"). Enabled by "--amr".
+            # DefenseFinder to detect anti-phage defense systems (and anti-defense systems with "-a"). Enabled by "--modules defense" (or "all").
             # Models are downloaded by `dfast_file_downloader.py --defensefinder` (license: CC BY-NC-SA 4.0).
             "component_name": "DefenseFinder",
             "enabled": False,
@@ -475,7 +475,7 @@ class Config:
             },
         },
         {
-            # IntegronFinder to detect integrons (MGEdb used by MobileElementFinder has no integrons). Enabled by "--mge".
+            # IntegronFinder to detect integrons (MGEdb used by MobileElementFinder has no integrons). Enabled by "--modules integron" (or "all").
             "tool_name": "IntegronFinder",
             "target": "feature",
             "enabled": False,
