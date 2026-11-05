@@ -3,6 +3,7 @@
 
 import sys
 import os
+import shutil
 import pprint
 from logging import getLogger
 
@@ -337,6 +338,20 @@ def set_values_from_metadata(config):
     config.GENOME_CONFIG["project_type"] = project_type
 
 
+def _available(name, executable, conda_package, data_dir=None, downloader_option=None):
+    """Tools added to --amr/--mge in 1.5.5 are skipped with a warning when they are not installed, so that
+    --amr/--mge keep working without them. Enabling them in a config file still requires them."""
+    if not shutil.which(executable):
+        logger.warning("{0} is skipped because '{1}' is not found. Install it with 'conda install -c bioconda {2}'."
+                       .format(name, executable, conda_package))
+        return False
+    if data_dir is not None and not os.path.exists(data_dir):
+        logger.warning("{0} is skipped because its data are not found in '{1}'. "
+                       "Run 'dfast_file_downloader.py {2}' to download them.".format(name, data_dir, downloader_option))
+        return False
+    return True
+
+
 def enable_amr(config):
     """CARD/VFDB references are mapped onto the genome (NuclMapping). A CARD/VFDB NuclSearch entry enabled in the config
     (searching the predicted CDSs, the previous method) is used instead of the mapping of that database."""
@@ -351,7 +366,8 @@ def enable_amr(config):
             else:
                 setting["enabled"] = True
         elif setting.get("component_name", "") == "DefenseFinder":
-            setting["enabled"] = True
+            setting["enabled"] = _available("DefenseFinder", "defense-finder", "defense-finder",
+                                            setting.get("options", {}).get("models_dir"), "--defensefinder")
 
     for setting in config.CONTIG_ANNOTATION:
         if setting.get("tool_name", "") == "Plasmidfinder":
@@ -361,8 +377,10 @@ def enable_amr(config):
 def enable_mge(config):
     logger.info("Mobile genetic element detection (MobileElementFinder, IntegronFinder) enabled.")
     for setting in config.CONTIG_ANNOTATION:
-        if setting.get("tool_name", "") in ("MobileElementFinder", "IntegronFinder"):
+        if setting.get("tool_name", "") == "MobileElementFinder":
             setting["enabled"] = True
+        elif setting.get("tool_name", "") == "IntegronFinder":
+            setting["enabled"] = _available("IntegronFinder", "integron_finder", "integron_finder")
 
 
 def enable_mag(config, complete=False):

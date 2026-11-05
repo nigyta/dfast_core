@@ -390,6 +390,7 @@ scripts/dfast_file_downloader.py --defensefinder
 ```
 The DefenseFinder models are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) (non-commercial use);
 they are not bundled with DFAST or its Docker image.
+When DefenseFinder or its models are not found, `--amr` skips it with a warning.
 
 ### Mobile genetic element (MGE) detection
 Invoke DFAST with `--mge` to detect mobile genetic elements using
@@ -412,7 +413,7 @@ package; only the BLAST index is written to `DB_ROOT`.)
 
 `--mge` also runs [IntegronFinder 2](https://github.com/gem-pasteur/Integron_Finder), because MGEdb has no integrons.
 Each integron (complete, In0 or CALIN) is annotated as `mobile_element` with `/mobile_element_type="integron"`,
-and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed).
+and each attC site as `misc_recomb`. Install it with `conda install -c bioconda integron_finder` (no reference data is needed); without it, `--mge` skips it with a warning.
 Add `--local-max` to the `cmd_options` of the `IntegronFinder` entry in `CONTIG_ANNOTATION` for a more sensitive (slower) search.
 
 Then run DFAST with `--mge`:
@@ -437,7 +438,7 @@ one row per gene, region or system, sorted by module, sequence and position:
 `amr_summary.tsv` is still written in its previous format.
 
 ### DFAST Record JSON  
-DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. It is written in version 3 of the DDBJ Record format (`"schema_version": "v3"`); versions up to 1.5.3 wrote version 2. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
+DFAST Record JSON is a JSON-formatted file that contains annotation results of DFAST, and will be used for DDBJ data submission in the future. It is written in version 3 of the DDBJ Record format (`"schema_version": "v3"`); versions up to 1.5.4 wrote version 2. To generate this, Python>=3.10 is required and [DR_tools](https://github.com/ddbj/dr_tools) must be installed. 
 ```
 pip install "git+https://github.com/ddbj/dr_tools.git"
 ```
