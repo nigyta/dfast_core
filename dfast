@@ -14,7 +14,7 @@ from dfc.utils.config_util import load_config, show_config, set_references, set_
     disable_trna_prediction, disable_cds_prediction, disable_crispr_prediction, set_genetic_code, \
     check_genetic_code, set_gff, set_threshold, set_values_from_metadata, enable_prodigal, enable_mga, \
     enable_genemarks2, \
-    enable_metagenome_mode, disable_func_annotation, enable_amr, enable_mge, enable_mag, set_hmm_db, set_rrna_model, set_rrna_kingdoms
+    enable_metagenome_mode, disable_func_annotation, enable_modules, MODULES, enable_mag, set_hmm_db, set_rrna_model, set_rrna_kingdoms
 from dfc.utils.fix_origin import fix_origin
 
 
@@ -89,8 +89,11 @@ group_workflow.add_argument("--no_trna", help="Disable tRNA prediction", action=
 group_workflow.add_argument("--no_crispr", help="Disable CRISPR prediction", action="store_true")
 # Preliminary implementation for GFF parsing
 group_workflow.add_argument("--metagenome", help="Set options of Prodigal/MGA for metagenome contigs", action="store_true")
-group_workflow.add_argument("--amr", help="[Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome), identification of plasmid-derived contigs and detection of (anti-)defense systems with DefenseFinder", action="store_true")
-group_workflow.add_argument("--mge", help="[Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder and IntegronFinder", action="store_true")
+group_workflow.add_argument("--modules", help="[Preliminary implementation] Enable accessory annotations: amr (CARD), vf (VFDB), plasmid (PlasmidFinder), mge (MobileElementFinder), integron (IntegronFinder), defense (DefenseFinder). "
+                            "'all' enables all of them and skips unavailable modules with a warning; a module named explicitly stops DFAST if it is unavailable",
+                            nargs="+", choices=MODULES + ("all",), metavar="NAME")
+group_workflow.add_argument("--amr", help="[Removed in Ver 1.6] use --modules amr vf plasmid defense", action="store_true")
+group_workflow.add_argument("--mge", help="[Removed in Ver 1.6] use --modules mge integron", action="store_true")
 group_workflow.add_argument("--gff", help="[Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.")
 
 
@@ -132,6 +135,10 @@ handler.setFormatter(Formatter("%(asctime)s %(message)s", datefmt='%Y/%m/%d %H:%
 logger.addHandler(handler)
 logger.setLevel(DEBUG)
 
+for flag, modules in [("--amr", "amr vf plasmid defense"), ("--mge", "mge integron")]:
+    if getattr(args, flag[2:]):
+        logger.error("{0} was removed in Ver 1.6. Use --modules {1} (or --modules all).".format(flag, modules))
+        exit(1)
 
 if args.help:
     parser.print_help()
@@ -258,12 +265,8 @@ if args.metagenome:
 
 check_genetic_code(config)  # after all gene-calling, --gcode and --metagenome options are applied
 
-if args.amr:
-    enable_amr(config)
-
-
-if args.mge:
-    enable_mge(config)
+if args.modules:
+    enable_modules(config, args.modules)
 
 if args.mag:  # --mag
     if args.strain:

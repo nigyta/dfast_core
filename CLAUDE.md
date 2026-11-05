@@ -25,7 +25,7 @@ There is no build step and no linter config. The `dfast` script resolves `APP_RO
 
 ## Architecture
 
-**Config is a Python file.** `dfc/utils/config_util.load_config` reads the config (default `dfc/default_config.py`, or `--config`), substitutes `@@APP_ROOT@@` / `@@DB_ROOT@@` (`--dbroot` > `$DFAST_DB_ROOT` > `APP_ROOT/db`), then `exec`s it to get the `Config` class. The workflow is the lists `STRUCTURAL_ANNOTATION`, `FUNCTIONAL_ANNOTATION`, and `CONTIG_ANNOTATION` of dicts with `tool_name`/`component_name`, `enabled`, and `options`. CLI flags in `dfast` mutate this config through helpers in `config_util.py` (`enable_amr`, `enable_mge`, `enable_mag`, `set_aligner`, `disable_*`, ...). They mostly flip `enabled` on entries already defined in `default_config.py`. A new optional step therefore needs a disabled entry in the default config plus an enable helper and a CLI flag. `example/dfc_config/dfast_web_config*.py` are the web-service configs and must be kept in sync when entries are added.
+**Config is a Python file.** `dfc/utils/config_util.load_config` reads the config (default `dfc/default_config.py`, or `--config`), substitutes `@@APP_ROOT@@` / `@@DB_ROOT@@` (`--dbroot` > `$DFAST_DB_ROOT` > `APP_ROOT/db`), then `exec`s it to get the `Config` class. The workflow is the lists `STRUCTURAL_ANNOTATION`, `FUNCTIONAL_ANNOTATION`, and `CONTIG_ANNOTATION` of dicts with `tool_name`/`component_name`, `enabled`, and `options`. CLI flags in `dfast` mutate this config through helpers in `config_util.py` (`enable_modules`, `enable_mag`, `set_aligner`, `disable_*`, ...). They mostly flip `enabled` on entries already defined in `default_config.py`. A new optional step therefore needs a disabled entry in the default config plus an enable helper and a CLI flag. `example/dfc_config/dfast_web_config*.py` are the web-service configs and must be kept in sync when entries are added.
 
 **Pipeline order** (`dfc/pipeline.py`):
 1. `StructuralAnnotation`: tools run in parallel threads.
@@ -46,7 +46,7 @@ There is no build step and no linter config. The `dfast` script resolves `APP_RO
 - `dfc/models/`: parsers and models for reference hits and databases (CARD, VFDB, CDD, plasmid DB, nucleotide refs).
 - `dfc/utils/ddbj_submission.py` + `metadata_util.py` + `metadata_definition.tsv`: MSS submission output. Metadata fields, their MSS feature/qualifier mapping, and validation patterns are defined in the TSV. `--metadata_file` values are loaded via `set_values_from_metadata`. MAG/ENV handling depends on `GENOME_CONFIG["project_type"]`.
 - `dfc/dev/`: experimental entry points (`dfast_gff`, `dfast_re` reannotation), not part of the main pipeline.
-- `scripts/dfast_file_downloader.py`: downloads and indexes reference DBs (protein, CDD, HMM, CARD/VFDB, PlasmidFinder, MobileElementFinder). It dispatches on argv at import time, so tests run it as a subprocess. `reference_util*.py` builds custom reference DBs.
+- `scripts/dfast_file_downloader.py`: downloads and indexes reference DBs (protein, CDD, HMM, CARD/VFDB, PlasmidFinder, MobileElementFinder, DefenseFinder; `--modules NAME ...` downloads the data of the accessory modules). It dispatches on argv at import time, so tests run it as a subprocess. `reference_util*.py` builds custom reference DBs.
 
 ## Releases
 

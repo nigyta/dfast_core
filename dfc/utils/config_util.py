@@ -4,6 +4,7 @@
 import sys
 import os
 import shutil
+import importlib.util
 import pprint
 from logging import getLogger
 
@@ -344,49 +345,103 @@ def set_values_from_metadata(config):
     config.GENOME_CONFIG["project_type"] = project_type
 
 
-def _available(name, executable, conda_package, data_dir=None, downloader_option=None):
-    """Tools added to --amr/--mge in 1.5.5 are skipped with a warning when they are not installed, so that
-    --amr/--mge keep working without them. Enabling them in a config file still requires them."""
-    if not shutil.which(executable):
-        logger.warning("{0} is skipped because '{1}' is not found. Install it with 'conda install -c bioconda {2}'."
-                       .format(name, executable, conda_package))
-        return False
-    if data_dir is not None and not os.path.exists(data_dir):
-        logger.warning("{0} is skipped because its data are not found in '{1}'. "
-                       "Run 'dfast_file_downloader.py {2}' to download them.".format(name, data_dir, downloader_option))
-        return False
-    return True
+MODULES = ("amr", "vf", "plasmid", "mge", "integron", "defense")
+
+# module -> (component_name or tool_name of the config entry, db_name of the entry or None)
+_MODULE_ENTRIES = {"amr": ("NuclMapping", "CARD"), "vf": ("NuclMapping", "VFDB"), "plasmid": ("Plasmidfinder", None),
+                   "mge": ("MobileElementFinder", None), "integron": ("IntegronFinder", None),
+                   "defense": ("DefenseFinder", None)}
 
 
-def enable_amr(config):
-    """CARD/VFDB references are mapped onto the genome (NuclMapping). A CARD/VFDB NuclSearch entry enabled in the config
-    (searching the predicted CDSs, the previous method) is used instead of the mapping of that database."""
-    logger.info("AMR/VFG annotation, Plasmid identification and defense system detection enabled.")
-    searched = {s.get("options", {}).get("db_name", "") for s in config.FUNCTIONAL_ANNOTATION
-                if s.get("component_name", "") == "NuclSearch" and s.get("enabled")}
-    for setting in config.FUNCTIONAL_ANNOTATION:
-        db_name = setting.get("options", {}).get("db_name", "")
-        if setting.get("component_name", "") == "NuclMapping" and db_name in ["CARD", "VFDB"]:
-            if db_name in searched:
-                logger.info("{} is searched with NuclSearch as set in the config, not mapped with NuclMapping.".format(db_name))
-            else:
-                setting["enabled"] = True
-        elif setting.get("component_name", "") == "DefenseFinder":
-            setting["enabled"] = _available("DefenseFinder", "defense-finder", "defense-finder",
-                                            setting.get("options", {}).get("models_dir"), "--defensefinder")
-
-    for setting in config.CONTIG_ANNOTATION:
-        if setting.get("tool_name", "") == "Plasmidfinder":
-            setting["enabled"] = True
+def _find_entry(config, name, db_name):
+    for setting in config.FUNCTIONAL_ANNOTATION + config.CONTIG_ANNOTATION:
+        if name in (setting.get("component_name"), setting.get("tool_name")) \
+                and (db_name is None or setting.get("options", {}).get("db_name") == db_name):
+            yield setting
 
 
-def enable_mge(config):
-    logger.info("Mobile genetic element detection (MobileElementFinder, IntegronFinder) enabled.")
-    for setting in config.CONTIG_ANNOTATION:
-        if setting.get("tool_name", "") == "MobileElementFinder":
-            setting["enabled"] = True
-        elif setting.get("tool_name", "") == "IntegronFinder":
-            setting["enabled"] = _available("IntegronFinder", "integron_finder", "integron_finder")
+def _module_entry(config, module):
+    """Return the config entry of a module, or None."""
+    return next(_find_entry(config, *_MODULE_ENTRIES[module]), None)
+
+
+def _nuclsearch_entry(config, module):
+    """Return the enabled NuclSearch entry of the database of amr/vf, or None."""
+    return next((s for s in _find_entry(config, "NuclSearch", _MODULE_ENTRIES[module][1]) if s.get("enabled")), None)
+
+
+def _plasmidfinder_available():
+    # Same alternatives as dfc/tools/dfast_plasmidfinder.py; its version (3.x) is checked when the tool starts.
+    return bool(shutil.which("plasmidfinder.py") or importlib.util.find_spec("plasmidfinder"))
+
+
+def module_unavailable(config, module):
+    """Return why a module cannot run (what is missing and how to install it), or None if it can."""
+    name, db_name = _MODULE_ENTRIES[module]
+    name = name.replace("Plasmidfinder", "PlasmidFinder")  # the config entry is named Plasmidfinder
+    if module in ("amr", "vf") and _nuclsearch_entry(config, module):
+        # ponytail: a CARD/VFDB NuclSearch entry enabled in the config is used instead of the mapping; its reference
+        # files are not checked here, NuclSearch reports them when it starts.
+        return None
+    entry = _module_entry(config, module)
+    if entry is None:
+        return "The config has no {0} entry.".format(name + (" " + db_name if db_name else ""))
+    options = entry.get("options", {})
+    if module in ("amr", "vf"):
+        database = options.get("database", "")
+        missing = [f for f in (database + ".nucl.ref", database + ".nucl.fasta") if not os.path.exists(f)]
+        if missing:
+            return ("{0} reference files are not found ({1}). Download them with 'dfast_file_downloader.py --modules {2}' "
+                    "or 'scripts/reference_util_for_nucl.py --{3}'.".format(db_name, ", ".join(missing), module, db_name.lower()))
+        return None
+    problems = []
+    data = None  # data directory the module needs, if any
+    if module == "plasmid":
+        if not _plasmidfinder_available():
+            problems.append("PlasmidFinder 3.x is not found. Install it with 'pip install plasmidfinder'.")
+        data = options.get("db_path", "")
+    elif module == "mge":
+        if not shutil.which("mefinder"):
+            problems.append("'mefinder' is not found. Install it with 'dfast_file_downloader.py --modules mge'.")
+        data = options.get("db_path", "")
+    elif module == "integron":
+        if not shutil.which("integron_finder"):
+            problems.append("'integron_finder' is not found. Install it with 'conda install -c bioconda integron_finder'.")
+    else:
+        if not shutil.which("defense-finder"):
+            problems.append("'defense-finder' is not found. Install it with 'conda install -c bioconda defense-finder'.")
+        data = options.get("models_dir", "")
+    if data is not None and not os.path.exists(data):
+        problems.append("The data of {0} are not found in '{1}'. Run 'dfast_file_downloader.py --modules {2}' to download them."
+                        .format(name, data, module))
+    return " ".join(problems) or None
+
+
+def enable_modules(config, names):
+    """Enable the accessory annotation modules named in `names` (--modules); "all" stands for every module.
+    Returns the enabled modules in MODULES order. A module that cannot run is skipped with a warning when it is only
+    selected by "all", and stops DFAST with an error when it is named explicitly."""
+    explicit = set(names) - {"all"}
+    selected = [m for m in MODULES if "all" in names or m in explicit]
+    enabled, failed = [], False
+    for module in selected:
+        reason = module_unavailable(config, module)
+        if reason is None:
+            enabled.append(module)
+        elif module in explicit:
+            logger.error("--modules {0} cannot be used. {1}".format(module, reason))
+            failed = True
+        else:
+            logger.warning("Module '{0}' is skipped. {1}".format(module, reason))
+    if failed:
+        exit(1)
+    for module in enabled:
+        if module in ("amr", "vf") and _nuclsearch_entry(config, module):
+            logger.info("{} is searched with NuclSearch as set in the config, not mapped with NuclMapping.".format(_MODULE_ENTRIES[module][1]))
+        else:
+            _module_entry(config, module)["enabled"] = True
+    logger.info("Modules enabled: {}".format(", ".join(enabled) or "none"))
+    return enabled
 
 
 def enable_mag(config, complete=False):

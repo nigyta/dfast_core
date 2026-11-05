@@ -15,7 +15,7 @@ class DefenseFinder(Tool):
     NAME = "DefenseFinder"
     VERSION_CHECK_CMD = ["defense-finder", "version", "2>/dev/null"]
     VERSION_PATTERN = r"DefenseFinder version (\d+\.\d+\.\d+)"
-    VERSION_ERROR_MSG = "DefenseFinder is required for --amr. Install it with 'conda install -c bioconda defense-finder'."
+    VERSION_ERROR_MSG = "DefenseFinder is required for --modules defense. Install it with 'conda install -c bioconda defense-finder'."
 
     def get_command(self, query_file, out_dir, models_dir, cpu, cmd_options=""):
         cmd = ["defense-finder", "run", "--db-type", "gembase", "--models-dir", models_dir,

@@ -37,7 +37,7 @@ class Plasmidfinder(ContigAnnotationTool):
         p = subprocess.run(self.VERSION_CHECK_CMD, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         m = re.search(self.VERSION_PATTERN, p.stdout)
         if p.returncode != 0 or not m or int(m.group(1).split(".")[0]) < 3:
-            self.logger.error("PlasmidFinder 3.x is required for --amr. Install it with 'pip install plasmidfinder'. [{0}]".format(
+            self.logger.error("PlasmidFinder 3.x is required for --modules plasmid. Install it with 'pip install plasmidfinder'. [{0}]".format(
                 " ".join((p.stdout + p.stderr).strip().splitlines()[-1:])))
             exit(1)
         self.__class__.version = m.group(1)

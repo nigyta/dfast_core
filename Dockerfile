@@ -70,7 +70,7 @@ RUN cd /opt && git clone https://bitbucket.org/mhkj/mge_finder.git && \
     pip install ./mge_finder "setuptools<81" && \
     rm -rf mge_finder
 
-# IntegronFinder 2 (--mge) and DefenseFinder (--amr). Infernal, HMMER and Prodigal come from apt above.
+# IntegronFinder 2 (--modules integron) and DefenseFinder (--modules defense). Infernal, HMMER and Prodigal come from apt above.
 # DefenseFinder models (CC BY-NC-SA 4.0) are not included; get them with 'dfast_file_downloader.py --defensefinder'.
 RUN pip install integron_finder mdmparis-defense-finder && \
     integron_finder --version && defense-finder version
