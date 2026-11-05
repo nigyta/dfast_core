@@ -200,20 +200,6 @@ def enable_trnascan(config, model):
         if setting.get("tool_name", "") == "Aragorn":
             setting["enabled"] = False
 
-def enable_rnammer(config, model):
-    # model should be arc/bac
-    if model == "bact":
-        model = "bac"
-    elif model == "arch":
-        model = "arc"
-    for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("tool_name", "") == "RNAmmer":
-            setting["enabled"] = True
-            setting["options"]["model"] = model
-        if setting.get("tool_name", "") == "Barrnap":
-            setting["enabled"] = False
-
-
 def set_rrna_model(config, model):
     """Choose the rRNA profile HMMs for Barrnap: "barrnap" (Barrnap 0.9 models, default) or "rfam"."""
     for setting in config.STRUCTURAL_ANNOTATION:

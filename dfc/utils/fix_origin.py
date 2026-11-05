@@ -15,8 +15,6 @@ if app_root == "":
 
 if __name__ == '__main__':
     sys.path.append(app_root)
-    from dfc.utils.path_util import set_binaries_path
-    set_binaries_path(app_root)
 
 from dfc.genome import Genome
 from dfc.functionalAnnotation import FunctionalAnnotation

@@ -130,16 +130,6 @@ class Config:
              },
         },
         {
-            # RNAmmer for rRNA prediction. By default, this is disabled.
-            # Please insall RNAmmer and put it in your PATH to enable this.
-            "tool_name": "RNAmmer",
-            "enabled": False,
-            "options": {
-                "model": "bac",  # arc/bac/euk
-                "cmd_options": ""
-            },
-        },
-        {
             # Diced for CRISPR detection (Python package, run in-process; pip install 'diced>=0.1.4')
             # The default parameters are those of CRT, which Diced replaced.
             "tool_name": "Diced",

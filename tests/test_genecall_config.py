@@ -105,3 +105,19 @@ def test_config_without_target_keys():
     set_genetic_code(config, 25)
     with pytest.raises(SystemExit):
         check_genetic_code(config)
+
+
+@pytest.mark.parametrize("path", ["dfc/default_config.py", "example/dfc_config/dfast_web_config.py",
+                                  "example/dfast_web_config.py", "example/test_config.py"])
+def test_no_rnammer(path):
+    from dfc.structuralAnnotation import TOOLS
+    assert "RNAmmer" not in TOOLS
+    assert all(s.get("tool_name") != "RNAmmer" for s in _config(path).STRUCTURAL_ANNOTATION)
+
+
+def test_dfast_help_has_no_use_rnammer():
+    import subprocess
+    import sys
+    out = subprocess.run([sys.executable, os.path.join(APP_ROOT, "dfast"), "-h"], capture_output=True, text=True).stdout
+    assert "--use_rnammer" not in out
+    assert "--use_mga" in out

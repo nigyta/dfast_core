@@ -16,7 +16,6 @@ from .tools.diced import Diced
 from .tools.prodigal import Prodigal
 from .tools.genemarkS2 import GeneMarkS2
 from .tools.tRNAscan import tRNAscan
-from .tools.rnammer import RNAmmer
 from .tools.gff_importer import GFFimporter
 
 TOOLS = {
@@ -29,7 +28,6 @@ TOOLS = {
     "Prodigal": Prodigal,
     "GeneMarkS2": GeneMarkS2,
     "tRNAscan": tRNAscan,
-    "RNAmmer": RNAmmer,
     "GFF_import": GFFimporter,
 }
 

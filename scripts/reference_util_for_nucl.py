@@ -19,7 +19,6 @@ CARD_DEFAULT_VERSION = "4.0.1"  # fallback if card.mcmaster.ca is unreachable
 
 # srcPath = os.path.join(os.path.dirname(__file__), "..", "dfc")
 sys.path.append(app_root)
-from dfc.utils.path_util import set_binaries_path
 # from dfc.tools.ghostx import Ghostx
 # from dfc.tools.ghostz import Ghostz
 # from dfc.tools.diamond import Diamond
@@ -74,7 +73,6 @@ if not any([args.card, args.vfdb]):
 
 
 
-set_binaries_path(app_root)
 
 def get_latest_card_version():
     import re

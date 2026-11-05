@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import os
-import platform
 import shutil
 from logging import getLogger
 
@@ -32,15 +31,6 @@ def create_output_directory(config):
         except OSError:
             logger.error("Failed to create an output directory '{}'. Aborting...".format(directory))
             exit(1)
-
-
-def set_binaries_path(app_root):
-    os_name = platform.system()
-    assert os_name == "Darwin" or os_name == "Linux"
-    logger.info("OS type is {0}.".format(os_name))
-    bin_dir = os.path.join(app_root, "bin", os_name)
-    logger.info("Adding {0} to PATH.".format(bin_dir))
-    os.environ["PATH"] = bin_dir + ":" + os.environ["PATH"]
 
 
 if __name__ == '__main__':
