@@ -22,6 +22,8 @@ class Prodigal(StructuralAnnotationTool):
     VERSION_CHECK_CMD = ["prodigal", "-v", "2>&1"]
     VERSION_PATTERN = r"Prodigal V(.+):"
     SHELL = True
+    # Single mode trains on the input itself; Prodigal itself recommends at least 20 kb for training.
+    MIN_SINGLE_LENGTH = 20000
 
     def __init__(self, options=None, workDir="OUT"):
         """
@@ -31,9 +33,22 @@ class Prodigal(StructuralAnnotationTool):
         self.transl_table = options.get("transl_table", 11)
         self.cmd_options = options.get("cmd_options", "")
 
+        with open(self.genomeFasta) as f:
+            self.total_length = sum(len(r) for r in SeqIO.parse(f, "fasta"))
+        if self.total_length < self.MIN_SINGLE_LENGTH and str(self.transl_table) != "11":
+            self.logger.error("The total input length ({0:,} bp) is below {1:,} bp, where Prodigal must use its "
+                              "pre-trained metagenomic models, which support only genetic code 11 (transl_table is {2}). "
+                              "Provide a longer input or use genetic code 11. Aborted...".format(
+                                  self.total_length, self.MIN_SINGLE_LENGTH, self.transl_table))
+            exit(1)
+
     def getCommand(self):
-        """prodigal -f gff genome.fna > out.gff 2> out.log"""
-        cmd = ["prodigal", self.cmd_options, "-g", str(self.transl_table), "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
+        """prodigal -f gff genome.fna > out.gff 2> out.log
+        Inputs shorter than MIN_SINGLE_LENGTH use meta mode (-p meta) unless -p is given in cmd_options."""
+        cmd = ["prodigal", self.cmd_options]
+        if self.total_length < self.MIN_SINGLE_LENGTH and "-p" not in self.cmd_options.split():
+            cmd += ["-p", "meta"]
+        cmd += ["-g", str(self.transl_table), "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
         return cmd
 
 
@@ -88,7 +103,12 @@ class Prodigal(StructuralAnnotationTool):
         D = {}
         i = 0
         for sequence, toolName, featureType, left, right, strand, qualifiers in _parseResult():
-            partial_flag = qualifiers.get("partial", "00")
+            if "partial" not in qualifiers:
+                self.logger.error("The Prodigal output has no 'partial' attribute, which is needed to detect genes "
+                                  "cut at sequence ends. This Prodigal build is broken (e.g. the Ubuntu apt package); "
+                                  "install Prodigal from Bioconda. Aborted...")
+                exit(1)
+            partial_flag = qualifiers["partial"]
             seq_length = dict_length[sequence]
 
             i += 1

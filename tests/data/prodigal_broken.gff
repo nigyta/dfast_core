@@ -1,0 +1,5 @@
+##gff-version  3
+# Sequence Data: seqnum=1;seqlen=30000;seqhdr="a"
+# Model Data: gc_cont=50.19;transl_table=11;uses_sd=1
+a	Prodigal_v2.6.3	CDS	1885	2208	59.7	+	0	;gc_cont=0.500;tscore=3.67;
+a	Prodigal_v2.6.3	CDS	12239	12661	72.4	+	0	;gc_cont=0.513;tscore=-1.26;
