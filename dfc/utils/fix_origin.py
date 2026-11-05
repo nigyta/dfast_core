@@ -15,8 +15,6 @@ if app_root == "":
 
 if __name__ == '__main__':
     sys.path.append(app_root)
-    from dfc.utils.path_util import set_binaries_path
-    set_binaries_path(app_root)
 
 from dfc.genome import Genome
 from dfc.functionalAnnotation import FunctionalAnnotation
@@ -41,9 +39,9 @@ class Config:
 
     STRUCTURAL_ANNOTATION = [
         {
-            "tool_name": "MGA",
+            "tool_name": "Prodigal",
             "enabled": True,
-            "options": {"cmd_options": "-s"},  # -s for single species, -m for multiple species
+            "options": {"transl_table": 11, "cmd_options": ""},
         },
     ]
 
@@ -96,7 +94,7 @@ def main():
     fix_origin(args.genome, output_file=args.out, offset=args.offset, logger=logger)
 
 
-def fix_origin(input_file, output_file=None, offset=0, logger=None):
+def fix_origin(input_file, output_file=None, offset=0, logger=None, transl_table=11):
     if logger is None:
         logger = getLogger(__name__)
     if __name__ != '__main__':
@@ -107,6 +105,7 @@ def fix_origin(input_file, output_file=None, offset=0, logger=None):
     config = Config()
     config.GENOME_FASTA = input_file
     config.FUNCTIONAL_ANNOTATION[0]["options"]["offset"] = offset
+    config.STRUCTURAL_ANNOTATION[0]["options"]["transl_table"] = transl_table  # Prodigal stays in single mode (>= 20 kb rule applies)
     tmp_dir = tempfile.mkdtemp()
     config.WORK_DIR = tmp_dir
     logger.info("A temporary working directory was created in {}".format(config.WORK_DIR))

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-DFAST (DDBJ Fast Annotation and Submission Tool) is a prokaryotic genome annotation pipeline that also generates DDBJ (MSS) submission files. Pure Python (3.10+, Biopython only) that shells out to bundled binaries in `bin/{Linux,Darwin}/` (MGA, CRT). BLAST+ (`blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`, >= 2.13), `rpsbproc` (>= 0.5), HMMER 3 (also `nhmmer` for rRNA: `dfc/tools/barrnap.py` reimplements Barrnap on rRNA HMMs from `dfast_file_downloader.py --rrna`; bac/arc models from `--rrna_kingdom` compete with euk models, always searched as a contamination check), LAST (>= 1180; `lastal -G <transl_table>`), Aragorn and GHOSTX (default aligner; DIAMOND for `--aligner diamond`) are not bundled and must be on `PATH` (Bioconda); the bundled binaries are being phased out in favor of Bioconda. BLAST+ creates version 5 databases; existing version 4 databases remain readable.
+DFAST (DDBJ Fast Annotation and Submission Tool) is a prokaryotic genome annotation pipeline that also generates DDBJ (MSS) submission files. Pure Python (3.10+, Biopython only) that shells out to external programs; DFAST bundles no executables. Prodigal (default CDS predictor; the Bioconda or Debian build, since `/usr/bin/prodigal` of Ubuntu 24.04 writes a GFF without `partial=` and DFAST stops on it) and MGA (`--use_mga`, Bioconda `metagene_annotator`, linux-64 only, table 11 only) predict CDSs, and Diced (PyPI `diced>=0.1.4`, with the CRT parameters) detects CRISPRs. BLAST+ (`blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`, >= 2.13), `rpsbproc` (>= 0.5), HMMER 3 (also `nhmmer` for rRNA: `dfc/tools/barrnap.py` reimplements Barrnap on rRNA HMMs from `dfast_file_downloader.py --rrna`; bac/arc models from `--rrna_kingdom` compete with euk models, always searched as a contamination check), LAST (>= 1180; `lastal -G <transl_table>`), Aragorn and GHOSTX (default aligner; DIAMOND for `--aligner diamond`) must be on `PATH` (Bioconda, apt or PyPI). BLAST+ creates version 5 databases; existing version 4 databases remain readable.
 
 **Language:** Write everything in tracked files in English: code, comments, docstrings, tests, commit messages and docs. Japanese is allowed only in dedicated locations such as `docs/report_ja/`. Put new Japanese documents in a `*_ja` directory like that, not alongside the English files.
 
@@ -21,7 +21,7 @@ python -m pytest -q tests/test_mag.py::test_boolean_render_true
 ./dfast ... --debug                               # keep temp files, dump genome.pickle
 ```
 
-There is no build step and no linter config. The `dfast` script resolves `APP_ROOT` from its own real path, so it must stay at the repo root next to `dfc/`, `bin/`, and `db/`.
+There is no build step and no linter config. The `dfast` script resolves `APP_ROOT` from its own real path, so it must stay at the repo root next to `dfc/` and `db/`.
 
 ## Architecture
 

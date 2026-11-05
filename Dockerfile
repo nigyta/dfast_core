@@ -1,4 +1,4 @@
-# Pin to linux/amd64: the bundled binaries under bin/Linux (MGA) are x86_64, so the image must be amd64.
+# Pin to linux/amd64: MGA from Bioconda (installed below) is an x86_64 static binary, so the image must be amd64.
 FROM --platform=linux/amd64 python:3.13
 
 # Environment variables
@@ -10,9 +10,9 @@ ENV INFERNAL_NCPU 1
 RUN mkdir /work && chmod 777 /work
 
 # Install dependency
-RUN pip install biopython && \
+RUN pip install biopython "diced>=0.1.4" && \
     apt-get update && \
-    apt install -y default-jre zip prodigal infernal ncbi-blast+ hmmer last-align aragorn && \
+    apt install -y zip prodigal infernal ncbi-blast+ hmmer last-align aragorn && \
     ln -s /usr/bin/cmscan /usr/local/bin/cmscan && \
     ln -s /usr/bin/cmsearch /usr/local/bin/cmsearch && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -39,6 +39,10 @@ RUN ln -s /usr/bin/rpsblast+ /usr/local/bin/rpsblast && \
     install -m 755 RpsbProc-x64-linux/rpsbproc /usr/local/bin/rpsbproc && \
     rm -r RpsbProc-x64-linux RpsbProc-x64-linux.tar.gz && \
     rpsblast -version && rpsbproc -version && lastal -V && aragorn -h | grep ARAGORN
+
+# MGA (--use_mga) is extracted from the Bioconda metagene_annotator package (static x86_64 binary).
+RUN curl -fsSL https://conda.anaconda.org/bioconda/linux-64/metagene_annotator-1.0-h516909a_3.tar.bz2 | tar xj -C /usr/local/bin --strip-components=1 bin/mga && \
+    mga 2>&1 | head -3
 
 # Protein aligners: GHOSTX (default) is built from source, as Bioconda does (the C++ sources need -std=c++14).
 # DIAMOND (--aligner diamond) is the official static binary; Debian's diamond-aligner is older.

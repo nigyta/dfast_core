@@ -1,18 +1,28 @@
 # FAQ
 
-## 1. How to use Prodigal to predict CDSs
-1. Make sure that 'prodigal' is in your `PATH`.  
-2. Set the option `--use_prodigal`.  
-    When enabled, Prodigal will be used instead of the default prediction tool (MGA).
-    
-Note that Prodigal is not bundled in the DFAST distribution. Please install it by yourself. 
+## 1. CDS prediction: Prodigal (default) and MGA
+Prodigal is the default CDS prediction tool from Ver 1.6 (MGA up to Ver 1.5), and `--use_prodigal` is no longer needed (it still selects Prodigal and logs a warning).
+
+To use MGA (MetaGeneAnnotator) instead:
+1. Make sure that 'mga' is in your `PATH`, e.g. install the Bioconda package `metagene_annotator` (linux-64 only).  
+2. Set the option `--use_mga`.  
+    When enabled, MGA will be used instead of the default prediction tool (Prodigal).
+
+MGA supports the genetic code 11 only, so `--use_mga` stops with an error when `--gcode` is not 11. `--metagenome` runs MGA with `-m`.
+Note that MGA is not bundled in the DFAST distribution. Please install it by yourself. 
+
+Notes on Prodigal:
+* DFAST stops when the Prodigal GFF has no `partial=` attribute. Some builds (e.g. the Ubuntu 24.04 apt package 2.6.3-6) write a broken GFF; use the Bioconda or Debian trixie build instead.
+* Prodigal needs at least 20,000 bp of sequence to train. For a shorter input, DFAST automatically runs it with `-p meta` (genetic code 11 only; DFAST stops with other genetic codes).
+* `--metagenome` runs Prodigal with `-p meta`, which supports the genetic code 11 only; DFAST stops when it is combined with another `--gcode`.
+* Use `--gcode 4` (Mycoplasma) or `--gcode 25` (SR1/Gracilibacteria) for these genetic codes. Start codons are taken from the translation table.
 
 
 ## 2. How to use GeneMarkS2 to predict CDSs
 1. Make sure that 'GeneMarkS2' is in your `PATH`, e.g. create a symbolic link for gms2.pl in '/usr/local/bin'.  
 2. Set the option `--use_genemarks2 GENOME-TYPE`.  
 	GENOME-TYPE should be 'auto', 'bact(eria)', or 'arch(aea)'.
-    When enabled, GeneMarkS2 will be used instead of the default prediction tool (MGA).
+    When enabled, GeneMarkS2 will be used instead of the default prediction tool (Prodigal).
 
 GeneMarkS2 is invoked with the command like below:
 `gms2.pl  --genome-type bacteria(or auto, archaea) --gcode 11 --format gff --seq input/genome.fna --output output_file.txt`  
@@ -22,20 +32,7 @@ Codon table for Mycoplasma can be used by specifying DFAST's commnand line optio
 Note that GeneMarkS2 is not bundled in the DFAST distribution. Please install it by yourself. 
 
 
-## 3. How to use RNAmmer to predict rRNAs
-**Deprecated:** `--use_rnammer` will be removed in Ver 1.6. RNAmmer requires HMMER 2, which is no longer maintained. The default rRNA prediction (`--rrna_model rfam`, `--rrna_kingdom bac arc`) covers bacteria and archaea.
-
-1. Make sure that 'RNAmmer' is in your `PATH`, e.g. create a symbolic link for the 'rnammer' executable in '/usr/local/bin'.  
-2. Set the option `--use_rnammer [bact|arch]`.  
-    `--use_rnammer bact` for bacterial genome, `--use_rnammer arch` for archaeal genome.  
-    When enabled, RNAmmer will be used instead of the default prediction tool (Barnnap).
-
-RNAmmer is invoked with the following command,  
-`rnammer -S bac(or arc) -m tsu,lsu,ssu  -gff output_file.txt input/genome.fna`,  
-meaning that all kind of rRNA genes will be predicted using the parameter for bacteria(or archaea).
-Note that RNAmmer is not bundled in the DFAST distribution. Please install it by yourself. 
-
-## 4. How to use tRNAscan-SE to predict tRNAs
+## 3. How to use tRNAscan-SE to predict tRNAs
 1. Make sure that 'tRNAscan-SE' is in your `PATH`.  
 2. Set the option `--use_trnascan [bact|arch]`.  
     `--use_trnascan bact` for bacterial genome, `--use_trnascan arch` for archaeal genome.  
@@ -45,7 +42,7 @@ Both tRNAscan-SE 1.3 and 2.0 can be used.
 Note that tRNAscan-SE is not bundled in the DFAST distribution. Please install it by yourself. 
 
 
-## 5. How to use Diamond to align protein sequences
+## 4. How to use Diamond to align protein sequences
 1. Make sure that the binary for Diamond is in your `PATH`.  
 2. Set the option `--aligner diamond`.  
 
@@ -54,7 +51,7 @@ DFAST runs Diamond in the `--very-sensitive` mode. Diamond is not bundled in the
 
 
 
-## 6. What are the meanings of 'note' qualifiers in CDS features?
+## 5. What are the meanings of 'note' qualifiers in CDS features?
 The note qualifier in GenBank or GFF format shows the result of an alignment to the reference sequence.
 ```
 note="Q890K8 chromosomal replication initiator protein DnaA (Lactobacillus plantarum WCFS1)
@@ -70,7 +67,7 @@ description and, in parenthesis, the organism name from which it is derived.
 The accession numbers with 'WP_' come from the NCBI RefSeq database, and there are some from UniProt. This entry comes from UniProtKB [[Q890KB](https://www.uniprot.org/uniprot/Q890K8)].
 
 
-## 7. How to change the location of the reference data.  
+## 6. How to change the location of the reference data.  
 You can specify it with a `--dbroot` option. This may be helpful when running DFAST within a Docker container.  
 
 Download the reference data:  

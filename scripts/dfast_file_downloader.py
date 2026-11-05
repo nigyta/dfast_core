@@ -26,9 +26,7 @@ logger.addHandler(StreamHandler())
 sys.path.append(app_root)
 from dfc.utils.reffile_util import prepare_database, run_hmmpress, extract_hmm_models, build_rrna_hmm
 from dfc.tools.barrnap import RRNA_MODELS, RFAM_RELEASE, RFAM_FAMILIES, KINGDOMS
-from dfc.utils.path_util import set_binaries_path
 
-set_binaries_path(app_root)
 
 try:
     # This part was added to avoid error under a specific environment.

@@ -103,7 +103,7 @@ class Config:
         {
             # MetaGeneAnnotator for CDS prediction
             "tool_name": "MGA",
-            "enabled": True,
+            "enabled": False,
             "options": {"cmd_options": "-s"},  # -s for single species, -m for multiple species
         },
         {
@@ -146,33 +146,23 @@ class Config:
              },
         },
         {
-            # RNAmmer for rRNA prediction. By default, this is disabled.
-            # Please insall RNAmmer and put it in your PATH to enable this.
-            "tool_name": "RNAmmer",
-            "enabled": False,
-            "options": {
-                "model": "bac",  # arc/bac/euk
-                "cmd_options": ""
-            },
-        },
-        {
-            # CRT for CRISPR detection
-            # CRT runs on JavaVM. Depending on your system, it requires additional parameters to run.
-            # Example
-            #     "java_options": "-Xmx256m"
-            "tool_name": "CRT",
+            # Diced for CRISPR detection (Python package, run in-process; pip install 'diced>=0.1.4')
+            # The default parameters are those of CRT, which Diced replaced.
+            "tool_name": "Diced",
+            "target": "CRISPR",
             "enabled": True,
             "options": {
-                "jar_file": "@@APP_ROOT@@/bin/common/CRT1.2-CLI.jar",
-                "java_options": "",  # options passed to java. e.g. -Xmx256m
-                "cmd_options": "",  # cmd_options passed to CRT.
+                "min_repeat_length": 19,
+                "max_repeat_length": 38,
+                "min_spacer_length": 19,
+                "max_spacer_length": 48,
             },
         },
         {
             # Prodigal for CDS prediction
-            # By default Prodigal is disabled. To enable this, also set MGA disabled or enable merge_cds in FEATURE_ADJUSTMENT.
+            # Prodigal is the default CDS predictor. To use MGA instead, disable this and enable MGA (or enable merge_cds in FEATURE_ADJUSTMENT).
             "tool_name": "Prodigal",
-            "enabled": False,
+            "enabled": True,
             "options": {
                 "transl_table": 11,
                 "cmd_options": "",

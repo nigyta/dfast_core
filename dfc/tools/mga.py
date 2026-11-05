@@ -24,18 +24,15 @@ class MGA(StructuralAnnotationTool):
     SHELL = True  # Run through shell
 
     def __init__(self, options=None, workDir="OUT"):
-        self.transl_table = options.get("transl_table", 11)  # MGA always uses transl_table = 11
+        self.transl_table = options.get("transl_table", 11)  # MGA always uses transl_table = 11 (checked by check_genetic_code)
         self.cmd_options = options.get("cmd_options", "-s")  # -s for single species, -m for multiple species
-        if self.transl_table == 4:
-            self.binary_name = "mga_4"
-        else:
-            self.binary_name = "mga"
+        self.binary_name = "mga"
         super(MGA, self).__init__(options, workDir)
 
     def setVersion(self):
         """
         MGA does not have an option to check the version.
-        The bundled version of MGA is released 2008/08/19.
+        The version of MGA (Bioconda metagene_annotator) is released 2008/08/19.
         """
         version = "2008/08/19"
         self.logger.info("Checking {0}... ".format(self.__class__.NAME))

@@ -33,20 +33,22 @@ You can override the values specified in the configuratin file by providing comm
 DFAST first detects biological features such as CDS, rRNA, and tRNA. 
 DFAST calls external programs for this, and they are executed in parallel.  
 Currently, programs listed below are incorporated. 
-The programs marked with * asterisk are used in the default workflow and 
-their executables are bundled in the DFAST distribution (MGA and CRT; they will be replaced by Prodigal and Diced in Ver 1.6).
-Programs marked with ** are used in the default workflow but are no longer bundled from Ver 1.5; install them separately (e.g. from Bioconda or apt).  
+The programs marked with ** are used in the default workflow. No executables are bundled in the DFAST distribution (from Ver 1.6); install them separately (e.g. from Bioconda, apt or PyPI).  
 
 The workflow is defined by the `STRUCTURAL_ANNOTATION` attribute in the configuration file,
 in which options for each setting is specified as a dictionary. 
 You can switch enabled/disabled and set options passed to each prorgam.
 
-1. MGA* (MetaGeneAnnotator)  
-CDS prediction tool. Default in Ver 1.5; Prodigal will be the default in Ver 1.6.  
+1. Prodigal**  
+CDS prediction tool. Default from Ver 1.6 (`--metagenome` runs it with `-p meta`).
+Use the Bioconda or Debian trixie build of Prodigal 2.6.3: DFAST stops when the GFF has no `partial=` attribute, as in the Ubuntu 24.04 apt package.
+Input shorter than 20,000 bp is run with `-p meta` automatically (genetic code 11 only). `--gcode` 4, 11 and 25 are supported;
+start codons are taken from the translation table. Genes whose start codon is exactly at a sequence end are reported as partial by Prodigal,
+and a later step turns them into complete CDSs (length >= 500 bp, a database hit and ATG/GTG/TTG start codon).  
+https://github.com/hyattpd/Prodigal
+2. MGA (MetaGeneAnnotator)  
+CDS prediction tool used up to Ver 1.5. Optional from Ver 1.6 (`--use_mga`); `mga` from the Bioconda package `metagene_annotator` (linux-64 only) must be on PATH. Genetic code 11 only.  
 http://metagene.nig.ac.jp
-2. Prodigal  
-CDS prediction tool.  
-http://prodigal.ornl.gov
 3. Barrnap**  
 rRNA prediction by the method of Barrnap: DFAST runs `nhmmer` (HMMER) against rRNA profile HMMs and applies Barrnap's length rules.
 From Ver 1.5, Barrnap itself is no longer needed: DFAST reimplements it in Python (`dfc/tools/barrnap.py`), written with reference to
@@ -57,25 +59,17 @@ and eukaryotes (euk) are prepared. `--rrna_kingdom` chooses the prokaryotic mode
 (`check_eukaryotic` in the configuration). Overlapping hits of the same subunit from different kingdoms compete and the best bit score wins
 (as in the clan competition of Rfam); eukaryotic 18S/28S rRNAs that win are reported as possible contamination (see Feature optimization).  
 https://github.com/tseemann/barrnap
-4. RNAmmer  
-rRNA prediction tool (deprecated; `--use_rnammer` will be removed in Ver 1.6). RNAmmer requires the hmmscan program version 2.3, which is not included in the DFAST distibution. 
-To install RNAmmer, follow the [instruction](https://blog.karinlag.no/2013/10/rnammer-install/) by original authors.  
-http://www.cbs.dtu.dk/services/RNAmmer/
-5. Aragorn**  
+4. Aragorn**  
 tRNA prediction tool.  
 https://www.trna.se/ARAGORN/
-6. tRNAscan-SE  
+5. tRNAscan-SE  
 tRNA prediction tool.  
 http://eddylab.org/software.html
-7. CRT* (Crisper Recognition Tool)  
-CRISPR prediction tool. CRT will be replaced by Diced (a reimplementation of MinCED, run with the CRT parameters) in Ver 1.6, which removes the Java dependency.
-CRT requires Java Runtime Environment (JRE). Type "java" in your console to check if Java is installed.  
-Depending on your system, you may need to configure options to launch Java.
-If not working properly, set `java_options` in the configuration file to "-Xmx256m", for example. 
-You can also export _JAVA_OPTIONS to environmental variables before running DFAST.  
-e.g. `export _JAVA_OPTIONS="-Xmx256m -XX:ParallelGCThreads=1`  
-http://www.room220.com/crt/
-8. Gap annotator*  
+6. Diced**  
+CRISPR prediction tool (a reimplementation of MinCED; Python package, version 0.1.4 or later: `pip install "diced>=0.1.4"`). Since Ver 1.6 it replaces CRT, so Java is no longer needed.
+DFAST runs it with the CRT parameters (repeat length 19-38, spacer length 19-48) and reports the most frequent repeat sequence as `rpt_unit_seq`.
+https://github.com/althonos/diced
+7. Gap annotator  
 Gap annotator is not an external program, but works as other programs do.
 It finds gap regions (runs of Ns or ns) in the sequence, 
 and annotate them as assembly_gap features.  
@@ -86,8 +80,9 @@ Please see this [page](https://www.ncbi.nlm.nih.gov/genbank/wgs_gapped/) to subm
 
 If you want to use programs not included in the DFAST distribution, 
 you need to install them and put the executables or links in your PATH. 
-You can also put them in $DFAST_APP_ROOT/bin/Darwin or $DFAST_APP_ROOT/bin/Linux,
-which will be automatically added to the PATH variable when running DFAST.
+Programs that are not on PATH cannot be used.
+
+Note: CRT (Java) and RNAmmer (`--use_rnammer`) were removed in Ver 1.6. Use the Diced entry for CRISPRs and the default rRNA prediction.
 
 ## Feature optimization
 DFAST cleans up unwanted features in two steps: right after structural annotation, and after functional annotation (just before locus_tags are assigned, so removed features leave no gaps in the numbering).
@@ -142,7 +137,8 @@ similar to Prokka, and reduce running time.
 * DBsearch (Database search)  
 This is a method for a conventional homology search against reference databases.  
 By default, it uses GHOSTX as a sequence aligner, which is about 100 times more efficient than BLAST. 
-You can choose an aligner from GHOSTX/DIAMOND/BLASTP (`--aligner`). DIAMOND runs in the `--very-sensitive` mode.  
+You can choose an aligner from GHOSTX/DIAMOND/BLASTP (`--aligner`). DIAMOND runs in the `--very-sensitive` mode.
+GHOSTX and DIAMOND run as one process with the given number of threads; BLASTP runs as one single-threaded process per CPU.  
 You can specify thresholds for E-value (`evalue_cutoff`), 
 query coverage % (`qcov_cutoff`), and subject coverage % (`scov_cutoff`).  
 The reference database is specified by `database`. 

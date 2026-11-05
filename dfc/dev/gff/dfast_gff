@@ -19,7 +19,6 @@ sys.path.append(app_root)
 from dfc import dfast_version
 from dfc.pipeline import Pipeline
 from dfc.utils.config_util import load_config, show_config, set_references, set_database, set_aligner, disable_cdd_search, disable_hmm_scan, set_gff
-from dfc.utils.path_util import set_binaries_path
 from dfc.utils.fix_origin import fix_origin
 
 
@@ -219,9 +218,6 @@ if args.show_config:
 # pp.pprint(config.FUNCTIONAL_ANNOTATION)
 # print(dir(config))
 
-
-# set environmental path
-set_binaries_path(app_root)
 
 # rotate the chromosome so that dnaA comes first.
 if args.fix_origin:

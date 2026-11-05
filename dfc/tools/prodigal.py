@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # coding: UTF8
 
+import subprocess
+
 from .base_tools import StructuralAnnotationTool
 from Bio import SeqIO
 # from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -22,6 +24,8 @@ class Prodigal(StructuralAnnotationTool):
     VERSION_CHECK_CMD = ["prodigal", "-v", "2>&1"]
     VERSION_PATTERN = r"Prodigal V(.+):"
     SHELL = True
+    # Single mode trains on the input itself; Prodigal itself recommends at least 20 kb for training.
+    MIN_SINGLE_LENGTH = 20000
 
     def __init__(self, options=None, workDir="OUT"):
         """
@@ -31,11 +35,35 @@ class Prodigal(StructuralAnnotationTool):
         self.transl_table = options.get("transl_table", 11)
         self.cmd_options = options.get("cmd_options", "")
 
+        with open(self.genomeFasta) as f:
+            self.total_length = sum(len(r) for r in SeqIO.parse(f, "fasta"))
+        if self.total_length < self.MIN_SINGLE_LENGTH and str(self.transl_table) != "11":
+            self.logger.error("The total input length ({0:,} bp) is below {1:,} bp, where Prodigal must use its "
+                              "pre-trained metagenomic models, which support only genetic code 11 (transl_table is {2}). "
+                              "Provide a longer input or use genetic code 11. Aborted...".format(
+                                  self.total_length, self.MIN_SINGLE_LENGTH, self.transl_table))
+            exit(1)
+
     def getCommand(self):
-        """prodigal -f gff genome.fna > out.gff 2> out.log"""
-        cmd = ["prodigal", self.cmd_options, "-g", str(self.transl_table), "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
+        """prodigal -f gff genome.fna > out.gff 2> out.log
+        Inputs shorter than MIN_SINGLE_LENGTH use meta mode (-p meta) unless -p is given in cmd_options."""
+        cmd = ["prodigal", self.cmd_options]
+        if self.total_length < self.MIN_SINGLE_LENGTH and "-p" not in self.cmd_options.split():
+            cmd += ["-p", "meta"]
+            self.logger.info("Input is shorter than {0:,} bp ({1:,} bp); Prodigal will run with '-p meta'.".format(
+                self.MIN_SINGLE_LENGTH, self.total_length))
+        cmd += ["-g", str(self.transl_table), "-f", "gff", "-i", self.genomeFasta, ">", self.outputFile, "2>", self.logFile]
         return cmd
 
+    def run(self):
+        """Prodigal's stderr goes to the log file, so the generic stderr check cannot see a failure; check the exit code."""
+        cmd = " ".join(self.getCommand())
+        self.logger.debug('Running command "{0}" ({1})'.format(cmd, self.__class__.__name__))
+        if subprocess.run(cmd, shell=True).returncode != 0:
+            self.logger.error("Process aborted due to an error in {0}.".format(self.__class__.__name__))
+            with open(self.logFile) as f:
+                self.logger.error(f.read())
+            exit(1)
 
     def getFeatures(self):
         """Prodigal generates standard GFF format.
@@ -88,7 +116,12 @@ class Prodigal(StructuralAnnotationTool):
         D = {}
         i = 0
         for sequence, toolName, featureType, left, right, strand, qualifiers in _parseResult():
-            partial_flag = qualifiers.get("partial", "00")
+            if "partial" not in qualifiers:
+                self.logger.error("The Prodigal output has no 'partial' attribute, which is needed to detect genes "
+                                  "cut at sequence ends. This Prodigal build is broken (e.g. the Ubuntu apt package); "
+                                  "install Prodigal from Bioconda. Aborted...")
+                exit(1)
+            partial_flag = qualifiers["partial"]
             seq_length = dict_length[sequence]
 
             i += 1

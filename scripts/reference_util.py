@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import sys
 import os
-# import platform
 from logging import getLogger, DEBUG, INFO, StreamHandler
 
 app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -10,7 +9,6 @@ logger.setLevel(INFO)
 
 # srcPath = os.path.join(os.path.dirname(__file__), "..", "dfc")
 sys.path.append(app_root)
-from dfc.utils.path_util import set_binaries_path
 from dfc.tools.ghostx import Ghostx
 from dfc.tools.ghostz import Ghostz
 from dfc.tools.diamond import Diamond
@@ -18,7 +16,6 @@ from dfc.tools.blastp import Blastp
 from dfc.tools.hmmer import Hmmer_hmmpress
 from dfc.models.protein import Protein
 from dfc.utils.reffile_util import fasta2dfast, dfast2fasta, genbank2dfast, prepare_database, prepare_database_dmnd, run_hmmpress
-set_binaries_path(app_root)
 
 
 

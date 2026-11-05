@@ -170,7 +170,7 @@ The default config file is `$DFAST_APP_ROOT/dfc/dev/gff/gff_config.py`. To make 
 * Supported biological features  
 Biological features specified by `targets` in the configuration file will be imported. The default setting is "CDS". This means:
     * CDS features in the GFF file are imported.
-    * Other CDS prediction tools (MetaGeneAnnotator or Prodigal) are disabled.
+    * Other CDS prediction tools (Prodigal or MetaGeneAnnotator) are disabled.
     * Functional annotation for the iImported CDSs will be performed in the same way as the standard pipeline.
     
 ### How to use

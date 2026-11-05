@@ -6,17 +6,16 @@ import shutil
 from logging import getLogger
 from concurrent import futures
 from Bio.SeqFeature import ExactPosition, FeatureLocation
-from Bio.Data.CodonTable import TranslationError
+from Bio.Data.CodonTable import TranslationError, unambiguous_dna_by_id
 from .tools.mga import MGA
 from .tools.barrnap import Barrnap
 from .tools.aragorn import Aragorn
 from .tools.gap import GAP
-from .tools.CRT import CRT
+from .tools.diced import Diced
 # from .tools.glimmer import Glimmer
 from .tools.prodigal import Prodigal
 from .tools.genemarkS2 import GeneMarkS2
 from .tools.tRNAscan import tRNAscan
-from .tools.rnammer import RNAmmer
 from .tools.gff_importer import GFFimporter
 
 TOOLS = {
@@ -24,14 +23,24 @@ TOOLS = {
     "MGA": MGA,
     "Barrnap": Barrnap,
     "Aragorn": Aragorn,
-    "CRT": CRT,
+    "Diced": Diced,
     # "Glimmer": Glimmer,
     "Prodigal": Prodigal,
     "GeneMarkS2": GeneMarkS2,
     "tRNAscan": tRNAscan,
-    "RNAmmer": RNAmmer,
     "GFF_import": GFFimporter,
 }
+
+
+REMOVED_TOOLS = {
+    "CRT": "Use the Diced entry of dfc/default_config.py instead.",
+    "RNAmmer": "Use the default rRNA prediction (Barrnap method) instead.",
+}
+
+
+def start_codons_of(transl_table):
+    """Return the set of start codons defined by the translation table (int or numeric str)."""
+    return set(unambiguous_dna_by_id[int(transl_table)].start_codons)
 
 
 class StructuralAnnotation(object):
@@ -51,15 +60,18 @@ class StructuralAnnotation(object):
         self.logger.info("Initializing structural annotation tools... ")
 
         for tool_config in self.configs:
-            Tool = TOOLS.get(tool_config["tool_name"])
+            if not tool_config.get("enabled"):
+                continue  # e.g. CRT and RNAmmer entries of a Ver 1.5 config
+            tool_name = tool_config["tool_name"]
+            Tool = TOOLS.get(tool_name)
             if Tool:
-                if tool_config.get("enabled"):
-                    tool = Tool(options=tool_config.get("options", {}), workDir=self.workDir)
-                    self.tools.append(tool)
+                self.tools.append(Tool(options=tool_config.get("options", {}), workDir=self.workDir))
             else:
-                self.logger.error(
-                    "{0} is not registered in {1}. \nProcess aborted due to an error.".format(tool_config["tool_name"],
-                                                                                              __name__))
+                if tool_name in REMOVED_TOOLS:
+                    msg = "{0} was removed in Ver 1.6. {1}".format(tool_name, REMOVED_TOOLS[tool_name])
+                else:
+                    msg = "{0} is not registered in {1}.".format(tool_name, __name__)
+                self.logger.error(msg + " \nProcess aborted due to an error.")
                 exit(1)
 
     def execute(self):
@@ -96,11 +108,6 @@ class StructuralAnnotation(object):
                 transl_table = tool.transl_table
             else:
                 transl_table = feature.qualifiers.get("transl_table", [11])[0]
-            if transl_table == 4:
-                start_codons = ["TTA", "TTG", "CTG", "ATT", "ATC", "ATA", "GTG"]  # and ATG  for transl_table 4
-            else:
-                start_codons = ["TTG", "CTG", "ATT", "ATC", "ATA", "GTG"]  # and ATG   for transl_table 11
-
             if right_offset == 0:
                 if isinstance(feature.location.start, ExactPosition) and isinstance(feature.location.end,
                                                                                     ExactPosition):
@@ -129,7 +136,7 @@ class StructuralAnnotation(object):
                 translation = nucseq[offset:right_offset].translate(table=transl_table)  # , stop_symbol="")
             translation = str(translation)
             first_codon = str(nucseq[offset:offset + 3]).upper()
-            if first_codon in start_codons:
+            if first_codon in start_codons_of(transl_table):
                 translation = "M" + translation[1:]
             return translation
 

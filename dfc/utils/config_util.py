@@ -173,7 +173,7 @@ def disable_hmm_scan(config):
 
 def disable_cds_prediction(config):
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") == "CDS":
+        if _is_cds_tool(setting):
             setting["enabled"] = False
 
 def disable_trna_prediction(config):
@@ -200,20 +200,6 @@ def enable_trnascan(config, model):
         if setting.get("tool_name", "") == "Aragorn":
             setting["enabled"] = False
 
-def enable_rnammer(config, model):
-    # model should be arc/bac
-    if model == "bact":
-        model = "bac"
-    elif model == "arch":
-        model = "arc"
-    for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("tool_name", "") == "RNAmmer":
-            setting["enabled"] = True
-            setting["options"]["model"] = model
-        if setting.get("tool_name", "") == "Barrnap":
-            setting["enabled"] = False
-
-
 def set_rrna_model(config, model):
     """Choose the rRNA profile HMMs for Barrnap: "barrnap" (Barrnap 0.9 models, default) or "rfam"."""
     for setting in config.STRUCTURAL_ANNOTATION:
@@ -230,9 +216,17 @@ def set_rrna_kingdoms(config, kingdoms):
     logger.info("Barrnap will search rRNA models of {}.".format(", ".join(kingdoms)))
 
 
+CDS_TOOLS = ("MGA", "Prodigal", "GeneMarkS2")
+
+
+def _is_cds_tool(setting):
+    # some configs (e.g. example/test_config.py) have no "target" keys, so also match by tool name
+    return setting.get("target", "") == "CDS" or setting.get("tool_name", "") in CDS_TOOLS
+
+
 def _select_CDS_prediction_tool(config, tool_name):
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") == "CDS":
+        if _is_cds_tool(setting):
             if setting.get("tool_name", "") == tool_name:
                 setting["enabled"] = True
             else:
@@ -261,7 +255,7 @@ def disable_func_annotation(config):
 def enable_metagenome_mode(config):
     logger.info("Metagenome mode is enabled.")
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") == "CDS":
+        if _is_cds_tool(setting):
             tool_name = setting.get("tool_name", "")
             if tool_name == "MGA":
                 if setting.get("enabled"):
@@ -286,23 +280,35 @@ def set_gff(config, gff_file_name):
                 setting["enabled"] = False
 
 def set_genetic_code(config, value):
-    if value not in [4, 11]:
-        logger.warning("[WARNING] Unsupported genetic code {} is specified.".format(value))
-    if value == 11:
-        pass
-    else:
-        # genetic code 4 can be specified when using Prodigal/GeneMarkS2/Aragorn
-        logger.warning("Genetic code is set to {}.".format(value))
-        logger.warning("Prodigal (--use_prodigal), GeneMarkS2 (--use_genemarks2), or customized binary of MGA is required.")
-
+    if value not in [4, 11, 25]:
+        logger.warning("Unsupported genetic code {} is specified.".format(value))
+    if value != 11:
+        logger.info("Genetic code is set to {}.".format(value))
         for setting in config.STRUCTURAL_ANNOTATION:
-            if "transl_table" in setting["options"]:
+            # CDS tools are included even without a "transl_table" key (MGA in example configs), so check_genetic_code sees it
+            if "transl_table" in setting["options"] or _is_cds_tool(setting):
                 setting["options"]["transl_table"] = value
         for setting in config.FUNCTIONAL_ANNOTATION:
             if setting.get("component_name", "") in ["PseudoGeneDetection", "NuclMapping"]:
                 setting["options"]["transl_table"] = value
 
 
+def check_genetic_code(config):
+    """Exit if the enabled CDS predictor cannot handle the genetic code: MGA and metagenome mode support table 11 only."""
+    for setting in config.STRUCTURAL_ANNOTATION:
+        if not _is_cds_tool(setting) or not setting.get("enabled"):
+            continue
+        options = setting.get("options", {})
+        tool_name = setting.get("tool_name", "")
+        transl_table = options.get("transl_table", 11)
+        cmd_options = options.get("cmd_options", "")
+        if tool_name == "MGA" and transl_table != 11:
+            logger.error("MGA supports only the genetic code 11, but {} is specified. Please use the default CDS predictor (Prodigal).".format(transl_table))
+            exit(1)
+        metagenome = (tool_name == "Prodigal" and "-p meta" in cmd_options) or (tool_name == "MGA" and "-m" in cmd_options.split())
+        if metagenome and transl_table != 11:
+            logger.error("Metagenome mode supports only the genetic code 11, but {} is specified.".format(transl_table))
+            exit(1)
 
 
 def set_values_from_metadata(config):

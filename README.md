@@ -3,7 +3,7 @@ DFAST is a flexible and customizable pipeline for prokaryotic genome annotation 
 The stand-alone version of DFAST is also refered to as DFAST-core to differentiate it from its on-line version.  
 For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 
-> **Note on Ver 1.5 and 1.6:** Up to Ver 1.4, DFAST came with the external programs for the default workflow. **From Ver 1.5, they are no longer bundled**: install BLAST+, rpsbproc, HMMER, LAST, Aragorn and GHOSTX from Bioconda or apt (see [Installation](#installation)). Ver 1.5 keeps the results compatible with earlier versions as far as possible, while some reference data are updated; when updating from Ver 1.4, run `dfast_file_downloader.py --rrna barrnap --cdd Cog --hmm NCBIfam`. MGA and CRT are still bundled in Ver 1.5 and will be replaced by Prodigal and Diced in Ver 1.6, which completes the switch. See [docs/history.txt](docs/history.txt) for details.
+> **Note on Ver 1.5 and 1.6:** Up to Ver 1.4, DFAST came with the external programs for the default workflow. **From Ver 1.5, they are no longer bundled**: install BLAST+, rpsbproc, HMMER, LAST, Aragorn and GHOSTX from Bioconda or apt (see [Installation](#installation)). Ver 1.5 keeps the results compatible with earlier versions as far as possible, while some reference data are updated; when updating from Ver 1.4, run `dfast_file_downloader.py --rrna barrnap --cdd Cog --hmm NCBIfam`. **Ver 1.6 completes the switch**: MGA is replaced by Prodigal for CDS prediction (MGA is still available with `--use_mga`) and CRT by Diced for CRISPR detection. DFAST no longer bundles any executables and no longer needs Java. **CDS predictions change from Ver 1.5**, because Prodigal is the default CDS predictor. See [docs/history.txt](docs/history.txt) for details.
 
 
 ---
@@ -56,26 +56,30 @@ If you use Anaconda/Miniconda, see [here](#condainstallation) to install using `
   ```
   If `pip` is not available, please follow the [instruction](http://biopython.org/wiki/Download) of BioPython.  
 
-* **External programs (no longer bundled from Ver 1.5)**  
+* **External programs (not bundled)**  
   The following programs must be in your `PATH`:
   * BLAST+ 2.13 or later (`blastp`, `blastn`, `makeblastdb`, `blastdbcmd`, `rpsblast`)
   * `rpsbproc` 0.5 or later (CDDsearch, i.e. COG assignment)
   * HMMER 3 (`hmmscan`, `hmmsearch`, `hmmpress`, and `nhmmer` and `hmmbuild` for rRNA prediction)
   * LAST 1180 or later (`lastdb`, `lastal`; PseudoGeneDetection)
+  * Prodigal 2.6.3 (CDS prediction). Use the Bioconda or Debian trixie build. The Ubuntu 24.04 apt package (2.6.3-6) writes a broken GFF without the `partial` attribute, and DFAST stops with an error when it detects such a build.
   * Aragorn 1.2.x (tRNA/tmRNA prediction)
   * GHOSTX (the default protein aligner)
+  * Diced 0.1.4 or later (CRISPR prediction; Python package)
   * DIAMOND (optional; only for `--aligner diamond`)
+  * MGA (MetaGeneAnnotator; optional, only for `--use_mga`; Bioconda `metagene_annotator`, linux-64 only)
 
-  The easiest way is to create a conda environment from Bioconda (`openjdk` is for CRT, see below):
+  The easiest way is to create a conda environment from Bioconda. Diced 0.1.4 is not on Bioconda yet (0.1.3 only), so install it from PyPI (add `metagene_annotator` for `--use_mga`):
   ```
-  conda create -n dfast -c conda-forge -c bioconda python=3.12 biopython blast rpsbproc hmmer last aragorn ghostx diamond openjdk
+  conda create -n dfast -c conda-forge -c bioconda python=3.12 biopython blast rpsbproc hmmer last aragorn prodigal ghostx diamond
   conda activate dfast
+  pip install "diced>=0.1.4"
   ```
-  They are also available from apt on Debian/Ubuntu (`ncbi-blast+ hmmer last-align aragorn`; `rpsblast` is installed as `rpsblast+`), from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), and from the developers ([HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last), [Aragorn](https://www.trna.se/ARAGORN/), [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/), [DIAMOND](https://github.com/bbuchfink/diamond)). See the [Dockerfile](Dockerfile) for an example.  
+  They are also available from apt on Debian/Ubuntu (`ncbi-blast+ hmmer last-align aragorn prodigal`; `rpsblast` is installed as `rpsblast+`), from NCBI ([BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/), [rpsbproc](https://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/rpsbproc/current/)), and from the developers ([Prodigal](https://github.com/hyattpd/Prodigal), [HMMER](http://hmmer.org/), [LAST](https://gitlab.com/mcfrith/last), [Aragorn](https://www.trna.se/ARAGORN/), [GHOSTX](http://www.bi.cs.titech.ac.jp/ghostx/), [DIAMOND](https://github.com/bbuchfink/diamond)) and PyPI ([Diced](https://pypi.org/project/diced/)). See the [Dockerfile](Dockerfile) for an example.  
   BLAST+ creates databases in the BLAST database version 5 format, which the BLAST+ 2.6.0 bundled up to Ver 1.4 cannot read. Databases in version 4 created by older DFAST can still be used.
 
-* **Java**  
-CRT (CRISPR prediction, still bundled in Ver 1.5) depends on Java. It works with the pre-installed version on your system or `openjdk` from conda. Java will no longer be needed from Ver 1.6. Perl is no longer required for the default workflow (optional tools such as tRNAscan-SE and RNAmmer need it).
+* **Java and Perl**  
+Neither is required for the default workflow. Java was needed for CRT up to Ver 1.5; CRISPR prediction now uses Diced. Optional tools such as tRNAscan-SE need Perl.
 
 ### Source code
 Available from the GitHub repository [nigyta/dfast_core](https://github.com/nigyta/dfast_core).
@@ -194,13 +198,13 @@ DFAST default annotation workflow accepts a genomic FASTA file (draft or complet
 ### Structural annotation
 The following tools are run in parallel to predict biological features (e.g. CDSs and RNAs). After that, partial and overlapping features will be cleaned up.
 Partial rRNAs (hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Eukaryotic rRNA models are always searched as a contamination check: they compete with the bacterial (and, with `--rrna_kingdom bac arc`, archaeal) models and the best-scoring one is kept; eukaryotic 18S/28S rRNAs (e.g. host contamination in MAGs) become `misc_feature` ("eukaryotic 18S ribosomal RNA-like sequence, possible contamination") and hypothetical CDSs overlapping them on either strand are removed. Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
-* CDS prediction (MetaGeneAnnotator)
+* CDS prediction (Prodigal; MetaGeneAnnotator with `--use_mga`)
 * rRNA prediction (Barrnap method with nhmmer; Barrnap or Rfam models)
 * tRNA/tmRNA prediction (Aragorn)
-* CRISPR prediction (CRT)
+* CRISPR prediction (Diced, run with the CRT parameters)
 * Assembly gaps within sequences
 
-Optionally, you can choose Prodigal/GeneMarkS2, RNAmmer, tRNAscan-SE to predict CDS, rRNA, tRNA, respectively. See [FAQ](docs/FAQ.md). (You need to install them manually.)
+Optionally, you can choose MGA/GeneMarkS2 and tRNAscan-SE to predict CDS and tRNA, respectively. See [FAQ](docs/FAQ.md). (You need to install them manually.)
 
 ### Functional annotation
 1. OrthoSearch (Optional. Set `--references` option to enable this.)
@@ -255,14 +259,14 @@ Workflow options:
   --database PATH       Additional reference database to be searched against prior to the default database. (format: db_path[,db_name[,pident,q_cov,s_cov,e_value]])
   --references PATH     Reference file(s) for OrthoSearch. Use semicolons for multiple files, e.g. 'genome1.faa;genome2.gbk'
   --aligner STR         Aligner to use [ghostx(=default)|blastp|diamond]
-  --use_prodigal        Use Prodigal to predict CDS instead of MGA
-  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of MGA. [auto|bact|arch]
+  --use_prodigal        [Deprecated] Prodigal is the default CDS predictor since Ver 1.6; this option is no longer needed
+  --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of Prodigal. [auto|bact|arch]
+  --use_mga             Use MGA (MetaGeneAnnotator, from Bioconda metagene_annotator) to predict CDS instead of Prodigal
   --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
   --rrna_model STR      rRNA profile HMMs for Barrnap [barrnap(=default)|rfam]. 'rfam' uses models built from Rfam seed alignments
   --rrna_kingdom STR [STR ...]
                         Prokaryotic rRNA models for Barrnap [bac(=default) arc]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac arc
-  --use_rnammer STR     [Deprecated; will be removed in Ver 1.6] Use RNAmmer to predict rRNA instead of Barrnap. [bact|arch]
-  --gcode INT           Genetic code [11(=default),4(=Mycoplasma)]
+  --gcode INT           Genetic code [11(=default),4(=Mycoplasma),25(=Gracilibacteria)]. Supported by Prodigal; MGA and --metagenome support 11 only
   --no_func_anno        Disable all functional annotation steps
   --no_hmm              Disable HMMscan
   --no_cdd              Disable CDDsearch
@@ -270,7 +274,7 @@ Workflow options:
   --no_rrna             Disable rRNA prediction
   --no_trna             Disable tRNA prediction
   --no_crispr           Disable CRISPR prediction
-  --metagenome          Set options of MGA/Prodigal for metagenome contigs
+  --metagenome          Set options of Prodigal/MGA for metagenome contigs
   --amr                 [Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome), identification of plasmid-derived contigs
                         and detection of (anti-)defense systems with DefenseFinder
   --mge                 [Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder
@@ -303,24 +307,21 @@ Run options:
 ## Software distribution
 DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](docs/LICENSE)).
 
-Up to Ver 1.4, this distribution contained the external programs for the default workflow. From Ver 1.5, it contains only the following ones, which will be replaced by Prodigal and Diced in Ver 1.6.
-* [MetaGeneAnnotator](http://metagene.cb.k.u-tokyo.ac.jp/) (© Hideki Noguchi)  
- Redistributed by courtesy of Hideki Noguchi at National Institute of Genetics.
-* [CRT](http://www.room220.com/crt/) (Public domain)
+Up to Ver 1.4, this distribution contained the external programs for the default workflow. From Ver 1.5, it contained only MGA and CRT. From Ver 1.6, **this distribution contains no external programs**: all of them are installed from Bioconda, apt or PyPI (see [Installation](#installation)).
 
 rRNA prediction reimplements [Barrnap](https://github.com/tseemann/barrnap) by Torsten Seemann (GPL-3.0) in Python, written with reference to its source code, and uses its rRNA models (downloaded with `dfast_file_downloader.py --rrna barrnap`). We are grateful to the author.
 
 ## Trouble shoot
 * DBsearch is slow  
-The default aligner GHOSTX is fast but requires a large amount of memory. In our environment, it uses 1.8Gbyte memory per process.  
-If your machine does not have enough memory, decrease the number of CPUs (`--cpu 2` or `--cpu 1`) or use BLASTP instead (`--aligner blastp`). 
+The default aligner GHOSTX is fast but requires about 1.8 Gbyte of memory. From Ver 1.6, GHOSTX and DIAMOND run as one process with `--cpu` threads, so the memory does not grow with the number of CPUs. This requires a GHOSTX built with OpenMP (Bioconda `ghostx` 1.3.7 build 3 or later); older builds ignore the thread option and run slower.  
+If your machine does not have enough memory, use DIAMOND (`--aligner diamond`, about 1.2 Gbyte) or BLASTP (`--aligner blastp`). 
 * GLIBCXX not found error on Linux system  
 If your system is old, DFAST will abort with the message "/usr/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.15' not found".  
 In this case, you need to update "libstdc++.so.6". (You might need to install a newer version of GCC.)  
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
 
 ## How to run DFAST within a Docker container.
-The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags). The image includes all the external programs (also DIAMOND for `--aligner diamond`).  
+The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags). The Dockerhub image includes all the external programs (Prodigal, Diced and MGA for `--use_mga`; also DIAMOND for `--aligner diamond`). The quay.io image includes them from Ver 1.6.0 on Bioconda.  
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```
@@ -333,13 +334,13 @@ docker run --rm -v PATH/TO/DB:/dfast_db -v PATH/TO/YOUR/DATA:/data nigyta/dfast_
 ```
 
 ### Building the Docker image
-The `Dockerfile` is located at the repository root and uses the local source tree (copied via `COPY`, so your local changes are reflected). A `.dockerignore` keeps the build context small by excluding reference data and non-Linux binaries.
+The `Dockerfile` is located at the repository root and uses the local source tree (copied via `COPY`, so your local changes are reflected). A `.dockerignore` keeps the build context small by excluding reference data and development files.
 ```
 git clone https://github.com/nigyta/dfast_core
 cd dfast_core
 docker build -t nigyta/dfast_core .
 ```
-The image is pinned to `linux/amd64` because the binaries still bundled under `bin/Linux` (MGA) are x86_64. The external programs are installed with apt, except for rpsbproc (NCBI), GHOSTX (built from source) and DIAMOND (official binary).
+The image is pinned to `linux/amd64` because the MGA binary (taken from the Bioconda `metagene_annotator` package, linux-64 only) is x86_64. The external programs are installed with apt, except for Diced (pip), MGA (Bioconda package), rpsbproc (NCBI), GHOSTX (built from source) and DIAMOND (official binary). Java is not needed.
 
 Images on Docker Hub are built automatically: pushing a version tag (e.g. `1.4.0`) to the repository triggers a GitHub Actions workflow ([.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)) that builds the image and pushes both `nigyta/dfast_core:<tag>` and `nigyta/dfast_core:latest`.
 
