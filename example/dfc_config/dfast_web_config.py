@@ -224,23 +224,64 @@ class Config:
         },
         {
             # preliminary implementation
-            "component_name": "NuclSearch",
+            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--amr' (unless the NuclSearch entry of the same database below is enabled).
+            "component_name": "NuclMapping",
             "enabled": False,
             "options": {
-                "skipAnnotatedFeatures": False,
-                "evalue_cutoff": 1e-6,
-                "qcov_cutoff": 90,
-                "scov_cutoff": 90,
+                "database": "@@DB_ROOT@@/card/CARD",
+                "db_name": "CARD",
                 "pident_cutoff": 90,
-                "aligner": "blastn",
-                "aligner_options": {},  # Normally, leave this empty. (Current version does not use this option.)
-                "database": "/work/db/PLASMID_DB",
-                "db_name": "PLASMID_DB",
-                "db_type": "PLASMID_DB",  # Must be either of auto/card/vfdb
+                "evalue_cutoff": 1e-10,
+                "overlap_tolerance": 30,
+                "transl_table": 11,
+                "blast_task": "dc-megablast",
+                "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
+                "overlap_fraction": 0.2,  # a same-strand predicted CDS is removed only if the overlap is >= this fraction of its length
+                "truncated_fraction": 0.7,  # a late frameshift/stop leaving an ORF of >= this fraction of the reference gives a truncated CDS
+                "aligner_options": "",
             },
         },
         {
             # preliminary implementation
+            # Maps full-length CARD/VFDB references onto the genome. Enabled by '--amr' (unless the NuclSearch entry of the same database below is enabled).
+            "component_name": "NuclMapping",
+            "enabled": False,
+            "options": {
+                "database": "@@DB_ROOT@@/vfdb/VFDB",
+                "db_name": "VFDB",
+                "pident_cutoff": 90,
+                "evalue_cutoff": 1e-10,
+                "overlap_tolerance": 30,
+                "transl_table": 11,
+                "blast_task": "dc-megablast",
+                "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
+                "overlap_fraction": 0.2,  # a same-strand predicted CDS is removed only if the overlap is >= this fraction of its length
+                "truncated_fraction": 0.7,  # a late frameshift/stop leaving an ORF of >= this fraction of the reference gives a truncated CDS
+                "aligner_options": "",
+            },
+        },
+        {
+            # preliminary implementation
+            # Maps a custom nucleotide reference (prepared in the PLASMID_DB format of reference_util_for_nucl.py) onto the genome.
+            "component_name": "NuclMapping",
+            "enabled": False,
+            "options": {
+                "database": "/work/db/PLASMID_DB",
+                "db_name": "PLASMID_DB",
+                "pident_cutoff": 90,
+                "evalue_cutoff": 1e-10,
+                "overlap_tolerance": 30,
+                "transl_table": 11,
+                "blast_task": "dc-megablast",
+                "pseudogene_pident_cutoff": 95,  # identity (%) a reference needs to call a pseudogene; below it the mapping only annotates
+                "overlap_fraction": 0.2,  # a same-strand predicted CDS is removed only if the overlap is >= this fraction of its length
+                "truncated_fraction": 0.7,  # a late frameshift/stop leaving an ORF of >= this fraction of the reference gives a truncated CDS
+                "aligner_options": "",
+            },
+        },
+        {
+            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--amr'). Not used by default;
+            # set 'enabled' to True here to use it instead of the NuclMapping entry of the same database.
             "component_name": "NuclSearch",
             "enabled": False,
             "options": {
@@ -257,7 +298,8 @@ class Config:
             },
         },
         {
-            # preliminary implementation
+            # Searches the nucleotide sequences of the predicted CDSs (the previous method of '--amr'). Not used by default;
+            # set 'enabled' to True here to use it instead of the NuclMapping entry of the same database.
             "component_name": "NuclSearch",
             "enabled": False,
             "options": {
@@ -409,6 +451,17 @@ class Config:
                 "rpsbproc_data": "@@DB_ROOT@@/cdd/rpsbproc_data",  # Annotation data from the same CDD release as the database.
             },
         },
+        {
+            # DefenseFinder to detect anti-phage defense systems (and anti-defense systems with "-a"). Enabled by "--amr".
+            # Models are downloaded by `dfast_file_downloader.py --defensefinder` (license: CC BY-NC-SA 4.0).
+            "component_name": "DefenseFinder",
+            "enabled": False,
+            "options": {
+                # "cpu": 2,  # Uncomment this to set the component-specific number of CPUs, or the global setting is used.
+                "models_dir": "@@DB_ROOT@@/defense_finder_models",
+                "cmd_options": "-a",
+            },
+        },
 
     ]
 
@@ -432,6 +485,16 @@ class Config:
             "options": {
                 "db_path": "@@DB_ROOT@@/mefinder_db",
                 "cmd_options": "--min-coverage 0.95",
+            },
+        },
+        {
+            # IntegronFinder to detect integrons (MGEdb used by MobileElementFinder has no integrons). Enabled by "--mge".
+            "tool_name": "IntegronFinder",
+            "target": "feature",
+            "enabled": False,
+            "options": {
+                # "--local-max" finds more attC sites (e.g. superintegrons) but is slower.
+                "cmd_options": "",
             },
         },
     ]

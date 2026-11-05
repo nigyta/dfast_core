@@ -90,8 +90,8 @@ group_workflow.add_argument("--no_trna", help="Disable tRNA prediction", action=
 group_workflow.add_argument("--no_crispr", help="Disable CRISPR prediction", action="store_true")
 # Preliminary implementation for GFF parsing
 group_workflow.add_argument("--metagenome", help="Set options of MGA/Prodigal for metagenome contigs", action="store_true")
-group_workflow.add_argument("--amr", help="[Preliminary implementation] Enable AMR/VFG annotation and identification of plasmid-derived contigs", action="store_true")
-group_workflow.add_argument("--mge", help="[Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder", action="store_true")
+group_workflow.add_argument("--amr", help="[Preliminary implementation] Enable AMR/VFG annotation (CARD/VFDB references mapped onto the genome), identification of plasmid-derived contigs and detection of (anti-)defense systems with DefenseFinder", action="store_true")
+group_workflow.add_argument("--mge", help="[Preliminary implementation] Enable mobile genetic element detection with MobileElementFinder and IntegronFinder", action="store_true")
 group_workflow.add_argument("--gff", help="[Preliminary implementation] Read GFF to import structural annotation. Ignores --use_original_name, --sort_sequence, --fix_origin.")
 
 
@@ -267,6 +267,7 @@ if args.metagenome:
 
 if args.amr:
     enable_amr(config)
+
 
 if args.mge:
     enable_mge(config)

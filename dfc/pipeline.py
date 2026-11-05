@@ -19,6 +19,7 @@ from dfc.utils.genome_stat import GenomeStat
 from dfc import dfast_version
 from dfc.utils.summarize_pseudo import summarize_pseudo
 from dfc.utils.summarize_amr import summarize_amr
+from dfc.utils.summarize_accessory import summarize_accessory
 
 class Pipeline():
     def __init__(self, config, logger):
@@ -68,6 +69,7 @@ class Pipeline():
         # self.genbank.create_submission_file() # deprecated as of 2024.May
         summarize_pseudo(self.genome, os.path.join(self.config.WORK_DIR, "pseudogene_summary.tsv"))
         summarize_amr(self.genome, self.config.WORK_DIR, dict_contig_annotation_report, os.path.join(self.config.WORK_DIR, "amr_summary.tsv"))
+        summarize_accessory(self.genome, self.config.WORK_DIR, self.ca.summaryRows(), os.path.join(self.config.WORK_DIR, "accessory_summary.tsv"))
 
         if self.config.DEBUG:
             self.genome.to_pickle(os.path.join(self.config.WORK_DIR, "genome.pickle"))

@@ -1,0 +1,4 @@
+replicon	hit_id	gene_name	hit_pos	model_fqn	sys_id	sys_loci	locus_num	sys_wholeness	sys_score	sys_occ	hit_gene_ref	hit_status	hit_seq_len	hit_i_eval	hit_score	hit_profile_cov	hit_seq_cov	hit_begin_match	hit_end_match	counterpart	used_in	type	subtype	activity
+R0001	R0001_00001	MazEF__MazE	9	defense-finder-models/DefenseFinder/MazEF/MazEF	protein_MazEF_1	1	1	1.0	2.0	1	MazEF__MazE	mandatory	85	1.1e-13	43.4	0.762	0.718	4	64			MazEF	MazEF	Defense
+R0001	R0001_00002	MazEF__MazF	10	defense-finder-models/DefenseFinder/MazEF/MazEF	protein_MazEF_1	1	1	1.0	2.0	1	MazEF__MazF	mandatory	110	1.2e-16	52.9	0.91	0.973	2	108			MazEF	MazEF	Defense
+R0001	R0001_00003	klca	46	defense-finder-models/ADF/Anti_RM/ardb_klca_acric11	protein_ardb_klca_acric11_2	1	1	1.0	0.8	1	ardb	mandatory	146	2.3e-49	159.4	0.828	0.966	6	146			Anti_RM	ardb_klca_acric11	Antidefense

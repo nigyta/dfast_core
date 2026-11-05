@@ -1,4 +1,4 @@
-from dfc.models.hit import ProteinHit, PseudoGene
+from dfc.models.hit import ProteinHit, NuclHit, PseudoGene
 
 header = ["# locus_id", "locus_tag", "location", "classification", "internal_stop", "indel",
           "ref_id", "description", "query_cov", "ref_cov", "identity"]
@@ -14,7 +14,7 @@ def summarize_pseudo(genome, output_file):
             locus_tag = feature.qualifiers.get("locus_tag", ["-"])[0]
             assert len(pseudogene_hits) == 1
             pseudogene = pseudogene_hits[0]
-            protein_hits = [h for h in hits if isinstance(h, ProteinHit) and h.id == pseudogene.ref_id ]
+            protein_hits = [h for h in hits if isinstance(h, (ProteinHit, NuclHit)) and h.id == pseudogene.ref_id ]
             # assert len(protein_hits) == 1
             p_hit = protein_hits[0]
             # print(locus_tag)
@@ -40,9 +40,12 @@ def summarize_pseudo(genome, output_file):
                 classification.append("internal_stop_codon")
             if (not classification) and "partial hit" in p_hit.flag:
                 classification.append("partial")
+            if not classification:  # pseudogenes from NuclMapping that have neither frameshift nor internal stop
+                notes = feature.qualifiers.get("note", [])
+                classification = [c for note, c in (("stop codon lost", "stop_codon_lost"), ("no start codon", "no_start_codon")) if note in notes]
             if classification:
                 classification = ",".join(classification)
-                ret = [feature.id, locus_tag, loc_string, classification, internal_stop, indel, p_hit.id, p_hit.description, round(p_hit.q_cov, 1), round(p_hit.s_cov, 1), round(p_hit.identity, 1)]
+                ret = [feature.id, locus_tag, loc_string, classification, internal_stop, indel, p_hit.id, p_hit.model.to_dict()["product"] if isinstance(p_hit, NuclHit) else p_hit.description, round(p_hit.q_cov, 1), round(p_hit.s_cov, 1), round(p_hit.identity, 1)]
                 ret = list(map(str, ret))
                 # print("\t".join(map(str, ret)))
                 output_buffer.append(ret)
