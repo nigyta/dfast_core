@@ -11,7 +11,7 @@ from Bio.SeqFeature import FeatureLocation
 from dfc.components.DefenseFinder import DefenseFinder
 from dfc.models.bio_feature import ExtendedFeature
 from dfc.models.hit import DefenseHit
-from dfc.utils.config_util import load_config, enable_amr, enable_mge
+from dfc.utils.config_util import load_config, enable_modules
 
 APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(os.path.dirname(__file__), "data", "defense_finder_genes.tsv")
@@ -79,7 +79,7 @@ def _enabled(key, name, settings):
     return [s["enabled"] for s in settings if s.get(key) == name]
 
 
-def test_enable_amr_and_mge(tmp_path, monkeypatch):
+def test_enable_modules_defense_and_integron(tmp_path, monkeypatch):
     config = load_config(APP_ROOT, os.path.join(APP_ROOT, "dfc", "default_config.py"))
     assert _enabled("component_name", "DefenseFinder", config.FUNCTIONAL_ANNOTATION) == [False]
     assert _enabled("tool_name", "IntegronFinder", config.CONTIG_ANNOTATION) == [False]
@@ -87,24 +87,21 @@ def test_enable_amr_and_mge(tmp_path, monkeypatch):
     for s in config.FUNCTIONAL_ANNOTATION:
         if s.get("component_name") == "DefenseFinder":
             s["options"]["models_dir"] = str(tmp_path)
-    enable_amr(config)
-    enable_mge(config)
+    enable_modules(config, ["defense", "integron"])
     assert _enabled("component_name", "DefenseFinder", config.FUNCTIONAL_ANNOTATION) == [True]
     assert _enabled("tool_name", "IntegronFinder", config.CONTIG_ANNOTATION) == [True]
 
 
-def test_enable_amr_and_mge_skip_missing_tools(tmp_path, monkeypatch, caplog):
-    # --amr/--mge keep working without DefenseFinder/IntegronFinder or the models
+def test_all_skips_missing_defense_and_integron(tmp_path, monkeypatch, caplog):
+    # --modules all keeps working without DefenseFinder/IntegronFinder or the models
     config = load_config(APP_ROOT, os.path.join(APP_ROOT, "dfc", "default_config.py"))
     monkeypatch.setattr(shutil, "which", lambda cmd: None if cmd == "integron_finder" else "/usr/bin/" + cmd)
     for s in config.FUNCTIONAL_ANNOTATION:
         if s.get("component_name") == "DefenseFinder":
             s["options"]["models_dir"] = str(tmp_path / "missing")
     with caplog.at_level(logging.WARNING):
-        enable_amr(config)
-        enable_mge(config)
+        enable_modules(config, ["all"])
     assert _enabled("component_name", "DefenseFinder", config.FUNCTIONAL_ANNOTATION) == [False]
     assert _enabled("tool_name", "IntegronFinder", config.CONTIG_ANNOTATION) == [False]
-    assert _enabled("tool_name", "MobileElementFinder", config.CONTIG_ANNOTATION) == [True]
-    assert "dfast_file_downloader.py --defensefinder" in caplog.text
+    assert "dfast_file_downloader.py --modules defense" in caplog.text
     assert "conda install -c bioconda integron_finder" in caplog.text
