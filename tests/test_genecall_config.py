@@ -1,6 +1,6 @@
 import os
 import pytest
-from dfc.utils.config_util import (load_config, enable_mga, enable_metagenome_mode, set_genetic_code,
+from dfc.utils.config_util import (load_config, enable_mga, enable_prodigal, enable_metagenome_mode, set_genetic_code,
                                    check_genetic_code)
 from dfc.utils import fix_origin
 from tests.test_overlap_rules import _run, _cds, _gap
@@ -86,3 +86,22 @@ def test_prodigal_cds_across_gap_removed():
 
 def test_fix_origin_config_uses_prodigal():
     assert fix_origin.Config.STRUCTURAL_ANNOTATION[0]["tool_name"] == "Prodigal"
+
+
+def test_use_prodigal_reselects_prodigal_in_mga_config():
+    # a 1.5-era custom config with MGA enabled: --use_prodigal (enable_prodigal) must still switch to Prodigal
+    config = _config()
+    enable_mga(config)
+    enable_prodigal(config)
+    tools = _cds_tools(config)
+    assert tools["Prodigal"]["enabled"] and not tools["MGA"]["enabled"]
+
+
+def test_config_without_target_keys():
+    config = _config("example/test_config.py")
+    enable_mga(config)
+    tools = _cds_tools(config)
+    assert tools["MGA"]["enabled"] and not tools["Prodigal"]["enabled"]
+    set_genetic_code(config, 25)
+    with pytest.raises(SystemExit):
+        check_genetic_code(config)

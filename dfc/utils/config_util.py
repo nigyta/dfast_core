@@ -230,9 +230,17 @@ def set_rrna_kingdoms(config, kingdoms):
     logger.info("Barrnap will search rRNA models of {}.".format(", ".join(kingdoms)))
 
 
+CDS_TOOLS = ("MGA", "Prodigal", "GeneMarkS2")
+
+
+def _is_cds_tool(setting):
+    # some configs (e.g. example/test_config.py) have no "target" keys, so also match by tool name
+    return setting.get("target", "") == "CDS" or setting.get("tool_name", "") in CDS_TOOLS
+
+
 def _select_CDS_prediction_tool(config, tool_name):
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") == "CDS":
+        if _is_cds_tool(setting):
             if setting.get("tool_name", "") == tool_name:
                 setting["enabled"] = True
             else:
@@ -291,7 +299,8 @@ def set_genetic_code(config, value):
     if value != 11:
         logger.info("Genetic code is set to {}.".format(value))
         for setting in config.STRUCTURAL_ANNOTATION:
-            if "transl_table" in setting["options"]:
+            # CDS tools are included even without a "transl_table" key (MGA in example configs), so check_genetic_code sees it
+            if "transl_table" in setting["options"] or _is_cds_tool(setting):
                 setting["options"]["transl_table"] = value
         for setting in config.FUNCTIONAL_ANNOTATION:
             if setting.get("component_name", "") in ["PseudoGeneDetection", "NuclMapping"]:
@@ -301,7 +310,7 @@ def set_genetic_code(config, value):
 def check_genetic_code(config):
     """Exit if the enabled CDS predictor cannot handle the genetic code: MGA and metagenome mode support table 11 only."""
     for setting in config.STRUCTURAL_ANNOTATION:
-        if setting.get("target", "") != "CDS" or not setting.get("enabled"):
+        if not _is_cds_tool(setting) or not setting.get("enabled"):
             continue
         options = setting.get("options", {})
         tool_name = setting.get("tool_name", "")
