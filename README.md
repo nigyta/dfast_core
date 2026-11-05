@@ -321,7 +321,7 @@ In this case, you need to update "libstdc++.so.6". (You might need to install a 
 Please check the file as following: `strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX`
 
 ## How to run DFAST within a Docker container.
-The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags). The image includes all the external programs (Prodigal, Diced and MGA for `--use_mga`; also DIAMOND for `--aligner diamond`).  
+The Docker container image is available from [Dockerhub:nigyta/dtast_core](https://hub.docker.com/r/nigyta/dfast_core/tags) and [quay.io:biocontainers/dfast](https://quay.io/repository/biocontainers/dfast?tab=tags). The Dockerhub image includes all the external programs (Prodigal, Diced and MGA for `--use_mga`; also DIAMOND for `--aligner diamond`). The quay.io image includes them from Ver 1.6.0 on Bioconda.  
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```

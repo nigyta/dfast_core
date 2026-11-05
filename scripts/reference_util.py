@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import sys
 import os
-# import platform
 from logging import getLogger, DEBUG, INFO, StreamHandler
 
 app_root = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))

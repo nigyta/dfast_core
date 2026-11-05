@@ -1,7 +1,9 @@
 # FAQ
 
-## 1. How to use MGA (MetaGeneAnnotator) to predict CDSs
-Prodigal is the default CDS prediction tool from Ver 1.6 (MGA up to Ver 1.5), and `--use_prodigal` is no longer needed (it only logs a warning).
+## 1. CDS prediction: Prodigal (default) and MGA
+Prodigal is the default CDS prediction tool from Ver 1.6 (MGA up to Ver 1.5), and `--use_prodigal` is no longer needed (it still selects Prodigal and logs a warning).
+
+To use MGA (MetaGeneAnnotator) instead:
 1. Make sure that 'mga' is in your `PATH`, e.g. install the Bioconda package `metagene_annotator` (linux-64 only).  
 2. Set the option `--use_mga`.  
     When enabled, MGA will be used instead of the default prediction tool (Prodigal).

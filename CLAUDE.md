@@ -21,7 +21,7 @@ python -m pytest -q tests/test_mag.py::test_boolean_render_true
 ./dfast ... --debug                               # keep temp files, dump genome.pickle
 ```
 
-There is no build step and no linter config. The `dfast` script resolves `APP_ROOT` from its own real path, so it must stay at the repo root next to `dfc/`, `bin/`, and `db/`.
+There is no build step and no linter config. The `dfast` script resolves `APP_ROOT` from its own real path, so it must stay at the repo root next to `dfc/` and `db/`.
 
 ## Architecture
 

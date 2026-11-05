@@ -68,7 +68,6 @@ http://eddylab.org/software.html
 6. Diced**  
 CRISPR prediction tool (a reimplementation of MinCED; Python package, version 0.1.4 or later: `pip install "diced>=0.1.4"`). Since Ver 1.6 it replaces CRT, so Java is no longer needed.
 DFAST runs it with the CRT parameters (repeat length 19-38, spacer length 19-48) and reports the most frequent repeat sequence as `rpt_unit_seq`.
-`--use_rnammer` (RNAmmer) has also been removed in Ver 1.6; use the default rRNA prediction.  
 https://github.com/althonos/diced
 7. Gap annotator  
 Gap annotator is not an external program, but works as other programs do.
@@ -82,6 +81,8 @@ Please see this [page](https://www.ncbi.nlm.nih.gov/genbank/wgs_gapped/) to subm
 If you want to use programs not included in the DFAST distribution, 
 you need to install them and put the executables or links in your PATH. 
 Programs that are not on PATH cannot be used.
+
+Note: CRT (Java) and RNAmmer (`--use_rnammer`) were removed in Ver 1.6. Use the Diced entry for CRISPRs and the default rRNA prediction.
 
 ## Feature optimization
 DFAST cleans up unwanted features in two steps: right after structural annotation, and after functional annotation (just before locus_tags are assigned, so removed features leave no gaps in the numbering).

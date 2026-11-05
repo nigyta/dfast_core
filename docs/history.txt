@@ -12,6 +12,8 @@ CRISPR prediction: Diced (>= 0.1.4, Python package; 'pip install "diced>=0.1.4"'
 
 '--use_rnammer' and RNAmmer support have been removed. Use the default rRNA prediction (Barrnap method; '--rrna_model rfam' and '--rrna_kingdom bac arc' for more coverage).
 
+Custom configuration files written for Ver 1.5: disabled CRT and RNAmmer entries are now ignored, but DFAST stops with an error when they are enabled. Replace the CRT entry with the Diced entry of dfc/default_config.py and enable Prodigal instead of MGA.
+
 GHOSTX (the default aligner) runs as one process with '--cpu' threads, like DIAMOND, so the memory no longer grows with the number of CPUs (7.5 GB to 2.3 GB with '--cpu 4' in a test) and the results are identical. This needs GHOSTX built with OpenMP (Bioconda 'ghostx' 1.3.7 build 3 or later); older builds ignore the thread option and run slower.
 
 Docker image: Prodigal (apt), Diced (pip) and MGA (extracted from the Bioconda package) are installed and Java is removed. The image is still linux/amd64 because the Bioconda MGA build is x86_64 only.

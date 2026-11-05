@@ -71,9 +71,6 @@ if not any([args.card, args.vfdb]):
     exit()
 
 
-
-
-
 def get_latest_card_version():
     import re
     url = "https://card.mcmaster.ca/download"
