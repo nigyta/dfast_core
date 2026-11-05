@@ -84,8 +84,8 @@ def test_all_skips_missing(tmp_path, no_tools, caplog):
 
 def test_explicit_missing_exits(tmp_path, tools, caplog):
     config = _config(tmp_path)
-    config_util_models = _entry(config, "DefenseFinder")["options"]["models_dir"]
-    os.rmdir(config_util_models)
+    models_dir = _entry(config, "DefenseFinder")["options"]["models_dir"]
+    os.rmdir(models_dir)
     with caplog.at_level(logging.INFO), pytest.raises(SystemExit) as e:
         enable_modules(config, ["defense"])
     assert e.value.code == 1
@@ -128,3 +128,26 @@ def test_modules_choices():
     p = subprocess.run([sys.executable, DFAST, "-g", GENOME, "--modules", "foo", "--show_config"],
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     assert p.returncode == 2
+
+
+def _drop_entries(config, name):
+    for settings in (config.FUNCTIONAL_ANNOTATION, config.CONTIG_ANNOTATION):
+        settings[:] = [s for s in settings if name not in (s.get("component_name"), s.get("tool_name"))]
+
+
+@pytest.mark.parametrize("module,name", [("integron", "IntegronFinder"), ("amr", "NuclMapping")])
+def test_missing_config_entry_explicit_exits(tmp_path, tools, caplog, module, name):
+    config = _config(tmp_path)
+    _drop_entries(config, name)
+    with caplog.at_level(logging.INFO), pytest.raises(SystemExit):
+        enable_modules(config, [module])
+    assert "The config has no {}".format(name) in caplog.text
+    assert "reference files" not in caplog.text
+
+
+def test_missing_config_entry_all_skips(tmp_path, tools, caplog):
+    config = _config(tmp_path)
+    _drop_entries(config, "IntegronFinder")
+    with caplog.at_level(logging.INFO):
+        assert enable_modules(config, ["all"]) == [m for m in MODULES if m != "integron"]
+    assert any(r.levelno == logging.WARNING and "The config has no IntegronFinder entry" in r.message for r in caplog.records)

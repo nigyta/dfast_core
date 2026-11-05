@@ -353,17 +353,21 @@ _MODULE_ENTRIES = {"amr": ("NuclMapping", "CARD"), "vf": ("NuclMapping", "VFDB")
                    "defense": ("DefenseFinder", None)}
 
 
-def _module_entry(config, module, kind="entry"):
-    """Return the config entry of a module (kind="entry") or the enabled NuclSearch entry of the same database (kind="search")."""
-    name, db_name = _MODULE_ENTRIES[module]
-    if kind == "search":
-        name = "NuclSearch"
+def _find_entry(config, name, db_name):
     for setting in config.FUNCTIONAL_ANNOTATION + config.CONTIG_ANNOTATION:
         if name in (setting.get("component_name"), setting.get("tool_name")) \
                 and (db_name is None or setting.get("options", {}).get("db_name") == db_name):
-            if kind == "entry" or setting.get("enabled"):
-                return setting
-    return None
+            yield setting
+
+
+def _module_entry(config, module):
+    """Return the config entry of a module, or None."""
+    return next(_find_entry(config, *_MODULE_ENTRIES[module]), None)
+
+
+def _nuclsearch_entry(config, module):
+    """Return the enabled NuclSearch entry of the database of amr/vf, or None."""
+    return next((s for s in _find_entry(config, "NuclSearch", _MODULE_ENTRIES[module][1]) if s.get("enabled")), None)
 
 
 def _plasmidfinder_available():
@@ -374,37 +378,39 @@ def _plasmidfinder_available():
 def module_unavailable(config, module):
     """Return why a module cannot run (what is missing and how to install it), or None if it can."""
     name, db_name = _MODULE_ENTRIES[module]
-    options = (_module_entry(config, module) or {}).get("options", {})
-    problems = []
-    if module in ("amr", "vf"):
+    if module in ("amr", "vf") and _nuclsearch_entry(config, module):
         # ponytail: a CARD/VFDB NuclSearch entry enabled in the config is used instead of the mapping; its reference
         # files are not checked here, NuclSearch reports them when it starts.
-        if _module_entry(config, module, "search"):
-            return None
-        missing = [f for f in (options.get("database", "") + ".nucl.ref", options.get("database", "") + ".nucl.fasta")
-                   if not os.path.exists(f)]
+        return None
+    entry = _module_entry(config, module)
+    if entry is None:
+        return "The config has no {0} entry.".format(name + (" " + db_name if db_name else ""))
+    options = entry.get("options", {})
+    if module in ("amr", "vf"):
+        database = options.get("database", "")
+        missing = [f for f in (database + ".nucl.ref", database + ".nucl.fasta") if not os.path.exists(f)]
         if missing:
-            problems.append("{0} reference files are not found ({1}). Download them with "
-                            "'dfast_file_downloader.py --modules {2}' or 'scripts/reference_util_for_nucl.py --{3}'."
-                            .format(db_name, ", ".join(missing), module, db_name.lower()))
-        return " ".join(problems) or None
+            return ("{0} reference files are not found ({1}). Download them with 'dfast_file_downloader.py --modules {2}' "
+                    "or 'scripts/reference_util_for_nucl.py --{3}'.".format(db_name, ", ".join(missing), module, db_name.lower()))
+        return None
+    problems = []
+    data = None  # data directory the module needs, if any
     if module == "plasmid":
         if not _plasmidfinder_available():
             problems.append("PlasmidFinder 3.x is not found. Install it with 'pip install plasmidfinder'.")
-        data, option = options.get("db_path", ""), "db_path"
+        data = options.get("db_path", "")
     elif module == "mge":
         if not shutil.which("mefinder"):
             problems.append("'mefinder' is not found. Install it with 'pip install MobileElementFinder'.")
-        data, option = options.get("db_path", ""), "db_path"
+        data = options.get("db_path", "")
     elif module == "integron":
         if not shutil.which("integron_finder"):
             problems.append("'integron_finder' is not found. Install it with 'conda install -c bioconda integron_finder'.")
-        return " ".join(problems) or None
     else:
         if not shutil.which("defense-finder"):
             problems.append("'defense-finder' is not found. Install it with 'conda install -c bioconda defense-finder'.")
-        data, option = options.get("models_dir", ""), "models_dir"
-    if not os.path.exists(data):
+        data = options.get("models_dir", "")
+    if data is not None and not os.path.exists(data):
         problems.append("The data of {0} are not found in '{1}'. Run 'dfast_file_downloader.py --modules {2}' to download them."
                         .format(name, data, module))
     return " ".join(problems) or None
@@ -429,7 +435,7 @@ def enable_modules(config, names):
     if failed:
         exit(1)
     for module in enabled:
-        if module in ("amr", "vf") and _module_entry(config, module, "search"):
+        if module in ("amr", "vf") and _nuclsearch_entry(config, module):
             logger.info("{} is searched with NuclSearch as set in the config, not mapped with NuclMapping.".format(_MODULE_ENTRIES[module][1]))
         else:
             _module_entry(config, module)["enabled"] = True
