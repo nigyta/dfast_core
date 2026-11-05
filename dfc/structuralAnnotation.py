@@ -6,7 +6,7 @@ import shutil
 from logging import getLogger
 from concurrent import futures
 from Bio.SeqFeature import ExactPosition, FeatureLocation
-from Bio.Data.CodonTable import TranslationError
+from Bio.Data.CodonTable import TranslationError, unambiguous_dna_by_id
 from .tools.mga import MGA
 from .tools.barrnap import Barrnap
 from .tools.aragorn import Aragorn
@@ -32,6 +32,11 @@ TOOLS = {
     "RNAmmer": RNAmmer,
     "GFF_import": GFFimporter,
 }
+
+
+def start_codons_of(transl_table):
+    """Return the set of start codons defined by the translation table (int or numeric str)."""
+    return set(unambiguous_dna_by_id[int(transl_table)].start_codons)
 
 
 class StructuralAnnotation(object):
@@ -96,11 +101,6 @@ class StructuralAnnotation(object):
                 transl_table = tool.transl_table
             else:
                 transl_table = feature.qualifiers.get("transl_table", [11])[0]
-            if transl_table == 4:
-                start_codons = ["TTA", "TTG", "CTG", "ATT", "ATC", "ATA", "GTG"]  # and ATG  for transl_table 4
-            else:
-                start_codons = ["TTG", "CTG", "ATT", "ATC", "ATA", "GTG"]  # and ATG   for transl_table 11
-
             if right_offset == 0:
                 if isinstance(feature.location.start, ExactPosition) and isinstance(feature.location.end,
                                                                                     ExactPosition):
@@ -129,7 +129,7 @@ class StructuralAnnotation(object):
                 translation = nucseq[offset:right_offset].translate(table=transl_table)  # , stop_symbol="")
             translation = str(translation)
             first_codon = str(nucseq[offset:offset + 3]).upper()
-            if first_codon in start_codons:
+            if first_codon in start_codons_of(transl_table):
                 translation = "M" + translation[1:]
             return translation
 
