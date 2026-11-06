@@ -1,4 +1,4 @@
-Ver 1.6.0 (unreleased) ---------------------------------------
+Ver 1.6.0 (20261106) ---------------------------------------
 DFAST no longer bundles any executables and no longer needs Java: the Roadmap of Ver 1.5.0 is done. All external programs are installed from Bioconda, apt or PyPI. The 'bin' directory has been removed.
 
 MGA (CDS prediction) and CRT (CRISPR prediction) have been replaced by Prodigal and Diced in consideration of long-term maintainability.
