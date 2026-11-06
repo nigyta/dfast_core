@@ -14,7 +14,7 @@ python -m pytest -q tests
 python -m pytest -q tests/test_mag.py::test_boolean_render_true
 # 5 tests in tests/test_dfast_mge.py fail unless `mefinder` (MobileElementFinder) is on PATH.
 
-# Smoke run (needs the default protein DB: scripts/dfast_file_downloader.py --protein dfast --rrna barrnap)
+# Smoke run (needs the default protein DB: scripts/dfast_file_downloader.py --protein dfast --rrna rfam)
 ./dfast --config example/test_config.py          # writes RESULT_TEST/
 ./dfast -g example/sample.genome.fna -o OUT --force
 ./dfast -g genome.fna --show_config               # print the resolved config and exit
