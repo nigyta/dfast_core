@@ -149,11 +149,11 @@ class Config:
             "enabled": True,
              "options": {
                  # nhmmer searches rRNA profile HMMs in db_dir with the Barrnap method (dfast_file_downloader.py --rrna).
-                 # model: "barrnap" (Barrnap 0.9 models, default) or "rfam" (built from Rfam seed alignments).
-                 "model": "barrnap",
+                 # model: "rfam" (built from Rfam seed alignments, default) or "barrnap" (Barrnap 0.9 models).
+                 "model": "rfam",
                  # kingdoms: prokaryotic models to search, "bac" and/or "arc" (--rrna_kingdom). With both,
                  # overlapping hits compete by bit score.
-                 "kingdoms": ["bac"],
+                 "kingdoms": ["bac", "arc"],
                  # check_eukaryotic: also search the euk models as a contamination check. 18S/28S hits that
                  # outscore the prokaryotic models become misc_feature ("possible contamination").
                  "check_eukaryotic": True,

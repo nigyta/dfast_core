@@ -63,14 +63,15 @@ def rrna_db(tmp_path, monkeypatch):
 
 
 def test_model_selection_and_options(rrna_db):
-    tool = Barrnap(options={"db_dir": rrna_db, "cmd_options": "--reject 0.25 --evalue 1e-5"})
+    tool = Barrnap(options={"db_dir": rrna_db, "model": "barrnap", "kingdoms": ["bac"],
+                            "cmd_options": "--reject 0.25 --evalue 1e-5"})
     assert tool.kingdoms == ["bac", "euk"]  # euk is always searched as a contamination check
     assert tool.hmm_files["bac"].endswith("barrnap_0.9_bac.hmm")
     assert tool.model_label == "BarrnapHmm:0.9"
     assert (tool.params.reject, tool.params.lencutoff, tool.params.evalue) == (0.25, 0.8, 1e-5)
     cmd = tool.getCommand()
     assert cmd[:5] == ["nhmmer", "--cpu", "1", "-E", "1e-05"] and cmd[-2] == tool.hmm_files["bac"]
-    tool = Barrnap(options={"db_dir": rrna_db, "model": "rfam", "kingdoms": ["bac", "arc"]})
+    tool = Barrnap(options={"db_dir": rrna_db})  # defaults since Ver 1.6: Rfam models, bac and arc
     assert tool.kingdoms == ["bac", "arc", "euk"]
     assert tool.hmm_files["euk"].endswith("Rfam_15.1_euk.hmm") and tool.model_label == "Rfam:15.1"
     assert tool.getCommand("arc")[-2].endswith("Rfam_15.1_arc.hmm") and tool.tblout("arc").endswith("Barrnap.arc.txt")

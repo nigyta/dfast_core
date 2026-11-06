@@ -53,9 +53,9 @@ http://metagene.nig.ac.jp
 rRNA prediction by the method of Barrnap: DFAST runs `nhmmer` (HMMER) against rRNA profile HMMs and applies Barrnap's length rules.
 From Ver 1.5, Barrnap itself is no longer needed: DFAST reimplements it in Python (`dfc/tools/barrnap.py`), written with reference to
 the source code of Barrnap 0.8 by Torsten Seemann (GPL-3.0). We are grateful to the author; please also acknowledge Barrnap when you use the rRNA predictions.
-The models are not bundled. `dfast_file_downloader.py --rrna barrnap` downloads the Barrnap 0.9 models (default),
-and `--rrna rfam` builds models from Rfam seed alignments (`dfast --rrna_model rfam`). Models for bacteria (bac, default), archaea (arc)
-and eukaryotes (euk) are prepared. `--rrna_kingdom` chooses the prokaryotic models (bac and/or arc). The euk models are always searched as a contamination check
+The models are not bundled. `dfast_file_downloader.py --rrna rfam` builds models from Rfam seed alignments (default from Ver 1.6),
+and `--rrna barrnap` downloads the Barrnap 0.9 models (`dfast --rrna_model barrnap`, the default up to Ver 1.5). Models for bacteria (bac),
+archaea (arc) and eukaryotes (euk) are prepared. `--rrna_kingdom` chooses the prokaryotic models (default: both bac and arc). The euk models are always searched as a contamination check
 (`check_eukaryotic` in the configuration). Overlapping hits of the same subunit from different kingdoms compete and the best bit score wins
 (as in the clan competition of Rfam); eukaryotic 18S/28S rRNAs that win are reported as possible contamination (see Feature optimization).  
 https://github.com/tseemann/barrnap

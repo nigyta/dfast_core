@@ -3,7 +3,7 @@ DFAST is a flexible and customizable pipeline for prokaryotic genome annotation 
 The stand-alone version of DFAST is also refered to as DFAST-core to differentiate it from its on-line version.  
 For inquiry and request, please contact us at `dfast @ nig.ac.jp`.
 
-> **Note on Ver 1.5 and 1.6:** Up to Ver 1.4, DFAST came with the external programs for the default workflow. **From Ver 1.5, they are no longer bundled**: install BLAST+, rpsbproc, HMMER, LAST, Aragorn and GHOSTX from Bioconda or apt (see [Installation](#installation)). Ver 1.5 keeps the results compatible with earlier versions as far as possible, while some reference data are updated; when updating from Ver 1.4, run `dfast_file_downloader.py --rrna barrnap --cdd Cog --hmm NCBIfam`. **Ver 1.6 completes the switch**: MGA is replaced by Prodigal for CDS prediction (MGA is still available with `--use_mga`) and CRT by Diced for CRISPR detection. DFAST no longer bundles any executables and no longer needs Java. **CDS predictions change from Ver 1.5**, because Prodigal is the default CDS predictor. See [docs/history.txt](docs/history.txt) for details.
+> **Note on Ver 1.5 and 1.6:** Up to Ver 1.4, DFAST came with the external programs for the default workflow. **From Ver 1.5, they are no longer bundled**: install BLAST+, rpsbproc, HMMER, LAST, Aragorn and GHOSTX from Bioconda or apt (see [Installation](#installation)). Ver 1.5 keeps the results compatible with earlier versions as far as possible, while some reference data are updated; when updating from Ver 1.4, run `dfast_file_downloader.py --rrna barrnap --cdd Cog --hmm NCBIfam`. **Ver 1.6 completes the switch**: MGA is replaced by Prodigal for CDS prediction (MGA is still available with `--use_mga`) and CRT by Diced for CRISPR detection. DFAST no longer bundles any executables and no longer needs Java. **CDS predictions change from Ver 1.5**, because Prodigal is the default CDS predictor. The default rRNA models are now built from Rfam; run `dfast_file_downloader.py --rrna rfam` when updating. See [docs/history.txt](docs/history.txt) for details.
 
 
 ---
@@ -118,10 +118,10 @@ ln -s $DFAST_APP_ROOT/scripts/dfast_file_downloader.py /usr/local/bin/
   By default, database files will be generated into the directory under $DFAST_APP_ROOT/db/. You can also change the location of the directory by specifying either `--dbroot` option or `DFAST_DB_ROOT` environmental variable.
 1. **Default protein database and rRNA models**
     ```
-    dfast_file_downloader.py --protein dfast --rrna barrnap
+    dfast_file_downloader.py --protein dfast --rrna rfam
     ```
     File downloading and database indexing for GHOSTX and BLASTP will be performed. 
-    `--rrna barrnap` downloads the rRNA profile HMMs (bacteria, archaea and eukaryotes) of [Barrnap](https://github.com/tseemann/barrnap) 0.9, which DFAST searches with `nhmmer` by the Barrnap method. `--rrna rfam` builds models from [Rfam](https://rfam.org/) 15.1 seed alignments with `hmmbuild`, used with `dfast --rrna_model rfam`. Barrnap is no longer bundled; run `--rrna barrnap` when you update DFAST from version 1.4.3 or earlier.
+    `--rrna rfam` builds the rRNA profile HMMs (bacteria, archaea and eukaryotes) from [Rfam](https://rfam.org/) 15.1 seed alignments with `hmmbuild`. DFAST searches them with `nhmmer` by the method of [Barrnap](https://github.com/tseemann/barrnap). They are the default models from Ver 1.6; run `--rrna rfam` when you update DFAST from an earlier version. `--rrna barrnap` downloads the models of Barrnap 0.9, used with `dfast --rrna_model barrnap` (the default up to Ver 1.5).
 2. **HMMer and RPS-BLAST databases (this may take time)**
     ```
     dfast_file_downloader.py --cdd Cog --hmm NCBIfam
@@ -152,7 +152,7 @@ DFAST executables are added to the `PATH` environmental variable, and the softwa
 
 After installing DFAST, download the reference databases:
 ```
-dfast_file_downloader.py --protein dfast --rrna barrnap --cdd Cog --hmm NCBIfam
+dfast_file_downloader.py --protein dfast --rrna rfam --cdd Cog --hmm NCBIfam
 ```
 
 ## <a id="howto"></a>How to run
@@ -205,9 +205,9 @@ DFAST default annotation workflow accepts a genomic FASTA file (draft or complet
 
 ### Structural annotation
 The following tools are run in parallel to predict biological features (e.g. CDSs and RNAs). After that, partial and overlapping features will be cleaned up.
-Partial rRNAs (hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Eukaryotic rRNA models are always searched as a contamination check: they compete with the bacterial (and, with `--rrna_kingdom bac arc`, archaeal) models and the best-scoring one is kept; eukaryotic 18S/28S rRNAs (e.g. host contamination in MAGs) become `misc_feature` ("eukaryotic 18S ribosomal RNA-like sequence, possible contamination") and hypothetical CDSs overlapping them on either strand are removed. Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
+Partial rRNAs (hits aligned to less than 80% of the expected length) are reported as `misc_feature` ("putative rRNA"). rRNAs overlapping an assembly gap are trimmed at the gap and shown as partial (`<`/`>`). Eukaryotic rRNA models are always searched as a contamination check: they compete with the bacterial and archaeal models and the best-scoring one is kept; eukaryotic 18S/28S rRNAs (e.g. host contamination in MAGs) become `misc_feature` ("eukaryotic 18S ribosomal RNA-like sequence, possible contamination") and hypothetical CDSs overlapping them on either strand are removed. Same-strand overlaps rejected by the DDBJ validator (rRNA vs CDS/rRNA, tRNA inside CDS) are resolved by removing the hypothetical CDS, or the RNA when the CDS has a functional product.
 * CDS prediction (Prodigal; MetaGeneAnnotator with `--use_mga`)
-* rRNA prediction (Barrnap method with nhmmer; Barrnap or Rfam models)
+* rRNA prediction (Barrnap method with nhmmer; Rfam or Barrnap models)
 * tRNA/tmRNA prediction (Aragorn)
 * CRISPR prediction (Diced, run with the CRT parameters)
 * Assembly gaps within sequences
@@ -275,9 +275,9 @@ Workflow options:
   --use_genemarks2 STR  Use GeneMarkS2 to predict CDS instead of Prodigal. [auto|bact|arch]
   --use_mga             Use MGA (MetaGeneAnnotator, from Bioconda metagene_annotator) to predict CDS instead of Prodigal
   --use_trnascan STR    Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]
-  --rrna_model STR      rRNA profile HMMs for Barrnap [barrnap(=default)|rfam]. 'rfam' uses models built from Rfam seed alignments
+  --rrna_model STR      rRNA profile HMMs for Barrnap [rfam(=default)|barrnap]. 'rfam' uses models built from Rfam seed alignments, 'barrnap' the Barrnap 0.9 models
   --rrna_kingdom STR [STR ...]
-                        Prokaryotic rRNA models for Barrnap [bac(=default) arc]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac arc
+                        Prokaryotic rRNA models for Barrnap [bac arc(=default)]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac
   --gcode INT           Genetic code [11(=default),4(=Mycoplasma),25(=Gracilibacteria)]. Supported by Prodigal; MGA and --metagenome support 11 only
   --no_func_anno        Disable all functional annotation steps
   --hmm_db STR          HMM database for HMMscan [tigr(=default)|ncbifam]. 'ncbifam' searches the whole NCBI HMM collection (TIGR, NCBIFAM and PRK-
@@ -326,7 +326,7 @@ DFAST is freely available as open-source under the GPLv3 license (See [LICENSE](
 
 Up to Ver 1.4, this distribution contained the external programs for the default workflow. From Ver 1.5, it contained only MGA and CRT. From Ver 1.6, **this distribution contains no external programs**: all of them are installed from Bioconda, apt or PyPI (see [Installation](#installation)).
 
-rRNA prediction reimplements [Barrnap](https://github.com/tseemann/barrnap) by Torsten Seemann (GPL-3.0) in Python, written with reference to its source code, and uses its rRNA models (downloaded with `dfast_file_downloader.py --rrna barrnap`). We are grateful to the author.
+rRNA prediction reimplements [Barrnap](https://github.com/tseemann/barrnap) by Torsten Seemann (GPL-3.0) in Python, written with reference to its source code, and can use its rRNA models (`--rrna_model barrnap`, downloaded with `dfast_file_downloader.py --rrna barrnap`). We are grateful to the author.
 
 ## Trouble shoot
 * DBsearch is slow  
@@ -342,7 +342,7 @@ The Docker container image is available from [Dockerhub:nigyta/dtast_core](https
 Use `--dbroot` to specity the location of the reference data.
 Download the reference data:
 ```
-docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --rrna barrnap --cdd Cog --hmm NCBIfam --dbroot /dfast_db
+docker run --rm -v PATH/TO/DB:/dfast_db nigyta/dfast_core:latest dfast_file_downloader.py --protein dfast --rrna rfam --cdd Cog --hmm NCBIfam --dbroot /dfast_db
 ```
 
 Invoke DFAST:

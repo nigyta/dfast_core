@@ -12,7 +12,9 @@ Genetic codes: '--gcode' accepts 4 (Mycoplasma), 11 and 25 (SR1/Gracilibacteria)
 
 CRISPR prediction: Diced (>= 0.1.4, Python package; 'pip install "diced>=0.1.4"', Bioconda has only 0.1.3 at present) replaces CRT. It runs with the CRT parameters (repeat length 19-38, spacer length 19-48) and the CRISPR features keep the most frequent repeat sequence as 'rpt_unit_seq', so the results are comparable (115 of 120 arrays were identical to CRT on 81 genomes). CRT and the Java dependency are removed.
 
-'--use_rnammer' and RNAmmer support have been removed. Use the default rRNA prediction (Barrnap method; '--rrna_model rfam' and '--rrna_kingdom bac arc' for more coverage).
+rRNA prediction: the default rRNA models are now those built from Rfam 15.1 seed alignments ('--rrna_model rfam'), and both the bacterial and archaeal models are searched ('--rrna_kingdom bac arc'); overlapping hits compete and the best-scoring model wins. Run 'dfast_file_downloader.py --rrna rfam' before using this version (DFAST stops with this hint when the model files are missing). The numbers of rRNAs are expected to be the same as in Ver 1.5, and their boundaries may differ by a few bases. '--rrna_model barrnap --rrna_kingdom bac' gives the previous defaults (models from 'dfast_file_downloader.py --rrna barrnap').
+
+'--use_rnammer' and RNAmmer support have been removed. Use the default rRNA prediction (Barrnap method).
 
 Custom configuration files written for Ver 1.5: disabled CRT and RNAmmer entries are now ignored, but DFAST stops with an error when they are enabled. Replace the CRT entry with the Diced entry of dfc/default_config.py and enable Prodigal instead of MGA.
 
@@ -20,7 +22,7 @@ GHOSTX (the default aligner) runs as one process with '--cpu' threads, like DIAM
 
 Docker image: Prodigal (apt), Diced (pip) and MGA (extracted from the Bioconda package) are installed and Java is removed. The image is still linux/amd64 because the Bioconda MGA build is x86_64 only.
 
-The configurations of the web service (example/dfc_config/dfast_web_config*.py) use Prodigal and Diced. Prodigal and 'diced>=0.1.4' must be installed in the environment before this version is deployed to the web service.
+The configurations of the web service (example/dfc_config/dfast_web_config*.py) use Prodigal, Diced and the Rfam rRNA models of both kingdoms. Prodigal and 'diced>=0.1.4' must be installed in the environment, and the Rfam rRNA models must be in the reference data, before this version is deployed to the web service.
 
 Accessory annotations are now selected with '--modules NAME [NAME ...]' instead of '--amr' and '--mge'. The names are amr (CARD), vf (VFDB), plasmid (PlasmidFinder), mge (MobileElementFinder), integron (IntegronFinder) and defense (DefenseFinder and AntiDefenseFinder); 'all' selects all six. Without '--modules', no accessory annotation runs. With 'all', a module whose program or data is missing is skipped with a warning; a module that is named explicitly (also together with 'all') stops DFAST with an error that says what is missing and how to install it, and a module whose entry is missing in a custom config counts as unavailable. As before, an enabled CARD/VFDB NuclSearch entry in a config is used instead of the NuclMapping of that database.
   - '--amr' and '--mge' were removed and now stop DFAST with an error. Use '--modules amr vf plasmid defense' (or '--modules all') instead of '--amr', and '--modules mge integron' (or '--modules all') instead of '--mge'.

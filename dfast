@@ -73,9 +73,9 @@ group_genecall.add_argument("--use_prodigal", help="[Deprecated] Prodigal is the
 group_genecall.add_argument("--use_genemarks2", help="Use GeneMarkS2 to predict CDS instead of Prodigal. [auto|bact|arch]", choices=["auto", "bact", "arch", "bacteria", "archaea"], metavar="STR")
 group_genecall.add_argument("--use_mga", help="Use MGA (MetaGeneAnnotator, from Bioconda metagene_annotator) to predict CDS instead of Prodigal", action="store_true")
 group_workflow.add_argument("--use_trnascan", help="Use tRNAscan-SE to predict tRNA instead of Aragorn. [bact|arch]", choices=["bac", "bact", "arc", "arch"], metavar="STR")
-group_workflow.add_argument("--rrna_model", help="rRNA profile HMMs for Barrnap [barrnap(=default)|rfam]. 'rfam' uses models built from Rfam seed alignments",
+group_workflow.add_argument("--rrna_model", help="rRNA profile HMMs for Barrnap [rfam(=default)|barrnap]. 'rfam' uses models built from Rfam seed alignments, 'barrnap' the Barrnap 0.9 models",
                             choices=["barrnap", "rfam"], metavar="STR")
-group_workflow.add_argument("--rrna_kingdom", help="Prokaryotic rRNA models for Barrnap [bac(=default) arc]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac arc",
+group_workflow.add_argument("--rrna_kingdom", help="Prokaryotic rRNA models for Barrnap [bac arc(=default)]. With both, the best-scoring model wins. e.g. --rrna_kingdom bac",
                             nargs="+", choices=["bac", "arc"], metavar="STR")
 group_workflow.add_argument("--gcode", help="Genetic code [11(=default),4(=Mycoplasma),25(=Gracilibacteria)]. Supported by Prodigal; MGA and --metagenome support 11 only", metavar="INT", type=int, default=11)
 group_workflow.add_argument("--no_func_anno", help="Disable all functional annotation steps", action="store_true")

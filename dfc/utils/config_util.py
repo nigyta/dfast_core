@@ -202,7 +202,7 @@ def enable_trnascan(config, model):
             setting["enabled"] = False
 
 def set_rrna_model(config, model):
-    """Choose the rRNA profile HMMs for Barrnap: "barrnap" (Barrnap 0.9 models, default) or "rfam"."""
+    """Choose the rRNA profile HMMs for Barrnap: "rfam" (default) or "barrnap" (Barrnap 0.9 models)."""
     for setting in config.STRUCTURAL_ANNOTATION:
         if setting.get("tool_name", "") == "Barrnap":
             setting.setdefault("options", {})["model"] = model
@@ -210,7 +210,7 @@ def set_rrna_model(config, model):
 
 
 def set_rrna_kingdoms(config, kingdoms):
-    """Choose the prokaryotic rRNA models for Barrnap: ["bac"] (default), ["arc"] or ["bac", "arc"]."""
+    """Choose the prokaryotic rRNA models for Barrnap: ["bac", "arc"] (default), ["bac"] or ["arc"]."""
     for setting in config.STRUCTURAL_ANNOTATION:
         if setting.get("tool_name", "") == "Barrnap":
             setting.setdefault("options", {})["kingdoms"] = list(kingdoms)

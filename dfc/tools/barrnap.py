@@ -102,8 +102,8 @@ class Barrnap(StructuralAnnotationTool):
     def __init__(self, options=None, workDir="OUT"):
         """
         options:
-            model: "barrnap" (default) or "rfam", see RRNA_MODELS
-            kingdoms: prokaryotic models to search, "bac" and/or "arc" (default: ["bac"]).
+            model: "rfam" (default) or "barrnap", see RRNA_MODELS
+            kingdoms: prokaryotic models to search, "bac" and/or "arc" (default: ["bac", "arc"]).
             check_eukaryotic: also search the euk models as a contamination check (default: True).
                 Overlapping hits of different kingdoms compete by bit score; 18S/28S hits that win are
                 reported as possible contamination.
@@ -112,9 +112,9 @@ class Barrnap(StructuralAnnotationTool):
         """
         options = options or {}
         super(Barrnap, self).__init__(options, workDir)
-        model = options.get("model", "barrnap")
+        model = options.get("model", "rfam")
         file_pattern, self.model_label = RRNA_MODELS[model]
-        kingdoms = options.get("kingdoms", ["bac"])
+        kingdoms = options.get("kingdoms", ["bac", "arc"])
         unknown = set(kingdoms) - {"bac", "arc"}
         if unknown or not kingdoms:
             self.logger.error("Invalid rRNA kingdoms: {0}. Choose bac and/or arc.".format(", ".join(kingdoms)))

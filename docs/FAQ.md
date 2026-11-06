@@ -72,7 +72,7 @@ You can specify it with a `--dbroot` option. This may be helpful when running DF
 
 Download the reference data:  
 ```
-dfast_file_downloader.py --protein dfast --rrna barrnap --cdd Cog --hmm NCBIfam --dbroot /dfast_db
+dfast_file_downloader.py --protein dfast --rrna rfam --cdd Cog --hmm NCBIfam --dbroot /dfast_db
 ```
 Invoke DFAST:
 ```
