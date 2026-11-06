@@ -423,7 +423,7 @@ Install DefenseFinder and download its models into `DB_ROOT/defense_finder_model
 conda install -c bioconda defense-finder
 scripts/dfast_file_downloader.py --modules defense
 ```
-**License of the DefenseFinder models.** The models used by DefenseFinder (defense-finder-models and CasFinder, by Institut Pasteur and CNRS) are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), which does not allow commercial use. The DefenseFinder program itself is GPL-3.0.
+**License of the DefenseFinder models.** The models used by DefenseFinder (defense-finder-models and CasFinder, by Institut Pasteur and CNRS) are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). The DefenseFinder program itself is GPL-3.0.
 * DFAST does not redistribute the models: they are not part of DFAST, its Docker image or its Bioconda package. `dfast_file_downloader.py --modules defense` (or `--defensefinder`) downloads them from their developers with `defense-finder update`.
 * When you run `--modules defense` (also via `--modules all`), you use the models under their license. Commercial use requires permission from the developers of DefenseFinder.
 * The developers of DefenseFinder have confirmed that the use of the models in DFAST and its web service is in agreement with their license.
