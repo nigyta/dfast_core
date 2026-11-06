@@ -426,8 +426,8 @@ scripts/dfast_file_downloader.py --modules defense
 **License of the DefenseFinder models.** The models used by DefenseFinder (defense-finder-models and CasFinder, by Institut Pasteur and CNRS) are distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), which does not allow commercial use. The DefenseFinder program itself is GPL-3.0.
 * DFAST does not redistribute the models: they are not part of DFAST, its Docker image or its Bioconda package. `dfast_file_downloader.py --modules defense` (or `--defensefinder`) downloads them from their developers with `defense-finder update`.
 * When you run `--modules defense` (also via `--modules all`), you use the models under their license. Commercial use requires permission from the developers of DefenseFinder.
-* The developers of DefenseFinder have permitted the use of the models in the DFAST web service, on the condition that DFAST does not redistribute them.
-* Please cite DefenseFinder (Tesson et al., *Nat Commun* 2022; 13:2561) and, for anti-defense systems, AntiDefenseFinder (Tesson et al., *Nucleic Acids Res* 2024, doi:10.1093/nar/gkae1171) when you publish results.
+* The developers of DefenseFinder have confirmed that the use of the models in DFAST and its web service is in agreement with their license.
+* Please cite DefenseFinder (Tesson et al., *Nat Commun* 2022; 13:2561, doi:10.1038/s41467-022-30269-9) and, for anti-defense systems, AntiDefenseFinder (Tesson et al., *Nucleic Acids Res* 2024, doi:10.1093/nar/gkae1171) when you publish results.
 
 When DefenseFinder or its models are not found, `--modules all` skips it with a warning and `--modules defense` stops with an error.
 
